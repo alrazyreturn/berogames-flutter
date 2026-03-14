@@ -61,9 +61,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _scrollCtrl.dispose();
     _typingTimer?.cancel();
     _sendTimeoutTimer?.cancel();
-    _socket.onChatMessageReceived = null;
-    _socket.onChatMessageSent     = null;
-    _socket.onChatTyping          = null;
+    _socket.onChatMessageReceived  = null;
+    _socket.onChatMessageSent      = null;
+    _socket.onChatTyping           = null;
+    _socket.onChatMessageDeleted   = null;
     // إلغاء "يكتب الآن" عند المغادرة
     _socket.sendTyping(toUserId: widget.friend.userId, isTyping: false);
     super.dispose();
@@ -117,6 +118,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       });
       _scrollToBottom();
+    };
+
+    // رسالة اتمسحت من الطرف الآخر
+    _socket.onChatMessageDeleted = (data) {
+      if (!mounted) return;
+      final deletedId = data['message_id'] as int?;
+      if (deletedId == null) return;
+      setState(() => _messages.removeWhere((m) => m.id == deletedId));
     };
 
     // يكتب الآن...
@@ -183,6 +192,48 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       });
     } else {
       _socket.sendTyping(toUserId: widget.friend.userId, isTyping: false);
+    }
+  }
+
+  // ─── مسح رسالة ───────────────────────────────────────────────────────────
+  Future<void> _deleteMessage(MessageModel msg) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E3F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('مسح الرسالة', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'هل تريد مسح هذه الرسالة؟',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('مسح', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    try {
+      await ChatService().deleteMessage(messageId: msg.id, token: token);
+      _socket.deleteChatMessage(messageId: msg.id, toUserId: widget.friend.userId);
+      setState(() => _messages.removeWhere((m) => m.id == msg.id));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('فشل مسح الرسالة')),
+        );
+      }
     }
   }
 
@@ -295,15 +346,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             horizontal: 16, vertical: 12),
                         itemCount: _messages.length,
                         itemBuilder: (_, i) {
-                          final msg   = _messages[i];
-                          final isMe  = msg.senderId == myId;
+                          final msg      = _messages[i];
+                          final isMe     = msg.senderId == myId;
                           final showDate = i == 0 ||
                               _messages[i].createdAt.day !=
                                   _messages[i - 1].createdAt.day;
                           return Column(
                             children: [
                               if (showDate) _DateDivider(date: msg.createdAt),
-                              _MessageBubble(msg: msg, isMe: isMe),
+                              GestureDetector(
+                                onLongPress: isMe && msg.id > 0
+                                    ? () => _deleteMessage(msg)
+                                    : null,
+                                child: _MessageBubble(msg: msg, isMe: isMe),
+                              ),
                             ],
                           );
                         },

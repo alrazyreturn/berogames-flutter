@@ -33,6 +33,7 @@ class SocketService {
   Function(Map<String, dynamic>)? onChatMessageReceived;
   Function(Map<String, dynamic>)? onChatMessageSent;
   Function(Map<String, dynamic>)? onChatTyping;
+  Function(Map<String, dynamic>)? onChatMessageDeleted;
 
   // ─── الاتصال بالسيرفر ────────────────────────────────────────────────────
   void connect({int? userId, String? userName}) {
@@ -154,6 +155,10 @@ class SocketService {
     _socket!.on('chat_typing', (data) {
       onChatTyping?.call(Map<String, dynamic>.from(data));
     });
+
+    _socket!.on('chat_message_deleted', (data) {
+      onChatMessageDeleted?.call(Map<String, dynamic>.from(data));
+    });
   }
 
   // ─── الانضمام لغرفة ──────────────────────────────────────────────────────
@@ -260,6 +265,13 @@ class SocketService {
     });
   }
 
+  void deleteChatMessage({ required int messageId, required int toUserId }) {
+    _socket?.emit('delete_chat_message', {
+      'message_id':  messageId,
+      'to_user_id':  toUserId,
+    });
+  }
+
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName }) {
     _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName });
@@ -294,6 +306,7 @@ class SocketService {
     onChatMessageReceived  = null;
     onChatMessageSent      = null;
     onChatTyping           = null;
+    onChatMessageDeleted   = null;
   }
 
   void clearCallbacks() => _clearCallbacks();

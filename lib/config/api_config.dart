@@ -22,8 +22,9 @@ class ApiConfig {
   static const String roomFinish = '/room/finish';
 
   // Chat
-  static const String chat       = '/chat';
-  static const String chatUnread = '/chat/unread/count';
+  static const String chat         = '/chat';
+  static const String chatUnread   = '/chat/unread/count';
+  static const String chatMessages = '/chat/messages';
 
   // Friends
   static const String friendsList     = '/friends';

@@ -19,6 +19,17 @@ class ChatService {
         .toList();
   }
 
+  // ─── مسح رسالة ───────────────────────────────────────────────────────────
+  Future<void> deleteMessage({
+    required int    messageId,
+    required String token,
+  }) async {
+    await _dio.delete(
+      '${ApiConfig.chatMessages}/$messageId',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
+
   // ─── عدد الرسائل غير المقروءة ────────────────────────────────────────────
   Future<int> getUnreadCount({required String token}) async {
     final res = await _dio.get(
