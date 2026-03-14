@@ -8,6 +8,7 @@ import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import 'add_friend_screen.dart';
 import 'create_room_screen.dart';
+import 'chat_screen.dart';
 
 /// شاشة الأصدقاء الرئيسية
 class FriendsScreen extends StatefulWidget {
@@ -255,6 +256,12 @@ class _FriendsScreenState extends State<FriendsScreen>
           friend:      _friends[i],
           onChallenge: () => _challengeFriend(_friends[i]),
           onDelete:    () => _deleteRelation(_friends[i].friendshipId),
+          onChat:      () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(friend: _friends[i]),
+            ),
+          ),
         ),
       ),
     );
@@ -293,11 +300,13 @@ class _FriendTile extends StatelessWidget {
   final FriendModel  friend;
   final VoidCallback onChallenge;
   final VoidCallback onDelete;
+  final VoidCallback onChat;
 
   const _FriendTile({
     required this.friend,
     required this.onChallenge,
     required this.onDelete,
+    required this.onChat,
   });
 
   @override
@@ -379,6 +388,14 @@ class _FriendTile extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+
+          // زر الشات
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded,
+                color: Color(0xFF43D8C9), size: 22),
+            tooltip: 'محادثة',
+            onPressed: onChat,
           ),
 
           // زر التحدي

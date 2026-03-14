@@ -29,6 +29,11 @@ class SocketService {
   Function(Map<String, dynamic>)? onGameInviteResult;
   Function(Map<String, dynamic>)? onInviteSent;
 
+  // ─── Chat Callbacks ───────────────────────────────────────────────────────
+  Function(Map<String, dynamic>)? onChatMessageReceived;
+  Function(Map<String, dynamic>)? onChatMessageSent;
+  Function(Map<String, dynamic>)? onChatTyping;
+
   // ─── الاتصال بالسيرفر ────────────────────────────────────────────────────
   void connect() {
     if (_socket != null && _socket!.connected) return;
@@ -115,6 +120,19 @@ class SocketService {
 
     _socket!.on('invite_sent', (data) {
       onInviteSent?.call(Map<String, dynamic>.from(data));
+    });
+
+    // ─── Chat Events ─────────────────────────────────────────────────────
+    _socket!.on('chat_message_received', (data) {
+      onChatMessageReceived?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('chat_message_sent', (data) {
+      onChatMessageSent?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('chat_typing', (data) {
+      onChatTyping?.call(Map<String, dynamic>.from(data));
     });
   }
 
@@ -207,6 +225,21 @@ class SocketService {
     });
   }
 
+  // ─── Chat ─────────────────────────────────────────────────────────────────
+  void sendChatMessage({ required int toUserId, required String message }) {
+    _socket?.emit('send_chat_message', {
+      'to_user_id': toUserId,
+      'message':    message,
+    });
+  }
+
+  void sendTyping({ required int toUserId, required bool isTyping }) {
+    _socket?.emit('chat_typing', {
+      'to_user_id': toUserId,
+      'is_typing':  isTyping,
+    });
+  }
+
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName }) {
     _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName });
@@ -238,6 +271,9 @@ class SocketService {
     onGameInviteReceived   = null;
     onGameInviteResult     = null;
     onInviteSent           = null;
+    onChatMessageReceived  = null;
+    onChatMessageSent      = null;
+    onChatTyping           = null;
   }
 
   void clearCallbacks() => _clearCallbacks();
