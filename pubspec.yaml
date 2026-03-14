@@ -1,0 +1,64 @@
+name: berogames
+description: "BeroGames - لعبة مسابقات"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # HTTP
+  dio: ^5.4.0
+
+  # State Management
+  provider: ^6.1.2
+
+  # Local Storage
+  shared_preferences: ^2.2.3
+
+  # Animations
+  flutter_animate: ^4.5.0
+  confetti: ^0.7.0
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # Audio
+  audioplayers: ^6.0.0
+
+  # Multiplayer - WebSocket
+  socket_io_client: ^2.0.3+1
+
+  # Image Picker (اختيار الصور)
+  image_picker: ^1.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/sounds/happy/answer-correct.mp3
+    - assets/sounds/happy/default_eKkIk7O.mp3
+    - assets/sounds/happy/kids_cheering.mp3
+    - assets/sounds/happy/omgwow.mp3
+    - assets/sounds/happy/original-sheesh.mp3
+    - assets/sounds/happy/very-nice-borat.mp3
+    - assets/sounds/happy/yeah-boymp4.mp3
+    - assets/sounds/sad/ceeday-huh-sound-effect.mp3
+    - assets/sounds/sad/fahhhhh-5.mp3
+    - assets/sounds/sad/final_60108db6919bc200b087a3a2_239343.mp3
+    - assets/sounds/sad/oh_no_1.mp3
+    - assets/sounds/sad/ow2-online-audio-converter.mp3
+    - assets/sounds/sad/sorry-sorry-sorry.mp3
+    - assets/sounds/sad/tf_nemesis.mp3
+    - assets/sounds/sad/y2mate_VKI8qDn.mp3

@@ -1,0 +1,244 @@
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../config/api_config.dart';
+
+/// SocketService - Singleton يدير اتصال WebSocket مع السيرفر
+class SocketService {
+  static final SocketService _instance = SocketService._internal();
+  factory SocketService() => _instance;
+  SocketService._internal();
+
+  IO.Socket? _socket;
+  bool get isConnected => _socket?.connected ?? false;
+
+  // ─── Callbacks (تُعيّن من الشاشات) ───────────────────────────────────────
+  Function(Map<String, dynamic>)? onPlayerJoined;
+  Function(Map<String, dynamic>)? onGameStarted;
+  Function(Map<String, dynamic>)? onScoreUpdate;
+  Function(Map<String, dynamic>)? onOpponentFinished;
+  Function(Map<String, dynamic>)? onGameOver;
+  Function(Map<String, dynamic>)? onOpponentDisconnected;
+  Function(String)?               onError;
+
+  // ─── Auto Matchmaking Callbacks ──────────────────────────────────────────
+  Function(Map<String, dynamic>)? onMatchFound;
+  Function(Map<String, dynamic>)? onInQueue;
+
+  // ─── Friends / Online Callbacks ───────────────────────────────────────────
+  Function(Map<int, bool>)?       onOnlineStatus;
+  Function(Map<String, dynamic>)? onGameInviteReceived;
+  Function(Map<String, dynamic>)? onGameInviteResult;
+  Function(Map<String, dynamic>)? onInviteSent;
+
+  // ─── الاتصال بالسيرفر ────────────────────────────────────────────────────
+  void connect() {
+    if (_socket != null && _socket!.connected) return;
+
+    _socket = IO.io(
+      ApiConfig.socketUrl,
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .setReconnectionAttempts(5)
+          .setReconnectionDelay(2000)
+          .build(),
+    );
+
+    _socket!.connect();
+
+    _socket!.onConnect((_) {
+      print('✅ Socket connected: ${_socket!.id}');
+    });
+
+    _socket!.onDisconnect((_) {
+      print('❌ Socket disconnected');
+    });
+
+    _socket!.onConnectError((err) {
+      print('⚠️ Socket connect error: $err');
+      onError?.call('فشل الاتصال بالسيرفر');
+    });
+
+    // ─── Incoming Events ─────────────────────────────────────────────────
+    _socket!.on('player_joined', (data) {
+      onPlayerJoined?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('game_started', (data) {
+      onGameStarted?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('score_update', (data) {
+      onScoreUpdate?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('opponent_finished', (data) {
+      onOpponentFinished?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('game_over', (data) {
+      onGameOver?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('opponent_disconnected', (data) {
+      onOpponentDisconnected?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('error_msg', (data) {
+      onError?.call(data['message'] ?? 'خطأ غير معروف');
+    });
+
+    // ─── Auto Matchmaking Events ─────────────────────────────────────────
+    _socket!.on('match_found', (data) {
+      onMatchFound?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('in_queue', (data) {
+      onInQueue?.call(Map<String, dynamic>.from(data));
+    });
+
+    // ─── Friends / Online Events ──────────────────────────────────────────
+    _socket!.on('online_status', (data) {
+      final map = <int, bool>{};
+      (data as Map).forEach((k, v) {
+        map[int.tryParse(k.toString()) ?? 0] = v == true;
+      });
+      onOnlineStatus?.call(map);
+    });
+
+    _socket!.on('game_invite_received', (data) {
+      onGameInviteReceived?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('game_invite_result', (data) {
+      onGameInviteResult?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('invite_sent', (data) {
+      onInviteSent?.call(Map<String, dynamic>.from(data));
+    });
+  }
+
+  // ─── الانضمام لغرفة ──────────────────────────────────────────────────────
+  void joinRoom({
+    required String roomCode,
+    required int    userId,
+    required String userName,
+    required String role,  // 'host' أو 'guest'
+  }) {
+    _socket?.emit('join_room', {
+      'room_code': roomCode,
+      'user_id':   userId,
+      'user_name': userName,
+      'role':      role,
+    });
+  }
+
+  // ─── Host يبدأ اللعبة ────────────────────────────────────────────────────
+  void startGame({
+    required String roomCode,
+    required int    categoryId,
+    required int    roomId,
+    required int    difficulty,
+  }) {
+    _socket?.emit('start_game', {
+      'room_code':   roomCode,
+      'category_id': categoryId,
+      'room_id':     roomId,
+      'difficulty':  difficulty,
+    });
+  }
+
+  // ─── إرسال إجابة ─────────────────────────────────────────────────────────
+  void submitAnswer({
+    required String roomCode,
+    required bool   isCorrect,
+    required int    scoreEarned,
+  }) {
+    _socket?.emit('submit_answer', {
+      'room_code':   roomCode,
+      'is_correct':  isCorrect,
+      'score_earned': scoreEarned,
+    });
+  }
+
+  // ─── اللاعب أنهى كل الأسئلة ──────────────────────────────────────────────
+  void playerFinished({
+    required String roomCode,
+    required int    finalScore,
+  }) {
+    _socket?.emit('player_finished', {
+      'room_code':   roomCode,
+      'final_score': finalScore,
+    });
+  }
+
+  // ─── Friends / Online ─────────────────────────────────────────────────────
+  void registerOnline({ required int userId, required String userName }) {
+    _socket?.emit('user_online', { 'user_id': userId, 'user_name': userName });
+  }
+
+  void getOnlineStatus(List<int> userIds) {
+    _socket?.emit('get_online_status', { 'user_ids': userIds });
+  }
+
+  void sendGameInvite({
+    required int    toUserId,
+    required String fromName,
+    required String roomCode,
+    String          categoryName = '',
+  }) {
+    _socket?.emit('send_game_invite', {
+      'to_user_id':    toUserId,
+      'from_name':     fromName,
+      'room_code':     roomCode,
+      'category_name': categoryName,
+    });
+  }
+
+  void respondToInvite({
+    required int    toUserId,
+    required bool   accepted,
+    required String roomCode,
+  }) {
+    _socket?.emit('game_invite_response', {
+      'to_user_id': toUserId,
+      'accepted':   accepted,
+      'room_code':  roomCode,
+    });
+  }
+
+  // ─── Auto Matchmaking ─────────────────────────────────────────────────────
+  void findMatch({ required int userId, required String userName }) {
+    _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName });
+  }
+
+  void cancelMatch() {
+    _socket?.emit('cancel_match');
+  }
+
+  // ─── قطع الاتصال ─────────────────────────────────────────────────────────
+  void disconnect() {
+    _clearCallbacks();
+    _socket?.disconnect();
+    _socket = null;
+  }
+
+  // ─── مسح الـ Callbacks عند مغادرة الشاشة ────────────────────────────────
+  void _clearCallbacks() {
+    onPlayerJoined        = null;
+    onGameStarted         = null;
+    onScoreUpdate         = null;
+    onOpponentFinished    = null;
+    onGameOver            = null;
+    onOpponentDisconnected = null;
+    onError               = null;
+    onMatchFound           = null;
+    onInQueue              = null;
+    onOnlineStatus         = null;
+    onGameInviteReceived   = null;
+    onGameInviteResult     = null;
+    onInviteSent           = null;
+  }
+
+  void clearCallbacks() => _clearCallbacks();
+}
