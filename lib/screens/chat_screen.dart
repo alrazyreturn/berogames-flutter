@@ -16,7 +16,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final _chatService  = ChatService();
   final _socket       = SocketService();
   final _msgCtrl      = TextEditingController();
@@ -32,12 +32,31 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
     _setupSocket();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _sendTimeoutTimer?.cancel();
+      if (mounted && _sending) setState(() => _sending = false);
+      _messages.removeWhere((m) => m.id < 0);
+
+      final user  = context.read<UserProvider>().user;
+      if (user == null) return;
+
+      // أعد الاتصال وسجّل المستخدم على السيرفر فور الاتصال
+      _socket.connect(userId: user.id, userName: user.name);
+      _setupSocket();
+      _loadHistory();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     _typingTimer?.cancel();

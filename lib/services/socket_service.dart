@@ -35,8 +35,25 @@ class SocketService {
   Function(Map<String, dynamic>)? onChatTyping;
 
   // ─── الاتصال بالسيرفر ────────────────────────────────────────────────────
-  void connect() {
-    if (_socket != null && _socket!.connected) return;
+  void connect({int? userId, String? userName}) {
+    if (_socket != null && _socket!.connected) {
+      // متصل بالفعل — فقط أعد التسجيل لو طُلب
+      if (userId != null && userName != null) {
+        registerOnline(userId: userId, userName: userName);
+      }
+      return;
+    }
+
+    // لو Socket موجود لكن منقطع — أعد الاتصال بدلاً من إنشاء جديد
+    if (_socket != null && !_socket!.connected) {
+      _socket!.connect();
+      if (userId != null && userName != null) {
+        _socket!.once('connect', (_) {
+          registerOnline(userId: userId, userName: userName);
+        });
+      }
+      return;
+    }
 
     _socket = IO.io(
       ApiConfig.socketUrl,
@@ -52,6 +69,9 @@ class SocketService {
 
     _socket!.onConnect((_) {
       print('✅ Socket connected: ${_socket!.id}');
+      if (userId != null && userName != null) {
+        registerOnline(userId: userId, userName: userName);
+      }
     });
 
     _socket!.onDisconnect((_) {
