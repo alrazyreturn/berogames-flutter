@@ -3,6 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'providers/user_provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/friends_screen.dart';
+import 'services/notification_service.dart';
+import 'models/friend_model.dart';
+
+// ─── Global Navigator Key للـ Navigation من الإشعارات ────────────────────────
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +17,47 @@ void main() async {
   // تهيئة Firebase
   await Firebase.initializeApp();
 
-  // ← مهم: ننتظر تحميل بيانات الجلسة قبل تشغيل التطبيق
+  // تهيئة خدمة الإشعارات
+  final notifService = NotificationService();
+  await notifService.init();
+
+  // عند الضغط على إشعار → افتح الشاشة المناسبة
+  notifService.onNotificationTap = (data) {
+    final type = data['type'] as String? ?? '';
+    final ctx  = navigatorKey.currentContext;
+    if (ctx == null) return;
+
+    switch (type) {
+      case 'chat':
+        final fromId   = int.tryParse(data['from_user_id'] ?? '') ?? 0;
+        final fromName = data['from_name'] ?? 'صديق';
+        if (fromId > 0) {
+          final friend = FriendModel(
+            friendshipId: 0,
+            userId:       fromId,
+            name:         fromName,
+          );
+          Navigator.of(navigatorKey.currentContext!).push(
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(friend: friend),
+            ),
+          );
+        }
+        break;
+      case 'friend_request':
+        Navigator.of(navigatorKey.currentContext!).push(
+          MaterialPageRoute(builder: (_) => const FriendsScreen()),
+        );
+        break;
+      case 'game_invite':
+        // الـ home_screen بيتعامل مع الدعوة عبر socket
+        // هنا نكتفي بالذهاب للرئيسية
+        Navigator.of(navigatorKey.currentContext!).popUntil((r) => r.isFirst);
+        break;
+    }
+  };
+
+  // تحميل بيانات الجلسة
   final userProvider = UserProvider();
   await userProvider.loadFromStorage();
 
@@ -28,8 +75,9 @@ class BeroGamesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BeroGames',
+      title:                    'BeroGames',
       debugShowCheckedModeBanner: false,
+      navigatorKey:             navigatorKey,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
         useMaterial3: true,

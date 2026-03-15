@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../providers/user_provider.dart';
 import '../services/socket_service.dart';
 import '../services/room_service.dart';
+import '../services/notification_service.dart';
 import '../models/room_model.dart';
+import '../config/api_config.dart';
 import 'categories_screen.dart';
 import 'dual_menu_screen.dart';
 import 'dual_game_screen.dart';
@@ -39,6 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _socket.connect();
     _socket.registerOnline(userId: user.id, userName: user.name);
 
+    // ─── حفظ FCM Token على السيرفر ────────────────────────────────────────
+    _saveFcmToken(token);
+
     // ─── استقبال دعوة لعب من صديق ─────────────────────────────────────────
     _socket.onGameInviteReceived = (data) {
       if (!mounted) return;
@@ -53,6 +59,28 @@ class _HomeScreenState extends State<HomeScreen> {
         categoryName:  categoryName,
       );
     };
+  }
+
+  // ─── حفظ FCM Token على السيرفر ──────────────────────────────────────────
+  Future<void> _saveFcmToken(String token) async {
+    try {
+      final fcmToken = await NotificationService().getToken();
+      if (fcmToken == null) return;
+      final dio = Dio();
+      await dio.put(
+        '${ApiConfig.baseUrl}/auth/fcm-token',
+        data: {'fcm_token': fcmToken},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      // مراقبة تجديد الـ Token
+      NotificationService().onTokenRefresh((newToken) {
+        dio.put(
+          '${ApiConfig.baseUrl}/auth/fcm-token',
+          data: {'fcm_token': newToken},
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      });
+    } catch (_) {}
   }
 
   @override
