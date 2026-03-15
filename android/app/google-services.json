@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "564493548124",
+    "project_id": "bero-1b739",
+    "storage_bucket": "bero-1b739.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564493548124:android:c361f00806ded414d4c499",
+        "android_client_info": {
+          "package_name": "com.example.berogames"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "564493548124-e92f9u7hdbukkpm4o043jl8na50khlf5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.berogames",
+            "certificate_hash": "07a9f08e3f3b628ddd5480c39cbf41600b91f419"
+          }
+        },
+        {
+          "client_id": "564493548124-p7q6n790akns34ujvjeklj9n37a3a8t7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKK6Pps2TBKW2sDFoaax0sJ0oFe4oHU-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "564493548124-p7q6n790akns34ujvjeklj9n37a3a8t7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

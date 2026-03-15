@@ -3,9 +3,10 @@ class ApiConfig {
   static const String socketUrl = 'https://api.berogames.store';  //'http://38.180.146.158:3000'; // WebSocket
 
   // Auth
-  static const String register  = '/auth/register';
-  static const String login     = '/auth/login';
-  static const String profile   = '/auth/profile';
+  static const String register    = '/auth/register';
+  static const String login       = '/auth/login';
+  static const String googleLogin = '/auth/google';
+  static const String profile     = '/auth/profile';
 
   // Game
   static const String categories  = '/game/categories';
