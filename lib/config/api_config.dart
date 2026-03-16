@@ -32,4 +32,9 @@ class ApiConfig {
   static const String friendsRequests = '/friends/requests';
   static const String friendsRequest  = '/friends/request';
   static const String friendsAccept   = '/friends/accept';
+
+  // Energy
+  static const String energy         = '/energy';
+  static const String energyConsume  = '/energy/consume';
+  static const String energyRecharge = '/energy/recharge';
 }

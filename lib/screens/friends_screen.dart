@@ -6,6 +6,7 @@ import '../providers/user_provider.dart';
 import '../services/friends_service.dart';
 import '../services/room_service.dart';
 import '../services/socket_service.dart';
+import '../services/energy_service.dart';
 import 'add_friend_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -20,9 +21,10 @@ class FriendsScreen extends StatefulWidget {
 
 class _FriendsScreenState extends State<FriendsScreen>
     with SingleTickerProviderStateMixin {
-  final _service    = FriendsService();
-  final _roomService = RoomService();
-  final _socket     = SocketService();
+  final _service       = FriendsService();
+  final _roomService   = RoomService();
+  final _socket        = SocketService();
+  final _energyService = EnergyService();
   late TabController _tabs;
 
   List<FriendModel>        _friends  = [];
@@ -99,17 +101,107 @@ class _FriendsScreenState extends State<FriendsScreen>
     }
   }
 
-  // ─── تحدي صديق ───────────────────────────────────────────────────────────
+  // ─── تحدي صديق (مع check الطاقة) ────────────────────────────────────────
   Future<void> _challengeFriend(FriendModel friend) async {
     final token = context.read<UserProvider>().token;
     final user  = context.read<UserProvider>().user;
     if (token == null || user == null) return;
 
-    // الذهاب لاختيار القسم → إنشاء غرفة
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateRoomScreen(inviteFriend: friend),
+    // ✅ تحقق من الطاقة قبل إرسال التحدي
+    try {
+      final energyRes = await _energyService.getEnergy(token);
+      final energy    = energyRes['energy'] as int? ?? 0;
+
+      if (energy <= 0) {
+        if (!mounted) return;
+        _showNoEnergyDialog(
+          token: token,
+          onRecharged: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => CreateRoomScreen(inviteFriend: friend)),
+          ),
+        );
+        return;
+      }
+
+      // استهلاك الطاقة ثم الانتقال
+      final consumeRes = await _energyService.consumeEnergy(token);
+      if (!mounted) return;
+      if (consumeRes['can_play'] == true) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => CreateRoomScreen(inviteFriend: friend)),
+        );
+      }
+    } catch (_) {
+      // لو في خطأ في الشبكة، اسمح بالتحدي
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CreateRoomScreen(inviteFriend: friend)),
+      );
+    }
+  }
+
+  // ─── dialog انتهاء الطاقة ────────────────────────────────────────────────
+  void _showNoEnergyDialog({required String token, required VoidCallback onRecharged}) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E3F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡ طاقتك انتهت!',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                5,
+                (i) => const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3),
+                  child: Icon(Icons.favorite_border, color: Colors.white24, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'شاهد إعلاناً للحصول على ❤️ طاقة إضافية',
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C63FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.play_circle_outline, size: 18),
+            label: const Text('شاهد إعلان +❤️'),
+            onPressed: () async {
+              Navigator.pop(context);
+              // TODO (Phase 3): عرض Rewarded Ad من AdMob هنا
+              try {
+                await _energyService.rechargeEnergy(token);
+                if (!mounted) return;
+                onRecharged();
+              } catch (_) {}
+            },
+          ),
+        ],
       ),
     );
   }

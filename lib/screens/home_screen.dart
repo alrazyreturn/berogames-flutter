@@ -5,6 +5,7 @@ import '../providers/user_provider.dart';
 import '../services/socket_service.dart';
 import '../services/room_service.dart';
 import '../services/notification_service.dart';
+import '../services/energy_service.dart';
 import '../models/room_model.dart';
 import '../config/api_config.dart';
 import 'categories_screen.dart';
@@ -25,13 +26,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _socket      = SocketService();
-  final _roomService = RoomService();
+  final _socket        = SocketService();
+  final _roomService   = RoomService();
+  final _energyService = EnergyService();
+
+  int  _energy       = 5;
+  bool _energyLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _setupSocket());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupSocket();
+      _loadEnergy();
+    });
+  }
+
+  // ─── تحميل الطاقة من السيرفر ────────────────────────────────────────────
+  Future<void> _loadEnergy() async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+    try {
+      final res = await _energyService.getEnergy(token);
+      if (mounted) {
+        setState(() {
+          _energy       = res['energy'] as int? ?? 5;
+          _energyLoaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _energyLoaded = true);
+    }
   }
 
   void _setupSocket() {
@@ -53,10 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final roomCode     = data['room_code']       ?? '';
       final categoryName = data['category_name']  ?? '';
       _showInviteDialog(
-        fromUserId:    fromUserId,
-        fromName:      fromName,
-        roomCode:      roomCode,
-        categoryName:  categoryName,
+        fromUserId:   fromUserId,
+        fromName:     fromName,
+        roomCode:     roomCode,
+        categoryName: categoryName,
       );
     };
   }
@@ -72,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen> {
         data: {'fcm_token': fcmToken},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      // مراقبة تجديد الـ Token
       NotificationService().onTokenRefresh((newToken) {
         dio.put(
           '${ApiConfig.baseUrl}/auth/fcm-token',
@@ -89,7 +113,112 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // ─── حوار الدعوة ────────────────────────────────────────────────────────
+  // ─── التحقق من الطاقة قبل اللعب ─────────────────────────────────────────
+  Future<void> _checkEnergyAndNavigate(VoidCallback navigate) async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    if (_energy > 0) {
+      try {
+        final res = await _energyService.consumeEnergy(token);
+        if (!mounted) return;
+        if (res['can_play'] == true) {
+          setState(() => _energy = res['energy'] as int? ?? (_energy - 1));
+          navigate();
+        }
+      } catch (_) {
+        // لو في خطأ في الشبكة، اسمح باللعب
+        navigate();
+      }
+      return;
+    }
+
+    // الطاقة = 0 → اعرض dialog
+    if (mounted) _showNoEnergyDialog(navigate);
+  }
+
+  // ─── dialog انتهاء الطاقة ────────────────────────────────────────────────
+  void _showNoEnergyDialog(VoidCallback navigate) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E3F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡ طاقتك انتهت!',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // عرض القلوب الفارغة
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                5,
+                (i) => const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3),
+                  child: Icon(Icons.favorite_border, color: Colors.white24, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'شاهد إعلاناً قصيراً للحصول على ❤️ طاقة إضافية',
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'أو انتظر حتى منتصف الليل لإعادة الشحن 🕛',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C63FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            icon: const Icon(Icons.play_circle_outline, size: 18),
+            label: const Text('شاهد إعلان +❤️'),
+            onPressed: () {
+              Navigator.pop(context);
+              _watchAdAndRecharge(navigate);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── مشاهدة إعلان وشحن الطاقة (Phase 3: سيتم استبداله بإعلان AdMob حقيقي) ──
+  Future<void> _watchAdAndRecharge(VoidCallback navigate) async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    // TODO (Phase 3): عرض Rewarded Ad من AdMob هنا قبل الشحن
+    try {
+      final res = await _energyService.rechargeEnergy(token);
+      if (!mounted) return;
+      setState(() => _energy = res['energy'] as int? ?? (_energy + 1));
+      // بعد الشحن نفذ اللعبة
+      await _checkEnergyAndNavigate(navigate);
+    } catch (_) {}
+  }
+
+  // ─── حوار الدعوة (بدون check طاقة — استقبال دعوة مجاني) ─────────────────
   void _showInviteDialog({
     required int    fromUserId,
     required String fromName,
@@ -130,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.pop(context);
               _socket.respondToInvite(
-                toUserId: fromUserId,   // رد للمضيف
+                toUserId: fromUserId,
                 accepted: false,
                 roomCode: roomCode,
               );
@@ -145,6 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: () {
               Navigator.pop(context);
+              // قبول الدعوة — بدون استهلاك طاقة
               _acceptInvite(fromUserId: fromUserId, fromName: fromName, roomCode: roomCode);
             },
             child: const Text('✅ قبول', style: TextStyle(color: Colors.white, fontSize: 16)),
@@ -154,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ─── قبول الدعوة والانضمام للغرفة ────────────────────────────────────────
+  // ─── قبول الدعوة والانضمام للغرفة (بدون استهلاك طاقة) ────────────────────
   Future<void> _acceptInvite({
     required int    fromUserId,
     required String fromName,
@@ -165,20 +295,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user == null || token == null) return;
 
     try {
-      // انضمام REST
-      final room = await _roomService.joinRoom(
-        roomCode: roomCode,
-        token:    token,
-      );
+      final room = await _roomService.joinRoom(roomCode: roomCode, token: token);
 
-      // إرسال رد القبول للمضيف
       _socket.respondToInvite(
-        toUserId: fromUserId,  // ID المضيف اللي بعت الدعوة
+        toUserId: fromUserId,
         accepted: true,
         roomCode: roomCode,
       );
 
-      // الانضمام للغرفة عبر socket كـ guest
       _socket.joinRoom(
         roomCode: roomCode,
         userId:   user.id,
@@ -245,28 +369,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Row(
                     children: [
-                      // زر كيف تلعب
                       IconButton(
-                        icon: const Icon(Icons.help_outline,
-                            color: Colors.white70),
+                        icon: const Icon(Icons.help_outline, color: Colors.white70),
                         tooltip: 'كيف تلعب؟',
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const HowToPlayScreen()),
+                          MaterialPageRoute(builder: (_) => const HowToPlayScreen()),
                         ),
                       ),
-                      // زر الأصدقاء
                       IconButton(
                         icon: const Icon(Icons.people, color: Colors.white70),
                         tooltip: 'الأصدقاء',
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const FriendsScreen()),
+                          MaterialPageRoute(builder: (_) => const FriendsScreen()),
                         ),
                       ),
-                      // زر تسجيل الخروج
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.white54),
                         onPressed: () async {
@@ -274,8 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (!context.mounted) return;
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(
-                                builder: (_) => const LoginScreen()),
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
                           );
                         },
                       ),
@@ -291,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                ),
+                ).then((_) => _loadEnergy()),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -348,20 +465,43 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star,
-                                    color: Colors.amber, size: 16),
+                                const Icon(Icons.star, color: Colors.amber, size: 16),
                                 const SizedBox(width: 4),
                                 Text(
                                   'النقاط: ${user?.totalScore ?? 0}',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // ─── عداد الطاقة ❤️ ───────────────────────────
+                            Row(
+                              children: [
+                                ...List.generate(5, (i) => Padding(
+                                  padding: const EdgeInsets.only(right: 4),
+                                  child: Icon(
+                                    i < _energy
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: i < _energy
+                                        ? Colors.redAccent
+                                        : Colors.white30,
+                                    size: 18,
+                                  ),
+                                )),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '$_energy/5',
                                   style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13),
+                                    color: Colors.white60,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                      // سهم للإشارة بأنها قابلة للضغط
                       const Icon(Icons.edit_outlined, color: Colors.white38, size: 18),
                     ],
                   ),
@@ -393,33 +533,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: 'لعب فردي',
                       subtitle: 'تحدّى نفسك',
                       color: const Color(0xFF6C63FF),
-                      onTap: () => Navigator.push(
+                      energy: _energy,
+                      // ✅ يحتاج طاقة
+                      onTap: () => _checkEnergyAndNavigate(() => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const CategoriesScreen()),
-                      ),
+                        MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+                      ).then((_) => _loadEnergy())),
                     ),
                     _ModeCard(
                       icon: '⚔️',
                       label: 'لعب ثنائي',
                       subtitle: 'تحدَّ صديقك',
                       color: const Color(0xFFFF6584),
-                      onTap: () => Navigator.push(
+                      energy: _energy,
+                      // ✅ يحتاج طاقة
+                      onTap: () => _checkEnergyAndNavigate(() => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const DualMenuScreen()),
-                      ),
+                        MaterialPageRoute(builder: (_) => const DualMenuScreen()),
+                      ).then((_) => _loadEnergy())),
                     ),
                     _ModeCard(
                       icon: '👥',
                       label: 'الأصدقاء',
                       subtitle: 'تحدّى أصدقاءك',
                       color: const Color(0xFF43D8C9),
+                      // بدون check طاقة
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const FriendsScreen()),
-                      ),
+                        MaterialPageRoute(builder: (_) => const FriendsScreen()),
+                      ).then((_) => _loadEnergy()),
                     ),
                     _ModeCard(
                       icon: '🏆',
@@ -428,8 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color(0xFFFFD700),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const LeaderboardScreen()),
+                        MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
                       ),
                     ),
                     _ModeCard(
@@ -439,8 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color(0xFF43D8C9),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const StatsScreen()),
+                        MaterialPageRoute(builder: (_) => const StatsScreen()),
                       ),
                     ),
                   ],
@@ -456,11 +596,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ─── بطاقة وضع اللعب ─────────────────────────────────────────────────────────
 class _ModeCard extends StatelessWidget {
-  final String   icon;
-  final String   label;
-  final String   subtitle;
-  final Color    color;
+  final String       icon;
+  final String       label;
+  final String       subtitle;
+  final Color        color;
   final VoidCallback onTap;
+  final int?         energy; // null = لا يحتاج طاقة
 
   const _ModeCard({
     required this.icon,
@@ -468,10 +609,13 @@ class _ModeCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    this.energy,
   });
 
   @override
   Widget build(BuildContext context) {
+    final noEnergy = energy != null && energy! <= 0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -480,24 +624,62 @@ class _ModeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 42)),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+              ],
+            ),
+            // ❤️ بادج صغير لو الطاقة منخفضة
+            if (energy != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: noEnergy
+                        ? Colors.red.withValues(alpha: 0.8)
+                        : Colors.black38,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.favorite,
+                        color: noEnergy ? Colors.white : Colors.redAccent,
+                        size: 11,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$energy',
+                        style: TextStyle(
+                          color: noEnergy ? Colors.white : Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
-            ),
           ],
         ),
       ),
