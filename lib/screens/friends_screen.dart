@@ -311,7 +311,14 @@ class _FriendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onChat,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: const Color(0xFF6C63FF).withValues(alpha: 0.15),
+        highlightColor: const Color(0xFF6C63FF).withValues(alpha: 0.08),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -436,6 +443,8 @@ class _FriendTile extends StatelessWidget {
               ),
             ),
         ],
+      ),
+        ),
       ),
     );
   }
