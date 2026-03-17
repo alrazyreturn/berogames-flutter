@@ -7,23 +7,25 @@ class GameService {
   final _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
 
   // ─── جيب كل الأقسام ──────────────────────────────────────────────────────
-  Future<List<CategoryModel>> getCategories() async {
-    final res = await _dio.get(ApiConfig.categories);
+  Future<List<CategoryModel>> getCategories({String lang = 'ar'}) async {
+    final res = await _dio.get(ApiConfig.categories, queryParameters: {'lang': lang});
     return (res.data as List)
         .map((e) => CategoryModel.fromJson(e))
         .toList();
   }
 
-  // ─── جيب أسئلة بناءً على القسم والصعوبة ──────────────────────────────────
+  // ─── جيب أسئلة بناءً على القسم والصعوبة واللغة ───────────────────────────
   Future<List<QuestionModel>> getQuestions({
-    required int categoryId,
-    required int difficulty,
-    int limit = 3,
+    required int    categoryId,
+    required int    difficulty,
+    int             limit = 3,
+    String          lang  = 'ar',
   }) async {
     final res = await _dio.get(ApiConfig.questions, queryParameters: {
       'category_id': categoryId,
       'difficulty':  difficulty,
       'limit':       limit,
+      'lang':        lang,
     });
     return (res.data as List)
         .map((e) => QuestionModel.fromJson(e))

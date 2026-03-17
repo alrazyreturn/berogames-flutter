@@ -223,7 +223,13 @@ class _StatsScreenState extends State<StatsScreen> {
     final correct   = (_stats?['total_correct']    as num?)?.toInt() ?? 0;
     final wrong     = (_stats?['total_wrong']      as num?)?.toInt() ?? 0;
     final bestScore = (_stats?['best_solo_score']  as num?)?.toInt() ?? 0;
-    final bestCat   = _stats?['best_category'] as String?;
+    final bestCatMap = _stats?['best_category'] as Map<String, dynamic>?;
+    final lang       = context.locale.languageCode;
+    final bestCat    = bestCatMap == null ? null : (
+      lang == 'en' ? (bestCatMap['name_en'] ?? bestCatMap['name_ar'])
+    : lang == 'tr' ? (bestCatMap['name_tr'] ?? bestCatMap['name_ar'])
+    : bestCatMap['name_ar']
+    ) as String?;
 
     return Column(
       children: [
@@ -395,7 +401,12 @@ class _StatsScreenState extends State<StatsScreen> {
         children: progress.asMap().entries.map((entry) {
           final i    = entry.key;
           final item = entry.value as Map<String, dynamic>;
-          final name = item['name_ar'] as String? ?? '';
+          final catLang = context.locale.languageCode;
+          final name = (catLang == 'en'
+              ? (item['name_en'] ?? item['name_ar'])
+              : catLang == 'tr'
+                  ? (item['name_tr'] ?? item['name_ar'])
+                  : item['name_ar']) as String? ?? '';
           final diff = (item['max_difficulty'] as num?)?.toInt() ?? 1;
           final pct  = diff / 10.0;
 

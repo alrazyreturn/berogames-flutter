@@ -220,7 +220,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'result.played'.tr(namedArgs: {'category': widget.category.nameAr}),
+                'result.played'.tr(namedArgs: {'category': widget.category.localizedName(context.locale.languageCode)}),
                 style: const TextStyle(color: Colors.white54, fontSize: 16),
               ),
 

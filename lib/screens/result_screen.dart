@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/category_model.dart';
 import '../services/ad_service.dart';
 import '../services/energy_service.dart';
@@ -210,7 +211,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 6),
 
                   Text(
-                    widget.category.nameAr,
+                    widget.category.localizedName(context.locale.languageCode),
                     style: const TextStyle(color: Colors.white54, fontSize: 15),
                   ),
 

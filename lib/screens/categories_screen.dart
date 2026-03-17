@@ -14,11 +14,22 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> {
   final _gameService = GameService();
   late Future<List<CategoryModel>> _future;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _future = _gameService.getCategories();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // نحمّل الأقسام مرة واحدة مع اللغة الحالية
+    if (!_initialized) {
+      _initialized = true;
+      _future = _gameService.getCategories(lang: context.locale.languageCode);
+    }
+  }
+
+  void _reload() {
+    setState(() {
+      _future = _gameService.getCategories(lang: context.locale.languageCode);
+    });
   }
 
   @override
@@ -59,8 +70,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
-                    onPressed: () =>
-                        setState(() => _future = _gameService.getCategories()),
+                    onPressed: _reload,
                     icon: const Icon(Icons.refresh),
                     label: Text('common.retry'.tr()),
                     style: ElevatedButton.styleFrom(
@@ -103,6 +113,7 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = category.color;
+    final lang  = context.locale.languageCode;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -137,17 +148,13 @@ class _CategoryCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              category.nameAr,
+              category.localizedName(lang),
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: color,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              category.name,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
           ],
         ),

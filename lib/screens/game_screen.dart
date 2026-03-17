@@ -101,6 +101,7 @@ class _GameScreenState extends State<GameScreen>
   Future<void> _loadNextBatch() async {
     setState(() => _isLoading = true);
 
+    final lang = context.locale.languageCode;
     List<QuestionModel> questions = [];
     int tryDifficulty = _currentDifficulty;
 
@@ -109,6 +110,7 @@ class _GameScreenState extends State<GameScreen>
         categoryId: widget.category.id,
         difficulty: tryDifficulty,
         limit: _batchSize,
+        lang: lang,
       );
       if (questions.isEmpty) tryDifficulty--;
     }
@@ -368,7 +370,7 @@ class _GameScreenState extends State<GameScreen>
                           onPressed: _finishGame,
                         ),
                         Text(
-                          '${'game.question'.tr(namedArgs: {'num': '${_questionIndex + 1}'})}  •  ${widget.category.nameAr}',
+                          '${'game.question'.tr(namedArgs: {'num': '${_questionIndex + 1}'})}  •  ${widget.category.localizedName(context.locale.languageCode)}',
                           style: const TextStyle(
                               color: Colors.white70, fontSize: 13),
                         ),

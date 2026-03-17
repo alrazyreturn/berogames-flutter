@@ -34,9 +34,20 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   String? _guestName;
 
   @override
+  bool _catsLoaded = false;
+
+  @override
   void initState() {
     super.initState();
-    _loadCategories();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_catsLoaded) {
+      _catsLoaded = true;
+      _loadCategories();
+    }
   }
 
   @override
@@ -47,7 +58,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   Future<void> _loadCategories() async {
     try {
-      final cats = await _gameService.getCategories();
+      final cats = await _gameService.getCategories(
+        lang: context.locale.languageCode,
+      );
       if (mounted) setState(() { _categories = cats; _loadingCategories = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingCategories = false);
@@ -104,7 +117,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           toUserId:     widget.inviteFriend!.userId,
           fromName:     user.name,
           roomCode:     room.roomCode,
-          categoryName: _selected?.nameAr ?? '',
+          categoryName: _selected?.localizedName(context.locale.languageCode) ?? '',
         );
         _socket.onInviteSent = (data) {
           if (!mounted) return;
@@ -142,6 +155,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       categoryId: _room!.categoryId,
       roomId:     _room!.roomId,
       difficulty: 1,
+      lang:       context.locale.languageCode,
     );
 
     Navigator.pushReplacement(
@@ -222,7 +236,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                               Text(cat.icon, style: const TextStyle(fontSize: 32)),
                               const SizedBox(height: 8),
                               Text(
-                                cat.nameAr,
+                                cat.localizedName(context.locale.languageCode),
                                 style: const TextStyle(color: Colors.white, fontSize: 14),
                               ),
                             ],

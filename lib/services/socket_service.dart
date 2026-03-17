@@ -182,12 +182,14 @@ class SocketService {
     required int    categoryId,
     required int    roomId,
     required int    difficulty,
+    String          lang = 'ar',
   }) {
     _socket?.emit('start_game', {
       'room_code':   roomCode,
       'category_id': categoryId,
       'room_id':     roomId,
       'difficulty':  difficulty,
+      'lang':        lang,
     });
   }
 
@@ -273,8 +275,8 @@ class SocketService {
   }
 
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
-  void findMatch({ required int userId, required String userName }) {
-    _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName });
+  void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
+    _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName, 'lang': lang });
   }
 
   void cancelMatch() {
