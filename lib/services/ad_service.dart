@@ -74,7 +74,7 @@ class AdService {
     _gameCount++;
     debugPrint('🎮 Game complete — count: $_gameCount');
 
-    if (_gameCount % 3 == 0 && _interstitialAd != null) {
+    if (_gameCount % 2 == 0 && _interstitialAd != null) {
       // ✅ الإعلان جاهز → اعرضه ثم انتقل
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (_) {
@@ -107,7 +107,7 @@ class AdService {
   void onGameComplete() {
     _gameCount++;
     debugPrint('🎮 Dual game complete — count: $_gameCount');
-    if (_gameCount % 3 == 0) {
+    if (_gameCount % 2 == 0) {
       Future.delayed(const Duration(milliseconds: 800), _showInterstitial);
     } else {
       loadInterstitial();
