@@ -7,6 +7,7 @@ import '../models/question_model.dart';
 import '../providers/user_provider.dart';
 import '../services/game_service.dart';
 import '../services/sound_service.dart';
+import '../services/ad_service.dart';
 import 'thankyou_screen.dart';
 
 class GameScreen extends StatefulWidget {
@@ -274,16 +275,29 @@ class _GameScreenState extends State<GameScreen>
     }
 
     if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ThankYouScreen(
-          score:             _score,
-          questionsAnswered: _questionIndex,
-          difficultyReached: _difficultyReached,
-          category:          widget.category,
-        ),
-      ),
+
+    // ✅ عرض Interstitial كل 3 مباريات قبل الانتقال لشاشة النتيجة
+    final score             = _score;
+    final questionsAnswered = _questionIndex;
+    final difficultyReached = _difficultyReached;
+    final category          = widget.category;
+    final ctx               = context;
+
+    AdService().showInterstitialBeforeAction(
+      onComplete: () {
+        if (!ctx.mounted) return;
+        Navigator.pushReplacement(
+          ctx,
+          MaterialPageRoute(
+            builder: (_) => ThankYouScreen(
+              score:             score,
+              questionsAnswered: questionsAnswered,
+              difficultyReached: difficultyReached,
+              category:          category,
+            ),
+          ),
+        );
+      },
     );
   }
 

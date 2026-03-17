@@ -67,27 +67,59 @@ class AdService {
     );
   }
 
-  // ─── عند انتهاء كل مبارة (فردي أو زوجي) ─────────────────────────────────
-  // يُظهر Interstitial بعد كل 3 مباريات
-  // تأخير 800ms لضمان اكتمال انتقال الشاشة قبل عرض الإعلان
-  void onGameComplete() {
+  // ─── قبل الانتقال من شاشة اللعبة (اللعب الفردي) ────────────────────────
+  // يعرض Interstitial كل 3 مباريات ثم ينفذ onComplete
+  // لو الإعلان مش جاهز → ينفذ onComplete مباشرة
+  void showInterstitialBeforeAction({required VoidCallback onComplete}) {
     _gameCount++;
     debugPrint('🎮 Game complete — count: $_gameCount');
 
-    if (_gameCount % 3 == 0) {
-      // ✅ تأخير لحين اكتمال انتقال الشاشة (سبب عدم ظهور الإعلان سابقاً)
-      Future.delayed(const Duration(milliseconds: 800), _showInterstitial);
+    if (_gameCount % 3 == 0 && _interstitialAd != null) {
+      // ✅ الإعلان جاهز → اعرضه ثم انتقل
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (_) {
+          debugPrint('📺 Interstitial showing');
+        },
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitial(); // preload التالي
+          onComplete();       // انتقل بعد إغلاق الإعلان
+        },
+        onAdFailedToShowFullScreenContent: (ad, err) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitial();
+          onComplete(); // انتقل حتى لو فشل
+          debugPrint('❌ Interstitial failed to show: ${err.message}');
+        },
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
+    } else {
+      // الإعلان مش جاهز أو مش وقته → انتقل مباشرة
+      onComplete();
+      loadInterstitial(); // preload للمرة القادمة
     }
-    // لا نحمّل هنا — الإعلان محمّل مسبقاً من الـ startup ومن بعد كل عرض
+  }
+
+  // ─── للعب الزوجي (يُظهر الإعلان بعد ظهور شاشة النتيجة) ─────────────────
+  void onGameComplete() {
+    _gameCount++;
+    debugPrint('🎮 Dual game complete — count: $_gameCount');
+    if (_gameCount % 3 == 0) {
+      Future.delayed(const Duration(milliseconds: 800), _showInterstitial);
+    } else {
+      loadInterstitial();
+    }
   }
 
   void _showInterstitial() {
     if (_interstitialAd == null) {
-      debugPrint('⚠️ Interstitial not ready, reloading...');
+      debugPrint('⚠️ Interstitial not ready');
       loadInterstitial();
       return;
     }
-
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (_) {
         debugPrint('📺 Interstitial showing');
@@ -95,13 +127,13 @@ class AdService {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitialAd = null;
-        loadInterstitial(); // preload التالي فوراً
+        loadInterstitial();
       },
       onAdFailedToShowFullScreenContent: (ad, err) {
         ad.dispose();
         _interstitialAd = null;
         loadInterstitial();
-        debugPrint('❌ Interstitial failed to show: ${err.message}');
+        debugPrint('❌ Interstitial failed: ${err.message}');
       },
     );
     _interstitialAd!.show();
