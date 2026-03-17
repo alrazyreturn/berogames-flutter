@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../services/auth_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
@@ -50,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showError('الإيميل مسجّل من قبل أو حدث خطأ');
+      _showError('register.error'.tr());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -74,9 +75,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'حساب جديد',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'register.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
@@ -91,28 +92,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // الاسم
                 _buildField(
                   controller: _nameCtrl,
-                  label: 'الاسم',
+                  label: 'register.name'.tr(),
                   icon: Icons.person_outline,
                   validator: (v) =>
-                      v!.trim().length >= 2 ? null : 'الاسم قصير جداً',
+                      v!.trim().length >= 2 ? null : 'register.name_short'.tr(),
                 ),
                 const SizedBox(height: 16),
 
                 // الإيميل
                 _buildField(
                   controller: _emailCtrl,
-                  label: 'الإيميل',
+                  label: 'login.email'.tr(),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) =>
-                      v!.contains('@') ? null : 'إيميل غير صحيح',
+                      v!.contains('@') ? null : 'login.invalid_email'.tr(),
                 ),
                 const SizedBox(height: 16),
 
                 // الباسورد
                 _buildField(
                   controller: _passCtrl,
-                  label: 'الباسورد',
+                  label: 'login.password'.tr(),
                   icon: Icons.lock_outline,
                   obscure: _obscure,
                   suffix: IconButton(
@@ -123,18 +124,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                   validator: (v) =>
-                      v!.length >= 6 ? null : 'الباسورد أقل من 6 أحرف',
+                      v!.length >= 6 ? null : 'login.short_password'.tr(),
                 ),
                 const SizedBox(height: 16),
 
                 // تأكيد الباسورد
                 _buildField(
                   controller: _pass2Ctrl,
-                  label: 'تأكيد الباسورد',
+                  label: 'register.confirm_password'.tr(),
                   icon: Icons.lock_outline,
                   obscure: _obscure,
                   validator: (v) =>
-                      v == _passCtrl.text ? null : 'الباسورد مش متطابق',
+                      v == _passCtrl.text ? null : 'register.password_mismatch'.tr(),
                 ),
 
                 const SizedBox(height: 32),
@@ -161,9 +162,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'إنشاء الحساب',
-                            style: TextStyle(
+                        : Text(
+                            'register.create_btn'.tr(),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),

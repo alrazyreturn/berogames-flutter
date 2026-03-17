@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../services/socket_service.dart';
 import '../services/room_service.dart';
@@ -145,9 +146,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E3F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          '⚡ طاقتك انتهت!',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'energy.empty_title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -165,15 +166,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'شاهد إعلاناً قصيراً للحصول على ❤️ طاقة إضافية',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+            Text(
+              'energy.recharge_hint'.tr(),
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
-            const Text(
-              'أو انتظر حتى منتصف الليل لإعادة الشحن 🕛',
-              style: TextStyle(color: Colors.white38, fontSize: 12),
+            Text(
+              'energy.wait_midnight'.tr(),
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],
@@ -182,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white38)),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
@@ -193,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             ),
             icon: const Icon(Icons.play_circle_outline, size: 18),
-            label: const Text('شاهد إعلان +❤️'),
+            label: Text('energy.watch_ad'.tr()),
             onPressed: () {
               Navigator.pop(context);
               _watchAdAndRecharge(navigate);
@@ -235,23 +236,23 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E3F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          '🎮 دعوة للعب!',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'home.invite_title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$fromName يريد مباراتك!',
+              'home.invite_msg'.tr(namedArgs: {'name': fromName}),
               style: const TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             if (categoryName.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                'القسم: $categoryName',
+                'home.invite_category'.tr(namedArgs: {'category': categoryName}),
                 style: const TextStyle(color: Color(0xFF6C63FF), fontSize: 14),
               ),
             ],
@@ -268,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 roomCode: roomCode,
               );
             },
-            child: const Text('❌ رفض', style: TextStyle(color: Colors.redAccent, fontSize: 16)),
+            child: Text('home.reject'.tr(), style: const TextStyle(color: Colors.redAccent, fontSize: 16)),
           ),
           const SizedBox(width: 16),
           ElevatedButton(
@@ -281,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // قبول الدعوة — بدون استهلاك طاقة
               _acceptInvite(fromUserId: fromUserId, fromName: fromName, roomCode: roomCode);
             },
-            child: const Text('✅ قبول', style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text('home.accept'.tr(), style: const TextStyle(color: Colors.white, fontSize: 16)),
           ),
         ],
       ),
@@ -330,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('خطأ في الانضمام: ${e.toString()}'),
+          content: Text('home.join_error'.tr(namedArgs: {'error': e.toString()})),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -339,10 +340,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showComingSoon() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('قريباً... 🚀'),
+      SnackBar(
+        content: Text('common.coming_soon'.tr()),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -363,9 +364,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'BeroGames 🎮',
-                    style: TextStyle(
+                  Text(
+                    'home.title'.tr(),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -375,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.help_outline, color: Colors.white70),
-                        tooltip: 'كيف تلعب؟',
+                        tooltip: 'home.how_to_play'.tr(),
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const HowToPlayScreen()),
@@ -383,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.people, color: Colors.white70),
-                        tooltip: 'الأصدقاء',
+                        tooltip: 'home.friends_mode'.tr(),
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const FriendsScreen()),
@@ -459,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'أهلاً، ${user?.name ?? 'لاعب'}!',
+                              'home.welcome'.tr(namedArgs: {'name': user?.name ?? ''}),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -472,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const Icon(Icons.star, color: Colors.amber, size: 16),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'النقاط: ${user?.totalScore ?? 0}',
+                                  'home.points'.tr(namedArgs: {'score': '${user?.totalScore ?? 0}'}),
                                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                                 ),
                               ],
@@ -514,9 +515,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 32),
 
-              const Text(
-                'اختر وضع اللعب',
-                style: TextStyle(
+              Text(
+                'home.choose_mode'.tr(),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -534,8 +535,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _ModeCard(
                       icon: '🎯',
-                      label: 'لعب فردي',
-                      subtitle: 'تحدّى نفسك',
+                      label: 'home.solo'.tr(),
+                      subtitle: 'home.solo_sub'.tr(),
                       color: const Color(0xFF6C63FF),
                       energy: _energy,
                       // ✅ يحتاج طاقة
@@ -546,8 +547,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _ModeCard(
                       icon: '⚔️',
-                      label: 'لعب ثنائي',
-                      subtitle: 'تحدَّ صديقك',
+                      label: 'home.dual'.tr(),
+                      subtitle: 'home.dual_sub'.tr(),
                       color: const Color(0xFFFF6584),
                       energy: _energy,
                       // ✅ يحتاج طاقة
@@ -558,8 +559,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _ModeCard(
                       icon: '👥',
-                      label: 'الأصدقاء',
-                      subtitle: 'تحدّى أصدقاءك',
+                      label: 'home.friends_mode'.tr(),
+                      subtitle: 'home.friends_sub'.tr(),
                       color: const Color(0xFF43D8C9),
                       // بدون check طاقة
                       onTap: () => Navigator.push(
@@ -569,8 +570,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _ModeCard(
                       icon: '🏆',
-                      label: 'المتصدرون',
-                      subtitle: 'أفضل اللاعبين',
+                      label: 'home.leaderboard'.tr(),
+                      subtitle: 'home.leaderboard_sub'.tr(),
                       color: const Color(0xFFFFD700),
                       onTap: () => Navigator.push(
                         context,
@@ -579,8 +580,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _ModeCard(
                       icon: '📊',
-                      label: 'إحصائياتي',
-                      subtitle: 'تقدمك وأدائك',
+                      label: 'home.stats'.tr(),
+                      subtitle: 'home.stats_sub'.tr(),
                       color: const Color(0xFF43D8C9),
                       onTap: () => Navigator.push(
                         context,

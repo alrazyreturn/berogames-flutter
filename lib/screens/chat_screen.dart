@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/message_model.dart';
 import '../models/friend_model.dart';
 import '../providers/user_provider.dart';
@@ -202,19 +203,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E3F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('مسح الرسالة', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'هل تريد مسح هذه الرسالة؟',
-          style: TextStyle(color: Colors.white70),
+        title: Text('chat.delete_msg'.tr(), style: const TextStyle(color: Colors.white)),
+        content: Text(
+          'chat.delete_confirm'.tr(),
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white54)),
+            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('مسح', style: TextStyle(color: Colors.redAccent)),
+            child: Text('common.delete'.tr(), style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -231,7 +232,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('فشل مسح الرسالة')),
+          SnackBar(content: Text('chat.delete_failed'.tr())),
         );
       }
     }
@@ -301,13 +302,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 if (_friendTyping)
-                  const Text(
-                    'يكتب الآن...',
-                    style: TextStyle(color: Colors.greenAccent, fontSize: 11),
+                  Text(
+                    'chat.typing_now'.tr(),
+                    style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
                   )
                 else
                   Text(
-                    widget.friend.isOnline ? 'أونلاين' : 'أوفلاين',
+                    widget.friend.isOnline ? 'friends.online'.tr() : 'friends.offline'.tr(),
                     style: TextStyle(
                       color: widget.friend.isOnline ? Colors.greenAccent : Colors.grey,
                       fontSize: 11,
@@ -334,7 +335,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             const Text('💬', style: TextStyle(fontSize: 60)),
                             const SizedBox(height: 12),
                             Text(
-                              'ابدأ محادثة مع ${widget.friend.name}!',
+                              'chat.start_with'.tr(namedArgs: {'name': widget.friend.name}),
                               style: const TextStyle(color: Colors.white54, fontSize: 15),
                             ),
                           ],
@@ -386,7 +387,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       maxLines: 4,
                       minLines: 1,
                       decoration: InputDecoration(
-                        hintText:  'اكتب رسالة...',
+                        hintText:  'chat.type_hint'.tr(),
                         hintStyle: const TextStyle(color: Colors.white30),
                         filled:    true,
                         fillColor: Colors.white.withValues(alpha: 0.06),
@@ -509,30 +510,35 @@ class _DateDivider extends StatelessWidget {
   final DateTime date;
   const _DateDivider({required this.date});
 
-  String _label() {
+  @override
+  Widget build(BuildContext context) {
     final now   = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d     = DateTime(date.year, date.month, date.day);
-    if (d == today) return 'اليوم';
-    if (d == today.subtract(const Duration(days: 1))) return 'أمس';
-    return '${date.day}/${date.month}/${date.year}';
-  }
+    String label;
+    if (d == today) {
+      label = 'chat.today'.tr();
+    } else if (d == today.subtract(const Duration(days: 1))) {
+      label = 'chat.yesterday'.tr();
+    } else {
+      label = '${date.day}/${date.month}/${date.year}';
+    }
 
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Row(
-      children: [
-        const Expanded(child: Divider(color: Colors.white10)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            _label(),
-            style: const TextStyle(color: Colors.white30, fontSize: 11),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: Colors.white10)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white30, fontSize: 11),
+            ),
           ),
-        ),
-        const Expanded(child: Divider(color: Colors.white10)),
-      ],
-    ),
-  );
+          const Expanded(child: Divider(color: Colors.white10)),
+        ],
+      ),
+    );
+  }
 }

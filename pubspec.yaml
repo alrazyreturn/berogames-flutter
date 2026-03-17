@@ -47,6 +47,9 @@ dependencies:
   # AdMob
   google_mobile_ads: ^5.1.0
 
+  # Localization (multi-language)
+  easy_localization: ^3.0.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,6 +59,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/translations/
     - assets/sounds/happy/answer-correct.mp3
     - assets/sounds/happy/default_eKkIk7O.mp3
     - assets/sounds/happy/kids_cheering.mp3

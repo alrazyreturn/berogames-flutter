@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/category_model.dart';
 import '../services/game_service.dart';
 import 'game_screen.dart';
@@ -28,9 +29,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'اختر الفئة',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'categories.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: FutureBuilder<List<CategoryModel>>(
@@ -52,16 +53,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 children: [
                   const Icon(Icons.wifi_off, color: Colors.white54, size: 56),
                   const SizedBox(height: 16),
-                  const Text(
-                    'تعذّر تحميل الفئات',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  Text(
+                    'categories.load_error'.tr(),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () =>
                         setState(() => _future = _gameService.getCategories()),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('إعادة المحاولة'),
+                    label: Text('common.retry'.tr()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6C63FF),
                       foregroundColor: Colors.white,

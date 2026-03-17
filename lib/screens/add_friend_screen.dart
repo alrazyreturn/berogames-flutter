@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../services/friends_service.dart';
 
@@ -27,7 +28,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   Future<void> _sendRequest() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      setState(() { _message = 'أدخل بريداً إلكترونياً صحيحاً'; _success = false; });
+      setState(() { _message = 'add_friend.invalid_email'.tr(); _success = false; });
       return;
     }
 
@@ -45,11 +46,15 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
     } catch (e) {
       if (mounted) {
         String msg = e.toString();
-        if (msg.contains('404')) msg = 'المستخدم غير موجود';
+        if (msg.contains('404')) msg = 'add_friend.not_found'.tr();
         if (msg.contains('400')) {
-          if (msg.contains('أصدقاء')) msg = 'أنتما أصدقاء بالفعل ✅';
-          else if (msg.contains('مُرسَل')) msg = 'الطلب مُرسَل بالفعل';
-          else msg = 'لا يمكنك إضافة نفسك';
+          if (msg.contains('أصدقاء') || msg.contains('friends')) {
+            msg = 'add_friend.already'.tr();
+          } else if (msg.contains('مُرسَل') || msg.contains('sent') || msg.contains('already')) {
+            msg = 'add_friend.sent_before'.tr();
+          } else {
+            msg = 'add_friend.self_add'.tr();
+          }
         }
         setState(() { _message = msg; _success = false; _loading = false; });
       }
@@ -67,9 +72,9 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'إضافة صديق 👋',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'add_friend.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -80,16 +85,16 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
           children: [
             const Text('👋', style: TextStyle(fontSize: 70)),
             const SizedBox(height: 20),
-            const Text(
-              'أضف صديقاً بالإيميل',
-              style: TextStyle(
+            Text(
+              'add_friend.section_title'.tr(),
+              style: const TextStyle(
                 color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'سيصله طلب صداقة ويمكنه قبوله',
-              style: TextStyle(color: Colors.white54, fontSize: 14),
+            Text(
+              'add_friend.subtitle'.tr(),
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
             ),
             const SizedBox(height: 32),
 
@@ -99,7 +104,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
               keyboardType: TextInputType.emailAddress,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText:     'example@email.com',
+                hintText:     'add_friend.email_hint'.tr(),
                 hintStyle:    const TextStyle(color: Colors.white24),
                 prefixIcon:   const Icon(Icons.email_outlined, color: Colors.white38),
                 filled:       true,
@@ -160,9 +165,9 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text(
-                        'إرسال طلب الصداقة',
-                        style: TextStyle(
+                    : Text(
+                        'add_friend.send_btn'.tr(),
+                        style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white,
                         ),
                       ),

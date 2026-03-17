@@ -1,0 +1,302 @@
+{
+  "app_name": "BeroGames",
+
+  "common": {
+    "cancel":        "Cancel",
+    "ok":            "OK",
+    "retry":         "Retry",
+    "error_generic": "An error occurred, please try again",
+    "loading":       "Loading...",
+    "coming_soon":   "Coming soon... 🚀",
+    "home":          "Home",
+    "points_unit":   "pts",
+    "delete":        "Delete",
+    "send":          "Send",
+    "error_prefix":  "Error: {msg}",
+    "opponent":      "Opponent",
+    "you":           "You"
+  },
+
+  "splash": {
+    "tagline": "Challenge yourself and learn"
+  },
+
+  "language": {
+    "title":   "Language 🌍",
+    "choose":  "Choose app language",
+    "arabic":  "العربية 🇸🇦",
+    "english": "English 🇬🇧",
+    "turkish": "Türkçe 🇹🇷"
+  },
+
+  "energy": {
+    "empty_title":   "⚡ Out of Energy!",
+    "recharge_hint": "Watch an ad to get ❤️ extra energy",
+    "wait_midnight": "Or wait until midnight to recharge 🕛",
+    "watch_ad":      "Watch Ad +❤️"
+  },
+
+  "login": {
+    "welcome":           "Welcome to BeroGames",
+    "subtitle":          "Sign in and start playing",
+    "email":             "Email",
+    "password":          "Password",
+    "invalid_email":     "Invalid email address",
+    "short_password":    "Password must be at least 6 characters",
+    "login_btn":         "Sign In",
+    "google_btn":        "Continue with Google",
+    "or":                "Or",
+    "no_account":        "Don't have an account? ",
+    "register_link":     "Register now",
+    "wrong_credentials": "Incorrect email or password",
+    "google_failed":     "Google sign in failed"
+  },
+
+  "register": {
+    "title":             "Create Account",
+    "name":              "Name",
+    "name_short":        "Name is too short",
+    "email":             "Email",
+    "invalid_email":     "Invalid email address",
+    "password":          "Password",
+    "short_password":    "Password must be at least 6 characters",
+    "confirm_password":  "Confirm Password",
+    "password_mismatch": "Passwords do not match",
+    "create_btn":        "Create Account",
+    "error":             "Email already registered or an error occurred",
+    "have_account":      "Already have an account? ",
+    "login_link":        "Sign in"
+  },
+
+  "home": {
+    "title":           "BeroGames 🎮",
+    "how_to_play":     "How to Play?",
+    "welcome":         "Hello, {name}!",
+    "points":          "Points: {score}",
+    "energy":          "{current}/5",
+    "choose_mode":     "Choose Game Mode",
+    "solo":            "Solo Play",
+    "solo_sub":        "Challenge yourself",
+    "dual":            "Dual Play",
+    "dual_sub":        "Challenge a friend",
+    "friends_mode":    "Friends",
+    "friends_sub":     "Challenge your friends",
+    "leaderboard":     "Leaderboard",
+    "leaderboard_sub": "Top players",
+    "stats":           "My Stats",
+    "stats_sub":       "Your progress",
+    "invite_title":    "🎮 Game Invite!",
+    "invite_msg":      "{name} wants to play with you!",
+    "invite_category": "Category: {category}",
+    "reject":          "❌ Decline",
+    "accept":          "✅ Accept",
+    "join_error":      "Error joining room: {error}"
+  },
+
+  "friends": {
+    "title":        "Friends 👥",
+    "my_friends":   "My Friends",
+    "requests":     "Requests",
+    "no_friends":   "No friends yet",
+    "add_friend":   "Add a Friend",
+    "online":       "Online",
+    "offline":      "Offline",
+    "chat_tooltip": "Chat",
+    "challenge":    "Challenge ⚔️",
+    "delete_title": "Remove Friend",
+    "delete_msg":   "Remove {name} from your friends list?",
+    "no_requests":  "No pending requests",
+    "accepted":     "{name} accepted the challenge! 🎉",
+    "rejected":     "{name} declined the challenge 😔"
+  },
+
+  "add_friend": {
+    "title":         "Add Friend 👋",
+    "section_title": "Add a friend by email",
+    "subtitle":      "They will receive a friend request",
+    "email_hint":    "example@email.com",
+    "invalid_email": "Enter a valid email address",
+    "not_found":     "User not found",
+    "already":       "You are already friends ✅",
+    "sent_before":   "Request already sent",
+    "self_add":      "You cannot add yourself",
+    "send_btn":      "Send Friend Request"
+  },
+
+  "categories": {
+    "title":      "Choose Category",
+    "load_error": "Failed to load categories"
+  },
+
+  "game": {
+    "level":         "Level",
+    "question":      "Question {num}",
+    "score":         "Score",
+    "easy":          "Easy",
+    "medium":        "Medium",
+    "hard":          "Hard",
+    "wrong_retry":   "Wrong! Try again 💪",
+    "next_question": "Next question...",
+    "correct":       "Correct!",
+    "points_earned": "+{points} pts ⭐"
+  },
+
+  "result": {
+    "title":           "Well Done! 🎉",
+    "played":          "You played {category}",
+    "points_label":    "Points",
+    "questions_label": "Questions",
+    "level_label":     "Top Level",
+    "double_btn":      "Double Points ({score}) ▶ Watch Ad",
+    "doubled":         "Points Doubled! ✨",
+    "home_btn":        "Home 🏠",
+    "play_again":      "Play Again 🎮"
+  },
+
+  "dual_result": {
+    "draw":       "Draw!",
+    "won":        "You Won! 🎉",
+    "lost":       "You Lost!",
+    "vs":         "VS",
+    "home_btn":   "Home",
+    "play_again": "Play Again ⚔️"
+  },
+
+  "dual_menu": {
+    "title":       "Dual Play ⚔️",
+    "subtitle":    "Challenge your friend!",
+    "description": "Create a room and invite your friend\nor join an existing room",
+    "auto":        "Auto Match",
+    "auto_sub":    "Play with any opponent instantly",
+    "create":      "Create Room",
+    "create_sub":  "Share the code with your friend",
+    "join":        "Join Room",
+    "join_sub":    "Enter room code"
+  },
+
+  "create_room": {
+    "title":          "Create Room 🏠",
+    "choose_section": "Choose Category",
+    "select_first":   "Please select a category first",
+    "create_btn":     "Create Room",
+    "share_code":     "Share the code with your friend",
+    "copied":         "Code copied ✅",
+    "invite_sent":    "Invite sent to {name} 📨",
+    "offline":        "Friend is offline",
+    "joined":         "{name} joined!",
+    "start_btn":      "🚀 Start Game",
+    "waiting":        "Waiting for opponent..."
+  },
+
+  "matchmaking": {
+    "title":    "Find Opponent 🎯",
+    "searching":"Searching for opponent...",
+    "timer":    "Search time: {time}",
+    "in_queue": "You are in the queue 🕐",
+    "cancel":   "Cancel Search",
+    "found":    "Opponent found!",
+    "entering": "Entering game..."
+  },
+
+  "join_room": {
+    "title":         "Join Room 🔗",
+    "code_hint":     "Enter room code",
+    "join_btn":      "Join Now",
+    "not_found":     "Room not found",
+    "ask_code":      "Ask your friend for the code",
+    "opponent_left": "Opponent left the room 😔",
+    "room_started":  "Room not found or already started",
+    "own_room":      "You cannot join your own room",
+    "joined_host":   "Joined {name}'s room",
+    "waiting_host":  "Waiting for the Host to start..."
+  },
+
+  "chat": {
+    "title":          "Chat",
+    "type_hint":      "Type a message...",
+    "delete_msg":     "Delete Message",
+    "delete_confirm": "Delete this message?",
+    "delete_failed":  "Failed to delete message",
+    "deleted":        "Deleted",
+    "typing":         "{name} is typing...",
+    "typing_now":     "typing now...",
+    "load_error":     "Failed to load messages",
+    "empty":          "No messages yet 💬\nStart the conversation!",
+    "start_with":     "Start a chat with {name}!",
+    "today":          "Today",
+    "yesterday":      "Yesterday"
+  },
+
+  "profile": {
+    "title":          "Profile",
+    "choose_source":  "Choose Photo Source",
+    "gallery":        "Gallery",
+    "camera":         "Camera",
+    "no_change":      "No changes made",
+    "updated":        "✅ Profile updated successfully",
+    "error":          "An error occurred, please try again",
+    "change_photo":   "Tap photo to change it",
+    "email_label":    "Email Address",
+    "name_label":     "Display Name",
+    "name_hint":      "Enter your name",
+    "name_required":  "Name is required",
+    "name_short":     "Name must be at least 2 characters",
+    "points":         "Points",
+    "provider":       "Account Provider",
+    "email_provider": "Email",
+    "save":           "Save Changes",
+    "language":       "Language 🌍"
+  },
+
+  "leaderboard": {
+    "title":      "🏆 Leaderboard",
+    "my_rank":    "Your current rank",
+    "no_players": "No players yet",
+    "load_error": "Failed to load data",
+    "me":         "(Me)"
+  },
+
+  "stats": {
+    "title":         "📊 My Stats",
+    "solo":          "🎯 Solo Play",
+    "sessions":      "Play Sessions",
+    "best_score":    "Best Score",
+    "correct":       "Correct Answers",
+    "wrong":         "Wrong Answers",
+    "best_category": "Your Best Category",
+    "accuracy":      "⭐ Accuracy Rate",
+    "correct_short": "✅ Correct",
+    "wrong_short":   "❌ Wrong",
+    "dual":          "⚔️ Dual Matches",
+    "matches":       "Matches",
+    "wins":          "Wins",
+    "losses":        "Losses",
+    "progress":      "📚 Category Progress",
+    "no_sections":   "Haven't played any category yet 🎯",
+    "level_prefix":  "Level",
+    "rank":          "Your Rank",
+    "load_error":    "Failed to load data",
+    "beginner":      "Beginner",
+    "intermediate":  "Intermediate",
+    "expert":        "Expert"
+  },
+
+  "how_to_play": {
+    "title":        "❓ How to Play?",
+    "app_desc":     "A competitive knowledge quiz game!\nTest your knowledge and challenge your friends",
+    "modes_title":  "🎮 Game Modes",
+    "solo_mode":    "Solo Play",
+    "solo_desc":    "Play alone and test yourself in different categories. Questions get harder as you go.",
+    "auto_mode":    "Auto Match",
+    "auto_desc":    "An opponent is found automatically and the match starts instantly!",
+    "create_mode":  "Create Room",
+    "create_desc":  "Create a private room and share the code with your friend.",
+    "friends_mode": "Friend Challenge",
+    "friends_desc": "Add friends and send them a game invite directly.",
+    "questions":    "📚 Question System",
+    "scoring":      "⭐ Scoring System",
+    "difficulty":   "🔥 Difficulty Levels",
+    "dual_title":   "⚔️ Dual Play",
+    "tips":         "💡 Tips to Win"
+  }
+}

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 
 import '../config/api_config.dart';
 import '../providers/user_provider.dart';
@@ -70,9 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'اختر مصدر الصورة',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                'profile.choose_source'.tr(),
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Row(
@@ -80,12 +81,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   _SourceButton(
                     icon:  Icons.photo_library_rounded,
-                    label: 'المعرض',
+                    label: 'profile.gallery'.tr(),
                     onTap: () => _pickImage(ImageSource.gallery),
                   ),
                   _SourceButton(
                     icon:  Icons.camera_alt_rounded,
-                    label: 'الكاميرا',
+                    label: 'profile.camera'.tr(),
                     onTap: () => _pickImage(ImageSource.camera),
                   ),
                 ],
@@ -127,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _loading = false);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('لم تقم بأي تغيير'), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text('profile.no_change'.tr()), behavior: SnackBarBehavior.floating),
         );
         return;
       }
@@ -146,9 +147,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ تم تحديث الملف الشخصي'),
-          backgroundColor: Color(0xFF43D8C9),
+        SnackBar(
+          content: Text('profile.updated'.tr()),
+          backgroundColor: const Color(0xFF43D8C9),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -156,12 +157,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     } on DioException catch (e) {
       setState(() {
-        _error   = e.response?.data?['message'] ?? 'حدث خطأ، حاول مجدداً';
+        _error   = e.response?.data?['message'] ?? 'profile.error'.tr();
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'حدث خطأ غير متوقع'; _loading = false; });
+      setState(() { _error = 'common.error_generic'.tr(); _loading = false; });
     }
+  }
+
+  // ─── Language Dialog ────────────────────────────────────────────────────────
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E3F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('language.title'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LangOption(label: 'language.arabic'.tr(),  locale: const Locale('ar'), context: context),
+            _LangOption(label: 'language.english'.tr(), locale: const Locale('en'), context: context),
+            _LangOption(label: 'language.turkish'.tr(), locale: const Locale('tr'), context: context),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -173,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
-        title: const Text('الملف الشخصي', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('profile.title'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         centerTitle: true,
       ),
@@ -242,9 +263,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
 
               const SizedBox(height: 8),
-              const Text(
-                'اضغط على الصورة لتغييرها',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
+              Text(
+                'profile.change_photo'.tr(),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
 
               const SizedBox(height: 32),
@@ -260,9 +281,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'البريد الإلكتروني',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    Text(
+                      'profile.email_label'.tr(),
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
                     ),
                     const SizedBox(height: 6),
                     Container(
@@ -282,9 +303,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 20),
 
-                    const Text(
-                      'اسم الظهور',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    Text(
+                      'profile.name_label'.tr(),
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -292,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       textDirection: TextDirection.rtl,
                       decoration: InputDecoration(
-                        hintText: 'أدخل اسمك',
+                        hintText: 'profile.name_hint'.tr(),
                         hintStyle: const TextStyle(color: Colors.white30),
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.05),
@@ -311,8 +332,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'الاسم مطلوب';
-                        if (v.trim().length < 2) return 'الاسم يجب أن يكون حرفين على الأقل';
+                        if (v == null || v.trim().isEmpty) return 'profile.name_required'.tr();
+                        if (v.trim().length < 2) return 'profile.name_short'.tr();
                         return null;
                       },
                     ),
@@ -335,7 +356,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Expanded(
                       child: _StatItem(
                         icon: '⭐',
-                        label: 'النقاط',
+                        label: 'profile.points'.tr(),
                         value: '${user?.totalScore ?? 0}',
                       ),
                     ),
@@ -343,10 +364,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Expanded(
                       child: _StatItem(
                         icon: '📧',
-                        label: 'مزود الحساب',
+                        label: 'profile.provider'.tr(),
                         value: user?.avatar?.startsWith('https://lh3') == true
                             ? 'Google'
-                            : 'إيميل',
+                            : 'profile.email_provider'.tr(),
                       ),
                     ),
                   ],
@@ -378,7 +399,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // ─── Language Switcher ────────────────────────────────────────
+              InkWell(
+                onTap: () => _showLanguageDialog(context),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E3F),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.language, color: Color(0xFF6C63FF), size: 24),
+                      const SizedBox(width: 16),
+                      Text(
+                        'profile.language'.tr(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
 
               // ─── زر الحفظ ────────────────────────────────────────────────
               SizedBox(
@@ -399,9 +453,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white, strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
-                          'حفظ التغييرات',
-                          style: TextStyle(
+                      : Text(
+                          'profile.save'.tr(),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -466,4 +520,24 @@ class _SourceButton extends StatelessWidget {
       ],
     ),
   );
+}
+
+// ─── خيار اللغة ──────────────────────────────────────────────────────────────
+class _LangOption extends StatelessWidget {
+  final String label;
+  final Locale locale;
+  const _LangOption({required this.label, required this.locale, required BuildContext context});
+
+  @override
+  Widget build(BuildContext outerContext) {
+    final isSelected = EasyLocalization.of(outerContext)!.locale == locale;
+    return ListTile(
+      title: Text(label, style: TextStyle(color: isSelected ? const Color(0xFF6C63FF) : Colors.white70)),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF6C63FF)) : null,
+      onTap: () {
+        outerContext.setLocale(locale);
+        Navigator.pop(outerContext);
+      },
+    );
+  }
 }

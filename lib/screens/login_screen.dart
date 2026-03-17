@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../services/auth_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
@@ -47,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showError('الإيميل أو الباسورد غلط');
+      _showError('login.wrong_credentials'.tr());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -66,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      _showError('فشل تسجيل الدخول بجوجل');
+      _showError('login.google_failed'.tr());
     } finally {
       if (mounted) setState(() => _loadingGoogle = false);
     }
@@ -117,18 +118,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 24),
-                const Text(
-                  'أهلاً بك في BeroGames',
-                  style: TextStyle(
+                Text(
+                  'login.welcome'.tr(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'سجّل دخولك وابدأ اللعب',
-                  style: TextStyle(color: Colors.white54, fontSize: 14),
+                Text(
+                  'login.subtitle'.tr(),
+                  style: const TextStyle(color: Colors.white54, fontSize: 14),
                 ),
 
                 const SizedBox(height: 40),
@@ -173,9 +174,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              const Text(
-                                'التسجيل مع جوجل',
-                                style: TextStyle(
+                              Text(
+                                'login.google_btn'.tr(),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -192,9 +193,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   children: [
                     const Expanded(child: Divider(color: Colors.white24)),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('أو', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('login.or'.tr(), style: const TextStyle(color: Colors.white38, fontSize: 13)),
                     ),
                     const Expanded(child: Divider(color: Colors.white24)),
                   ],
@@ -205,11 +206,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Email
                 _buildField(
                   controller: _emailCtrl,
-                  label: 'الإيميل',
+                  label: 'login.email'.tr(),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) =>
-                      v!.contains('@') ? null : 'إيميل غير صحيح',
+                      v!.contains('@') ? null : 'login.invalid_email'.tr(),
                 ),
 
                 const SizedBox(height: 16),
@@ -217,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password
                 _buildField(
                   controller: _passCtrl,
-                  label: 'الباسورد',
+                  label: 'login.password'.tr(),
                   icon: Icons.lock_outline,
                   obscure: _obscure,
                   suffix: IconButton(
@@ -228,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                   validator: (v) =>
-                      v!.length >= 6 ? null : 'الباسورد أقل من 6 أحرف',
+                      v!.length >= 6 ? null : 'login.short_password'.tr(),
                 ),
 
                 const SizedBox(height: 28),
@@ -255,9 +256,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'تسجيل الدخول',
-                            style: TextStyle(
+                        : Text(
+                            'login.login_btn'.tr(),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -271,9 +272,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'مش عندك حساب؟ ',
-                      style: TextStyle(color: Colors.white54),
+                    Text(
+                      'login.no_account'.tr(),
+                      style: const TextStyle(color: Colors.white54),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -282,9 +283,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (_) => const RegisterScreen(),
                         ),
                       ),
-                      child: const Text(
-                        'سجّل دلوقتي',
-                        style: TextStyle(
+                      child: Text(
+                        'login.register_link'.tr(),
+                        style: const TextStyle(
                           color: Color(0xFF6C63FF),
                           fontWeight: FontWeight.bold,
                         ),

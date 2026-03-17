@@ -2,6 +2,7 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/category_model.dart';
 import '../models/question_model.dart';
 import '../providers/user_provider.dart';
@@ -367,7 +368,7 @@ class _GameScreenState extends State<GameScreen>
                           onPressed: _finishGame,
                         ),
                         Text(
-                          'سؤال ${_questionIndex + 1}  •  ${widget.category.nameAr}',
+                          '${'game.question'.tr(namedArgs: {'num': '${_questionIndex + 1}'})}  •  ${widget.category.nameAr}',
                           style: const TextStyle(
                               color: Colors.white70, fontSize: 13),
                         ),
@@ -407,8 +408,8 @@ class _GameScreenState extends State<GameScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        const Text('المستوى: ',
-                            style: TextStyle(
+                        Text('${'game.level'.tr()}: ',
+                            style: const TextStyle(
                                 color: Colors.white54, fontSize: 11)),
                         ...List.generate(
                             10,
@@ -500,15 +501,15 @@ class _GameScreenState extends State<GameScreen>
                                   color: Colors.redAccent
                                       .withValues(alpha: 0.5)),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.refresh,
+                                const Icon(Icons.refresh,
                                     color: Colors.redAccent, size: 15),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'إجابة خاطئة! حاول مجدداً 💪',
-                                  style: TextStyle(
+                                  'game.wrong_retry'.tr(),
+                                  style: const TextStyle(
                                       color: Colors.redAccent, fontSize: 13),
                                 ),
                               ],
@@ -632,9 +633,9 @@ class _GameScreenState extends State<GameScreen>
   }
 
   String _difficultyLabel(int d) {
-    if (d <= 3) return 'سهل';
-    if (d <= 6) return 'متوسط';
-    return 'صعب';
+    if (d <= 3) return 'game.easy'.tr();
+    if (d <= 6) return 'game.medium'.tr();
+    return 'game.hard'.tr();
   }
 }
 
@@ -653,9 +654,9 @@ class _CelebrationOverlay extends StatelessWidget {
           children: [
             const Text('✅', style: TextStyle(fontSize: 90)),
             const SizedBox(height: 20),
-            const Text(
-              'إجابة صحيحة!',
-              style: TextStyle(
+            Text(
+              'game.correct'.tr(),
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
@@ -672,7 +673,7 @@ class _CelebrationOverlay extends StatelessWidget {
                     color: const Color(0xFFFFD700), width: 2),
               ),
               child: Text(
-                '+$points نقطة ⭐',
+                'game.points_earned'.tr(namedArgs: {'points': '$points'}),
                 style: const TextStyle(
                   color: Color(0xFFFFD700),
                   fontSize: 24,
@@ -723,23 +724,23 @@ class _TransitionOverlayState extends State<_TransitionOverlay>
       opacity: _fadeAnim,
       child: Container(
         color: Colors.black.withValues(alpha: 0.65),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('🎯', style: TextStyle(fontSize: 60)),
-              SizedBox(height: 20),
+              const Text('🎯', style: TextStyle(fontSize: 60)),
+              const SizedBox(height: 20),
               Text(
-                'السؤال القادم...',
-                style: TextStyle(
+                'game.next_question'.tr(),
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 1,
                 ),
               ),
-              SizedBox(height: 16),
-              SizedBox(
+              const SizedBox(height: 16),
+              const SizedBox(
                 width: 40,
                 height: 40,
                 child: CircularProgressIndicator(

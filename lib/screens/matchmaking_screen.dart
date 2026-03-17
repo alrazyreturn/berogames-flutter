@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/question_model.dart';
 import '../models/room_model.dart';
 import '../providers/user_provider.dart';
@@ -65,7 +66,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
 
       // بناء RoomModel من بيانات الـ Match
       final role         = data['role'] as String;          // 'host' أو 'guest'
-      final opponentName = data['opponent_name'] as String? ?? 'الخصم';
+      final opponentName = data['opponent_name'] as String? ?? 'opponent';
       final roomId       = data['room_id'] as int;
       final roomCode     = data['room_code'] as String;
       final categoryId   = data['category_id'] as int;
@@ -142,9 +143,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
                 onPressed: _cancel,
               )
             : null,
-        title: const Text(
-          'البحث عن خصم 🎯',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'matchmaking.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -209,9 +210,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
 
         const SizedBox(height: 32),
 
-        const Text(
-          'جاري البحث عن خصم...',
-          style: TextStyle(
+        Text(
+          'matchmaking.searching'.tr(),
+          style: const TextStyle(
             color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold,
           ),
         ),
@@ -219,14 +220,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
         const SizedBox(height: 8),
 
         Text(
-          'وقت البحث: $_timeStr',
+          'matchmaking.timer'.tr(namedArgs: {'time': _timeStr}),
           style: const TextStyle(color: Colors.white38, fontSize: 14),
         ),
 
         if (_queuePos > 0) ...[
           const SizedBox(height: 4),
           Text(
-            'أنت في قائمة الانتظار 🕐',
+            'matchmaking.in_queue'.tr(),
             style: const TextStyle(color: Colors.white38, fontSize: 13),
           ),
         ],
@@ -262,7 +263,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
         OutlinedButton.icon(
           onPressed: _cancel,
           icon: const Icon(Icons.close, color: Colors.white54),
-          label: const Text('إلغاء البحث', style: TextStyle(color: Colors.white54)),
+          label: Text('matchmaking.cancel'.tr(), style: const TextStyle(color: Colors.white54)),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: Colors.white24),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
@@ -282,16 +283,16 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
             .animate()
             .scale(duration: 400.ms, curve: Curves.elasticOut),
         const SizedBox(height: 20),
-        const Text(
-          'تم إيجاد خصم!',
-          style: TextStyle(
+        Text(
+          'matchmaking.found'.tr(),
+          style: const TextStyle(
             color: Colors.greenAccent, fontSize: 26, fontWeight: FontWeight.bold,
           ),
         ).animate().fadeIn(duration: 400.ms),
         const SizedBox(height: 8),
-        const Text(
-          'جاري الدخول للعبة...',
-          style: TextStyle(color: Colors.white54, fontSize: 15),
+        Text(
+          'matchmaking.entering'.tr(),
+          style: const TextStyle(color: Colors.white54, fontSize: 15),
         ).animate().fadeIn(delay: 300.ms),
         const SizedBox(height: 24),
         const CircularProgressIndicator(color: Color(0xFF6C63FF)),

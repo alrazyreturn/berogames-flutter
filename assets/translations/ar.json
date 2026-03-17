@@ -1,0 +1,302 @@
+{
+  "app_name": "BeroGames",
+
+  "common": {
+    "cancel":        "إلغاء",
+    "ok":            "موافق",
+    "retry":         "إعادة المحاولة",
+    "error_generic": "حدث خطأ، حاول مجدداً",
+    "loading":       "جاري التحميل...",
+    "coming_soon":   "قريباً... 🚀",
+    "home":          "الرئيسية",
+    "points_unit":   "نقطة",
+    "delete":        "حذف",
+    "send":          "إرسال",
+    "error_prefix":  "خطأ: {msg}",
+    "opponent":      "الخصم",
+    "you":           "أنت"
+  },
+
+  "splash": {
+    "tagline": "تحدّى نفسك وتعلّم"
+  },
+
+  "language": {
+    "title":   "اللغة 🌍",
+    "choose":  "اختر لغة التطبيق",
+    "arabic":  "العربية 🇸🇦",
+    "english": "English 🇬🇧",
+    "turkish": "Türkçe 🇹🇷"
+  },
+
+  "energy": {
+    "empty_title":   "⚡ طاقتك انتهت!",
+    "recharge_hint": "شاهد إعلاناً للحصول على ❤️ طاقة إضافية",
+    "wait_midnight": "أو انتظر حتى منتصف الليل لإعادة الشحن 🕛",
+    "watch_ad":      "شاهد إعلان +❤️"
+  },
+
+  "login": {
+    "welcome":           "أهلاً بك في BeroGames",
+    "subtitle":          "سجّل دخولك وابدأ اللعب",
+    "email":             "الإيميل",
+    "password":          "الباسورد",
+    "invalid_email":     "إيميل غير صحيح",
+    "short_password":    "الباسورد أقل من 6 أحرف",
+    "login_btn":         "تسجيل الدخول",
+    "google_btn":        "الدخول مع جوجل",
+    "or":                "أو",
+    "no_account":        "مش عندك حساب؟ ",
+    "register_link":     "سجّل دلوقتي",
+    "wrong_credentials": "الإيميل أو الباسورد غلط",
+    "google_failed":     "فشل تسجيل الدخول بجوجل"
+  },
+
+  "register": {
+    "title":             "حساب جديد",
+    "name":              "الاسم",
+    "name_short":        "الاسم قصير جداً",
+    "email":             "الإيميل",
+    "invalid_email":     "إيميل غير صحيح",
+    "password":          "الباسورد",
+    "short_password":    "الباسورد أقل من 6 أحرف",
+    "confirm_password":  "تأكيد الباسورد",
+    "password_mismatch": "الباسورد مش متطابق",
+    "create_btn":        "إنشاء الحساب",
+    "error":             "الإيميل مسجّل من قبل أو حدث خطأ",
+    "have_account":      "عندك حساب؟ ",
+    "login_link":        "سجّل دخولك"
+  },
+
+  "home": {
+    "title":          "BeroGames 🎮",
+    "how_to_play":    "كيف تلعب؟",
+    "welcome":        "أهلاً، {name}!",
+    "points":         "النقاط: {score}",
+    "energy":         "{current}/5",
+    "choose_mode":    "اختر وضع اللعب",
+    "solo":           "لعب فردي",
+    "solo_sub":       "تحدّى نفسك",
+    "dual":           "لعب ثنائي",
+    "dual_sub":       "تحدَّ صديقك",
+    "friends_mode":   "الأصدقاء",
+    "friends_sub":    "تحدّى أصدقاءك",
+    "leaderboard":    "المتصدرون",
+    "leaderboard_sub":"أفضل اللاعبين",
+    "stats":          "إحصائياتي",
+    "stats_sub":      "تقدمك وأدائك",
+    "invite_title":   "🎮 دعوة للعب!",
+    "invite_msg":     "{name} يريد مباراتك!",
+    "invite_category":"القسم: {category}",
+    "reject":         "❌ رفض",
+    "accept":         "✅ قبول",
+    "join_error":     "خطأ في الانضمام: {error}"
+  },
+
+  "friends": {
+    "title":        "الأصدقاء 👥",
+    "my_friends":   "أصدقائي",
+    "requests":     "طلبات",
+    "no_friends":   "لا يوجد أصدقاء بعد",
+    "add_friend":   "أضف صديقاً",
+    "online":       "أونلاين",
+    "offline":      "أوفلاين",
+    "chat_tooltip": "محادثة",
+    "challenge":    "تحدَّ ⚔️",
+    "delete_title": "حذف صديق",
+    "delete_msg":   "هل تريد حذف {name} من قائمة أصدقائك؟",
+    "no_requests":  "لا توجد طلبات معلقة",
+    "accepted":     "{name} قبل التحدي! 🎉",
+    "rejected":     "{name} رفض التحدي 😔"
+  },
+
+  "add_friend": {
+    "title":         "إضافة صديق 👋",
+    "section_title": "أضف صديقاً بالإيميل",
+    "subtitle":      "سيصله طلب صداقة ويمكنه قبوله",
+    "email_hint":    "example@email.com",
+    "invalid_email": "أدخل بريداً إلكترونياً صحيحاً",
+    "not_found":     "المستخدم غير موجود",
+    "already":       "أنتما أصدقاء بالفعل ✅",
+    "sent_before":   "الطلب مُرسَل بالفعل",
+    "self_add":      "لا يمكنك إضافة نفسك",
+    "send_btn":      "إرسال طلب الصداقة"
+  },
+
+  "categories": {
+    "title":      "اختر الفئة",
+    "load_error": "تعذّر تحميل الفئات"
+  },
+
+  "game": {
+    "level":         "المستوى",
+    "question":      "السؤال {num}",
+    "score":         "النقاط",
+    "easy":          "سهل",
+    "medium":        "متوسط",
+    "hard":          "صعب",
+    "wrong_retry":   "إجابة خاطئة! حاول مجدداً 💪",
+    "next_question": "السؤال القادم...",
+    "correct":       "إجابة صحيحة!",
+    "points_earned": "+{points} نقطة ⭐"
+  },
+
+  "result": {
+    "title":          "أحسنت! 🎉",
+    "played":         "لعبت قسم {category}",
+    "points_label":   "النقاط",
+    "questions_label":"الأسئلة",
+    "level_label":    "أعلى مستوى",
+    "double_btn":     "ضاعف نقاطك ({score}) ▶ شاهد إعلان",
+    "doubled":        "تم مضاعفة النقاط! ✨",
+    "home_btn":       "الرئيسية 🏠",
+    "play_again":     "العب مجدداً 🎮"
+  },
+
+  "dual_result": {
+    "draw":      "تعادل!",
+    "won":       "فزت! 🎉",
+    "lost":      "خسرت!",
+    "vs":        "VS",
+    "home_btn":  "الرئيسية",
+    "play_again":"العب مجدداً ⚔️"
+  },
+
+  "dual_menu": {
+    "title":       "اللعب الثنائي ⚔️",
+    "subtitle":    "تحدَّ صديقك!",
+    "description": "أنشئ غرفة وادعُ صديقك\nأو انضم لغرفة موجودة",
+    "auto":        "بحث تلقائي",
+    "auto_sub":    "العب مع أي خصم فوراً",
+    "create":      "إنشاء غرفة",
+    "create_sub":  "شارك الكود مع صديقك",
+    "join":        "الانضمام لغرفة",
+    "join_sub":    "أدخل كود الغرفة"
+  },
+
+  "create_room": {
+    "title":         "إنشاء غرفة 🏠",
+    "choose_section":"اختر القسم",
+    "select_first":  "اختر قسماً أولاً",
+    "create_btn":    "إنشاء الغرفة",
+    "share_code":    "شارك الكود مع صديقك",
+    "copied":        "تم نسخ الكود ✅",
+    "invite_sent":   "تم إرسال الدعوة لـ {name} 📨",
+    "offline":       "الصديق غير متصل",
+    "joined":        "{name} انضم!",
+    "start_btn":     "🚀 ابدأ اللعبة",
+    "waiting":       "في انتظار الخصم..."
+  },
+
+  "matchmaking": {
+    "title":    "البحث عن خصم 🎯",
+    "searching":"جاري البحث عن خصم...",
+    "timer":    "وقت البحث: {time}",
+    "in_queue": "أنت في قائمة الانتظار 🕐",
+    "cancel":   "إلغاء البحث",
+    "found":    "تم إيجاد خصم!",
+    "entering": "جاري الدخول للعبة..."
+  },
+
+  "join_room": {
+    "title":         "الانضمام لغرفة 🔗",
+    "code_hint":     "أدخل كود الغرفة",
+    "join_btn":      "انضم الآن",
+    "not_found":     "الغرفة غير موجودة",
+    "ask_code":      "اطلب الكود من صديقك",
+    "opponent_left": "غادر الخصم الغرفة 😔",
+    "room_started":  "الغرفة غير موجودة أو بدأت بالفعل",
+    "own_room":      "لا يمكنك الانضمام لغرفتك الخاصة",
+    "joined_host":   "انضممت لغرفة {name}",
+    "waiting_host":  "في انتظار الـ Host يبدأ اللعبة..."
+  },
+
+  "chat": {
+    "title":          "المحادثة",
+    "type_hint":      "اكتب رسالة...",
+    "delete_msg":     "حذف الرسالة",
+    "delete_confirm": "هل تريد مسح هذه الرسالة؟",
+    "delete_failed":  "فشل مسح الرسالة",
+    "deleted":        "تم الحذف",
+    "typing":         "{name} يكتب...",
+    "typing_now":     "يكتب الآن...",
+    "load_error":     "فشل تحميل الرسائل",
+    "empty":          "لا توجد رسائل بعد 💬\nابدأ المحادثة!",
+    "start_with":     "ابدأ محادثة مع {name}!",
+    "today":          "اليوم",
+    "yesterday":      "أمس"
+  },
+
+  "profile": {
+    "title":         "الملف الشخصي",
+    "choose_source": "اختر مصدر الصورة",
+    "gallery":       "المعرض",
+    "camera":        "الكاميرا",
+    "no_change":     "لم تقم بأي تغيير",
+    "updated":       "✅ تم تحديث الملف الشخصي",
+    "error":         "حدث خطأ، حاول مجدداً",
+    "change_photo":  "اضغط على الصورة لتغييرها",
+    "email_label":   "البريد الإلكتروني",
+    "name_label":    "اسم الظهور",
+    "name_hint":     "أدخل اسمك",
+    "name_required": "الاسم مطلوب",
+    "name_short":    "الاسم يجب أن يكون حرفين على الأقل",
+    "points":        "النقاط",
+    "provider":      "مزود الحساب",
+    "email_provider":"إيميل",
+    "save":          "حفظ التغييرات",
+    "language":      "اللغة 🌍"
+  },
+
+  "leaderboard": {
+    "title":      "🏆 المتصدرون",
+    "my_rank":    "ترتيبك الحالي",
+    "no_players": "لا يوجد لاعبون بعد",
+    "load_error": "فشل تحميل البيانات",
+    "me":         "(أنا)"
+  },
+
+  "stats": {
+    "title":         "📊 إحصائياتي",
+    "solo":          "🎯 اللعب الفردي",
+    "sessions":      "جلسات اللعب",
+    "best_score":    "أعلى نتيجة",
+    "correct":       "إجابات صحيحة",
+    "wrong":         "إجابات خاطئة",
+    "best_category": "أفضل قسم لديك",
+    "accuracy":      "⭐ نسبة الدقة",
+    "correct_short": "✅ صحيح",
+    "wrong_short":   "❌ خطأ",
+    "dual":          "⚔️ المسابقات الثنائية",
+    "matches":       "مسابقات",
+    "wins":          "انتصارات",
+    "losses":        "هزائم",
+    "progress":      "📚 تقدمك في الأقسام",
+    "no_sections":   "لم تلعب في أي قسم بعد 🎯",
+    "level_prefix":  "مستوى",
+    "rank":          "ترتيبك",
+    "load_error":    "فشل تحميل البيانات",
+    "beginner":      "مبتدئ",
+    "intermediate":  "متوسط",
+    "expert":        "خبير"
+  },
+
+  "how_to_play": {
+    "title":         "❓ كيف تلعب؟",
+    "app_desc":      "لعبة مسابقات ثقافية تنافسية!\nاختبر معلوماتك وتحدّى أصدقاءك",
+    "modes_title":   "🎮 أوضاع اللعب",
+    "solo_mode":     "لعب فردي",
+    "solo_desc":     "العب بمفردك واختبر نفسك في أقسام مختلفة. الأسئلة تتصعب تدريجياً.",
+    "auto_mode":     "بحث تلقائي",
+    "auto_desc":     "يتم إيجاد خصم مناسب لك تلقائياً وتبدأ المسابقة فوراً!",
+    "create_mode":   "إنشاء غرفة",
+    "create_desc":   "أنشئ غرفة خاصة واشارك الكود مع صديقك للعب معاً.",
+    "friends_mode":  "تحدي الأصدقاء",
+    "friends_desc":  "أضف أصدقاءك وابعتلهم دعوة للعب مباشرة.",
+    "questions":     "📚 نظام الأسئلة",
+    "scoring":       "⭐ نظام الدرجات",
+    "difficulty":    "🔥 مستويات الصعوبة",
+    "dual_title":    "⚔️ اللعب الثنائي",
+    "tips":          "💡 نصائح للفوز"
+  }
+}

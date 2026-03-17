@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../services/game_service.dart';
 
@@ -31,7 +32,7 @@ class _StatsScreenState extends State<StatsScreen> {
       final data = await _gameService.getStats(token: token);
       setState(() { _stats = data; _loading = false; });
     } catch (e) {
-      setState(() { _error = 'فشل تحميل البيانات'; _loading = false; });
+      setState(() { _error = 'stats.load_error'.tr(); _loading = false; });
     }
   }
 
@@ -54,10 +55,10 @@ class _StatsScreenState extends State<StatsScreen> {
                         color: Colors.white70),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      '📊 إحصائياتي',
-                      style: TextStyle(
+                      'stats.title'.tr(),
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold),
@@ -92,7 +93,7 @@ class _StatsScreenState extends State<StatsScreen> {
                               const SizedBox(height: 16),
 
                               // ── إحصائيات عامة ────────────────────
-                              _buildSectionTitle('🎯 اللعب الفردي'),
+                              _buildSectionTitle('stats.solo'.tr()),
                               const SizedBox(height: 10),
                               _buildSoloStats(),
 
@@ -104,14 +105,14 @@ class _StatsScreenState extends State<StatsScreen> {
                               const SizedBox(height: 20),
 
                               // ── اللعب الثنائي ─────────────────────
-                              _buildSectionTitle('⚔️ المسابقات الثنائية'),
+                              _buildSectionTitle('stats.dual'.tr()),
                               const SizedBox(height: 10),
                               _buildMultiStats(),
 
                               const SizedBox(height: 20),
 
                               // ── تقدم الأقسام ──────────────────────
-                              _buildSectionTitle('📚 تقدمك في الأقسام'),
+                              _buildSectionTitle('stats.progress'.tr()),
                               const SizedBox(height: 10),
                               _buildCategoryProgress(),
 
@@ -179,7 +180,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
-                    Text('$score نقطة',
+                    Text('$score ${'common.points_unit'.tr()}',
                         style: const TextStyle(
                             color: Colors.white70, fontSize: 14)),
                   ],
@@ -197,9 +198,9 @@ class _StatsScreenState extends State<StatsScreen> {
                       fontSize: 26,
                       fontWeight: FontWeight.bold),
                 ),
-                const Text('ترتيبك',
+                Text('stats.rank'.tr(),
                     style:
-                        TextStyle(color: Colors.white60, fontSize: 11)),
+                        const TextStyle(color: Colors.white60, fontSize: 11)),
               ],
             ),
         ],
@@ -228,17 +229,17 @@ class _StatsScreenState extends State<StatsScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _StatCard(label: 'جلسات اللعب', value: '$games', icon: '🎮', color: const Color(0xFF6C63FF))),
+            Expanded(child: _StatCard(label: 'stats.sessions'.tr(), value: '$games', icon: '🎮', color: const Color(0xFF6C63FF))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: 'أعلى نتيجة', value: '$bestScore', icon: '⭐', color: const Color(0xFFFFD700))),
+            Expanded(child: _StatCard(label: 'stats.best_score'.tr(), value: '$bestScore', icon: '⭐', color: const Color(0xFFFFD700))),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _StatCard(label: 'إجابات صحيحة', value: '$correct', icon: '✅', color: const Color(0xFF4CAF50))),
+            Expanded(child: _StatCard(label: 'stats.correct'.tr(), value: '$correct', icon: '✅', color: const Color(0xFF4CAF50))),
             const SizedBox(width: 12),
-            Expanded(child: _StatCard(label: 'إجابات خاطئة', value: '$wrong', icon: '❌', color: const Color(0xFFF44336))),
+            Expanded(child: _StatCard(label: 'stats.wrong'.tr(), value: '$wrong', icon: '❌', color: const Color(0xFFF44336))),
           ],
         ),
         if (bestCat != null) ...[
@@ -259,8 +260,8 @@ class _StatsScreenState extends State<StatsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('أفضل قسم لديك',
-                        style: TextStyle(
+                    Text('stats.best_category'.tr(),
+                        style: const TextStyle(
                             color: Colors.white54, fontSize: 11)),
                     Text(bestCat,
                         style: const TextStyle(
@@ -305,8 +306,8 @@ class _StatsScreenState extends State<StatsScreen> {
             children: [
               Text(emoji, style: const TextStyle(fontSize: 22)),
               const SizedBox(width: 10),
-              const Text('نسبة الدقة',
-                  style: TextStyle(
+              Text('stats.accuracy'.tr(),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.bold)),
@@ -334,10 +335,10 @@ class _StatsScreenState extends State<StatsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('✅ $correct صحيح',
+              Text('${'stats.correct_short'.tr()} $correct',
                   style: const TextStyle(
                       color: Colors.white54, fontSize: 12)),
-              Text('❌ $wrong خطأ',
+              Text('${'stats.wrong_short'.tr()} $wrong',
                   style: const TextStyle(
                       color: Colors.white54, fontSize: 12)),
             ],
@@ -355,11 +356,11 @@ class _StatsScreenState extends State<StatsScreen> {
 
     return Row(
       children: [
-        Expanded(child: _StatCard(label: 'مسابقات', value: '$total', icon: '⚔️', color: const Color(0xFFFF6584))),
+        Expanded(child: _StatCard(label: 'stats.matches'.tr(), value: '$total', icon: '⚔️', color: const Color(0xFFFF6584))),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'انتصارات', value: '$wins',  icon: '👑', color: const Color(0xFFFFD700))),
+        Expanded(child: _StatCard(label: 'stats.wins'.tr(),  value: '$wins',  icon: '👑', color: const Color(0xFFFFD700))),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'هزائم',    value: '$losses', icon: '😅', color: const Color(0xFF9E9E9E))),
+        Expanded(child: _StatCard(label: 'stats.losses'.tr(), value: '$losses', icon: '😅', color: const Color(0xFF9E9E9E))),
       ],
     );
   }
@@ -377,9 +378,9 @@ class _StatsScreenState extends State<StatsScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white12),
         ),
-        child: const Center(
-          child: Text('لم تلعب في أي قسم بعد 🎯',
-              style: TextStyle(color: Colors.white38)),
+        child: Center(
+          child: Text('stats.no_sections'.tr(),
+              style: const TextStyle(color: Colors.white38)),
         ),
       );
     }
@@ -439,7 +440,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'مستوى $diff',
+                          '${'stats.level_prefix'.tr()} $diff',
                           style: TextStyle(
                               color: levelColor,
                               fontSize: 13,
@@ -474,15 +475,15 @@ class _StatsScreenState extends State<StatsScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
                 onPressed: _load,
-                child: const Text('إعادة المحاولة')),
+                child: Text('common.retry'.tr())),
           ],
         ),
       );
 
   String _levelLabel(int d) {
-    if (d <= 3) return 'مبتدئ';
-    if (d <= 6) return 'متوسط';
-    return 'خبير';
+    if (d <= 3) return 'stats.beginner'.tr();
+    if (d <= 6) return 'stats.intermediate'.tr();
+    return 'stats.expert'.tr();
   }
 }
 

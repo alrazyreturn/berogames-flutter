@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/category_model.dart';
 import '../providers/user_provider.dart';
 import '../services/energy_service.dart';
@@ -108,9 +109,9 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E3F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          '⚡ طاقتك انتهت!',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'energy.empty_title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -128,15 +129,15 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'شاهد إعلاناً للحصول على ❤️ طاقة إضافية',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+            Text(
+              'energy.recharge_hint'.tr(),
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
-            const Text(
-              'أو انتظر حتى منتصف الليل 🕛',
-              style: TextStyle(color: Colors.white38, fontSize: 12),
+            Text(
+              'energy.wait_midnight'.tr(),
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],
@@ -145,7 +146,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white38)),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
@@ -156,7 +157,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                   borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.play_circle_outline, size: 18),
-            label: const Text('شاهد إعلان +❤️'),
+            label: Text('energy.watch_ad'.tr()),
             onPressed: () {
               Navigator.pop(context);
               AdService().showRewarded(
@@ -211,15 +212,15 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
 
               const SizedBox(height: 24),
 
-              const Text(
-                'أحسنت! 🎉',
-                style: TextStyle(
+              Text(
+                'result.title'.tr(),
+                style: const TextStyle(
                   color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'لعبت قسم ${widget.category.nameAr}',
+                'result.played'.tr(namedArgs: {'category': widget.category.nameAr}),
                 style: const TextStyle(color: Colors.white54, fontSize: 16),
               ),
 
@@ -231,7 +232,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                 children: [
                   _InfoCard(
                     icon: '⭐',
-                    label: 'النقاط',
+                    label: 'result.points_label'.tr(),
                     value: '$_displayScore',
                     color: _isDoubled
                         ? const Color(0xFFFFD700)
@@ -241,13 +242,13 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                   ),
                   _InfoCard(
                     icon: '❓',
-                    label: 'الأسئلة',
+                    label: 'result.questions_label'.tr(),
                     value: '${widget.questionsAnswered}',
                     color: Colors.white,
                   ),
                   _InfoCard(
                     icon: '🎯',
-                    label: 'أعلى مستوى',
+                    label: 'result.level_label'.tr(),
                     value: '${widget.difficultyReached}',
                     color: _levelColor(widget.difficultyReached),
                   ),
@@ -272,15 +273,15 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                             border: Border.all(
                                 color: Colors.amber.withValues(alpha: 0.4)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle,
+                              const Icon(Icons.check_circle,
                                   color: Colors.amber, size: 20),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
-                                'تم مضاعفة النقاط! ✨',
-                                style: TextStyle(
+                                'result.doubled'.tr(),
+                                style: const TextStyle(
                                   color: Colors.amber,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -333,7 +334,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                                           style: TextStyle(fontSize: 20)),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'ضاعف نقاطك (${widget.score * 2}) ▶ شاهد إعلان',
+                                        'result.double_btn'.tr(namedArgs: {'score': '${widget.score * 2}'}),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -364,8 +365,8 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('الرئيسية 🏠',
-                          style: TextStyle(color: Colors.white, fontSize: 15)),
+                      child: Text('result.home_btn'.tr(),
+                          style: const TextStyle(color: Colors.white, fontSize: 15)),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -378,8 +379,8 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('العب مجدداً 🎮',
-                          style: TextStyle(color: Colors.white, fontSize: 15)),
+                      child: Text('result.play_again'.tr(),
+                          style: const TextStyle(color: Colors.white, fontSize: 15)),
                     ),
                   ),
                 ],

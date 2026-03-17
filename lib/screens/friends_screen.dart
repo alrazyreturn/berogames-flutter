@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/friend_model.dart';
 import '../models/room_model.dart';
 import '../providers/user_provider.dart';
@@ -69,7 +70,11 @@ class _FriendsScreenState extends State<FriendsScreen>
       final accepted = data['accepted'] == true;
       final name     = data['responder_name'] ?? 'الصديق';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(accepted ? '$name قبل التحدي! 🎉' : '$name رفض التحدي 😔'),
+        content: Text(
+          accepted
+              ? 'friends.accepted'.tr(namedArgs: {'name': name})
+              : 'friends.rejected'.tr(namedArgs: {'name': name}),
+        ),
         behavior: SnackBarBehavior.floating,
       ));
       if (accepted) {
@@ -151,9 +156,9 @@ class _FriendsScreenState extends State<FriendsScreen>
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E3F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          '⚡ طاقتك انتهت!',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'energy.empty_title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -170,9 +175,9 @@ class _FriendsScreenState extends State<FriendsScreen>
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'شاهد إعلاناً للحصول على ❤️ طاقة إضافية',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+            Text(
+              'energy.recharge_hint'.tr(),
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],
@@ -181,7 +186,7 @@ class _FriendsScreenState extends State<FriendsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white38)),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
@@ -191,7 +196,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.play_circle_outline, size: 18),
-            label: const Text('شاهد إعلان +❤️'),
+            label: Text('energy.watch_ad'.tr()),
             onPressed: () {
               Navigator.pop(context);
               // ✅ Rewarded Ad حقيقي من AdMob
@@ -251,9 +256,9 @@ class _FriendsScreenState extends State<FriendsScreen>
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'الأصدقاء 👥',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'friends.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -274,12 +279,12 @@ class _FriendsScreenState extends State<FriendsScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
           tabs: [
-            const Tab(text: 'أصدقائي'),
+            Tab(text: 'friends.my_friends'.tr()),
             Tab(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('طلبات'),
+                  Text('friends.requests'.tr()),
                   if (_requests.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Container(
@@ -323,8 +328,8 @@ class _FriendsScreenState extends State<FriendsScreen>
           children: [
             const Text('👥', style: TextStyle(fontSize: 60)),
             const SizedBox(height: 16),
-            const Text('لا يوجد أصدقاء بعد',
-                style: TextStyle(color: Colors.white54, fontSize: 16)),
+            Text('friends.no_friends'.tr(),
+                style: const TextStyle(color: Colors.white54, fontSize: 16)),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => Navigator.push(
@@ -332,7 +337,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 MaterialPageRoute(builder: (_) => const AddFriendScreen()),
               ).then((_) => _loadAll()),
               icon: const Icon(Icons.person_add),
-              label: const Text('أضف صديقاً'),
+              label: Text('friends.add_friend'.tr()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6C63FF),
                 foregroundColor: Colors.white,
@@ -367,14 +372,14 @@ class _FriendsScreenState extends State<FriendsScreen>
   // ─── طلبات الصداقة ────────────────────────────────────────────────────────
   Widget _buildRequestsList() {
     if (_requests.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('📭', style: TextStyle(fontSize: 60)),
-            SizedBox(height: 16),
-            Text('لا توجد طلبات معلقة',
-                style: TextStyle(color: Colors.white54, fontSize: 16)),
+            const Text('📭', style: TextStyle(fontSize: 60)),
+            const SizedBox(height: 16),
+            Text('friends.no_requests'.tr(),
+                style: const TextStyle(color: Colors.white54, fontSize: 16)),
           ],
         ),
       );
@@ -469,7 +474,7 @@ class _FriendTile extends StatelessWidget {
                     const Icon(Icons.star, color: Colors.amber, size: 13),
                     const SizedBox(width: 3),
                     Text(
-                      '${friend.totalScore} نقطة',
+                      '${friend.totalScore} ${'common.points_unit'.tr()}',
                       style: const TextStyle(color: Colors.white38, fontSize: 12),
                     ),
                     const SizedBox(width: 8),
@@ -481,7 +486,7 @@ class _FriendTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        friend.isOnline ? 'أونلاين' : 'أوفلاين',
+                        friend.isOnline ? 'friends.online'.tr() : 'friends.offline'.tr(),
                         style: TextStyle(
                           color:    friend.isOnline ? Colors.greenAccent : Colors.grey,
                           fontSize: 11,
@@ -498,7 +503,7 @@ class _FriendTile extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded,
                 color: Color(0xFF43D8C9), size: 22),
-            tooltip: 'محادثة',
+            tooltip: 'friends.chat_tooltip'.tr(),
             onPressed: onChat,
           ),
 
@@ -512,7 +517,7 @@ class _FriendTile extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('تحدَّ ⚔️', style: TextStyle(fontSize: 13)),
+              child: Text('friends.challenge'.tr(), style: const TextStyle(fontSize: 13)),
             )
           else
             IconButton(
@@ -521,19 +526,19 @@ class _FriendTile extends StatelessWidget {
                 context: context,
                 builder: (_) => AlertDialog(
                   backgroundColor: const Color(0xFF16213E),
-                  title: const Text('حذف صديق', style: TextStyle(color: Colors.white)),
+                  title: Text('friends.delete_title'.tr(), style: const TextStyle(color: Colors.white)),
                   content: Text(
-                    'هل تريد حذف ${friend.name} من قائمة أصدقائك؟',
+                    'friends.delete_msg'.tr(namedArgs: {'name': friend.name}),
                     style: const TextStyle(color: Colors.white70),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('إلغاء', style: TextStyle(color: Colors.white54)),
+                      child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white54)),
                     ),
                     TextButton(
                       onPressed: () { Navigator.pop(context); onDelete(); },
-                      child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+                      child: Text('common.delete'.tr(), style: const TextStyle(color: Colors.redAccent)),
                     ),
                   ],
                 ),
@@ -586,7 +591,7 @@ class _RequestTile extends StatelessWidget {
               children: [
                 Text(request.name,
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('${request.totalScore} نقطة',
+                Text('${request.totalScore} ${'common.points_unit'.tr()}',
                     style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             ),

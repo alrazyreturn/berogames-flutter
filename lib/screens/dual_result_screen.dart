@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../services/ad_service.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
@@ -82,8 +83,8 @@ class _DualResultScreenState extends State<DualResultScreen> {
                   const SizedBox(height: 12),
                   Text(
                     _isDraw
-                        ? 'تعادل!'
-                        : (_iWon ? 'فزت! 🎉' : 'خسرت!'),
+                        ? 'dual_result.draw'.tr()
+                        : (_iWon ? 'dual_result.won'.tr() : 'dual_result.lost'.tr()),
                     style: TextStyle(
                       color: _isDraw
                           ? Colors.amber
@@ -154,9 +155,9 @@ class _DualResultScreenState extends State<DualResultScreen> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: const Text(
-                            'الرئيسية',
-                            style: TextStyle(color: Colors.white),
+                          child: Text(
+                            'dual_result.home_btn'.tr(),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       ),
@@ -174,9 +175,9 @@ class _DualResultScreenState extends State<DualResultScreen> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: const Text(
-                            'العب مجدداً ⚔️',
-                            style: TextStyle(color: Colors.white),
+                          child: Text(
+                            'dual_result.play_again'.tr(),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       ),
@@ -227,7 +228,7 @@ class _PlayerResult extends StatelessWidget {
             color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold,
           ),
         ),
-        const Text('نقطة', style: TextStyle(color: Colors.white38, fontSize: 12)),
+        Text('common.points_unit'.tr(), style: const TextStyle(color: Colors.white38, fontSize: 12)),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/category_model.dart';
 import '../models/friend_model.dart';
 import '../models/room_model.dart';
@@ -56,7 +57,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   Future<void> _createRoom() async {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('اختر قسماً أولاً'), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text('create_room.select_first'.tr()), behavior: SnackBarBehavior.floating),
       );
       return;
     }
@@ -79,7 +80,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         if (!mounted) return;
         setState(() {
           _guestJoined = true;
-          _guestName   = data['guest_name'] ?? 'الخصم';
+          _guestName   = data['guest_name'] ?? 'common.opponent'.tr();
         });
       };
       _socket.onError = (msg) {
@@ -110,8 +111,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           final success = data['success'] == true;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(success
-                ? 'تم إرسال الدعوة لـ ${widget.inviteFriend!.name} 📨'
-                : (data['message'] ?? 'الصديق غير متصل')),
+                ? 'create_room.invite_sent'.tr(namedArgs: {'name': widget.inviteFriend!.name})
+                : (data['message'] ?? 'create_room.offline'.tr())),
             behavior: SnackBarBehavior.floating,
           ));
         };
@@ -124,7 +125,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         setState(() => _creatingRoom = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: ${e.toString()}'),
+            content: Text('common.error_prefix'.tr(namedArgs: {'msg': e.toString()})),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -149,8 +150,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         builder: (_) => DualGameScreen(
           room:      _room!,
           role:      'host',
-          myName:    user?.name ?? 'أنت',
-          guestName: _guestName ?? 'الخصم',
+          myName:    user?.name ?? 'common.you'.tr(),
+          guestName: _guestName ?? 'common.opponent'.tr(),
         ),
       ),
     );
@@ -167,9 +168,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'إنشاء غرفة 🏠',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'create_room.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -184,9 +185,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'اختر القسم',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            'create_room.choose_section'.tr(),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _loadingCategories
@@ -246,7 +247,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       width: 24, height: 24,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
-                  : const Text('إنشاء الغرفة', style: TextStyle(fontSize: 16, color: Colors.white)),
+                  : Text('create_room.create_btn'.tr(), style: const TextStyle(fontSize: 16, color: Colors.white)),
             ),
           ),
         ],
@@ -263,9 +264,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         children: [
           const Text('🏠', style: TextStyle(fontSize: 70)),
           const SizedBox(height: 20),
-          const Text(
-            'شارك الكود مع صديقك',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+          Text(
+            'create_room.share_code'.tr(),
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
           const SizedBox(height: 24),
 
@@ -274,10 +275,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             onTap: () {
               Clipboard.setData(ClipboardData(text: _room!.roomCode));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تم نسخ الكود ✅'),
+                SnackBar(
+                  content: Text('create_room.copied'.tr()),
                   behavior: SnackBarBehavior.floating,
-                  duration: Duration(seconds: 1),
+                  duration: const Duration(seconds: 1),
                 ),
               );
             },
@@ -314,7 +315,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     const Text('✅', style: TextStyle(fontSize: 40)),
                     const SizedBox(height: 8),
                     Text(
-                      '${_guestName ?? "اللاعب"} انضم!',
+                      'create_room.joined'.tr(namedArgs: {'name': _guestName ?? 'common.opponent'.tr()}),
                       style: const TextStyle(
                         color: Colors.greenAccent, fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -332,21 +333,21 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: const Text(
-                          '🚀 ابدأ اللعبة',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        child: Text(
+                          'create_room.start_btn'.tr(),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                   ],
                 )
-              : const Column(
+              : Column(
                   children: [
-                    CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                    const SizedBox(height: 16),
                     Text(
-                      'في انتظار الخصم...',
-                      style: TextStyle(color: Colors.white54, fontSize: 15),
+                      'create_room.waiting'.tr(),
+                      style: const TextStyle(color: Colors.white54, fontSize: 15),
                     ),
                   ],
                 ),

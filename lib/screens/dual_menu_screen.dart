@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'create_room_screen.dart';
 import 'join_room_screen.dart';
 import 'matchmaking_screen.dart';
@@ -18,9 +19,9 @@ class DualMenuScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'اللعب الثنائي ⚔️',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'dual_menu.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -32,19 +33,19 @@ class DualMenuScreen extends StatelessWidget {
             // ─── صورة توضيحية ───────────────────────────────────────────────
             const Text('⚔️', style: TextStyle(fontSize: 80)),
             const SizedBox(height: 16),
-            const Text(
-              'تحدَّ صديقك!',
-              style: TextStyle(
+            Text(
+              'dual_menu.subtitle'.tr(),
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'أنشئ غرفة وادعُ صديقك\nأو انضم لغرفة موجودة',
+            Text(
+              'dual_menu.description'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 15),
+              style: const TextStyle(color: Colors.white54, fontSize: 15),
             ),
 
             const SizedBox(height: 48),
@@ -52,8 +53,8 @@ class DualMenuScreen extends StatelessWidget {
             // ─── بحث تلقائي ─────────────────────────────────────────────────
             _BigButton(
               icon: '⚡',
-              label: 'بحث تلقائي',
-              subtitle: 'العب مع أي خصم فوراً',
+              label: 'dual_menu.auto'.tr(),
+              subtitle: 'dual_menu.auto_sub'.tr(),
               color: const Color(0xFFFFD700),
               onTap: () => Navigator.push(
                 context,
@@ -66,8 +67,8 @@ class DualMenuScreen extends StatelessWidget {
             // ─── إنشاء غرفة ────────────────────────────────────────────────
             _BigButton(
               icon: '🏠',
-              label: 'إنشاء غرفة',
-              subtitle: 'شارك الكود مع صديقك',
+              label: 'dual_menu.create'.tr(),
+              subtitle: 'dual_menu.create_sub'.tr(),
               color: const Color(0xFF6C63FF),
               onTap: () => Navigator.push(
                 context,
@@ -80,8 +81,8 @@ class DualMenuScreen extends StatelessWidget {
             // ─── الانضمام لغرفة ─────────────────────────────────────────────
             _BigButton(
               icon: '🔗',
-              label: 'الانضمام لغرفة',
-              subtitle: 'أدخل كود الغرفة',
+              label: 'dual_menu.join'.tr(),
+              subtitle: 'dual_menu.join_sub'.tr(),
               color: const Color(0xFFFF6584),
               onTap: () => Navigator.push(
                 context,

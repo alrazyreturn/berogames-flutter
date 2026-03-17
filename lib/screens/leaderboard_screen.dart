@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../config/api_config.dart';
 import 'package:dio/dio.dart';
@@ -51,7 +52,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         _loading = false;
       });
     } catch (e) {
-      setState(() { _error = 'فشل تحميل البيانات'; _loading = false; });
+      setState(() { _error = 'leaderboard.load_error'.tr(); _loading = false; });
     }
   }
 
@@ -74,10 +75,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         color: Colors.white70),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      '🏆 المتصدرون',
-                      style: TextStyle(
+                      'leaderboard.title'.tr(),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -123,15 +124,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: _load,
-                                child: const Text('إعادة المحاولة'),
+                                child: Text('common.retry'.tr()),
                               ),
                             ],
                           ),
                         )
                       : _players.isEmpty
-                          ? const Center(
-                              child: Text('لا يوجد لاعبون بعد',
-                                  style: TextStyle(color: Colors.white38)))
+                          ? Center(
+                              child: Text('leaderboard.no_players'.tr(),
+                                  style: const TextStyle(color: Colors.white38)))
                           : RefreshIndicator(
                               onRefresh: _load,
                               color: const Color(0xFFFFD700),
@@ -264,7 +265,7 @@ class _MyRankBanner extends StatelessWidget {
                       fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'ترتيبك الحالي',
+                  'leaderboard.my_rank'.tr(),
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
@@ -281,7 +282,7 @@ class _MyRankBanner extends StatelessWidget {
                     fontWeight: FontWeight.bold),
               ),
               Text(
-                '$score نقطة',
+                '$score ${'common.points_unit'.tr()}',
                 style:
                     const TextStyle(color: Colors.white70, fontSize: 12),
               ),
@@ -433,7 +434,7 @@ class _PlayerRow extends StatelessWidget {
           // الاسم
           Expanded(
             child: Text(
-              isMe ? '$name (أنا)' : name,
+              isMe ? '$name ${'leaderboard.me'.tr()}' : name,
               style: TextStyle(
                 color: isMe ? Colors.white : Colors.white70,
                 fontSize: 14,

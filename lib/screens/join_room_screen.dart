@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../models/room_model.dart';
 import '../providers/user_provider.dart';
 import '../services/room_service.dart';
@@ -35,7 +36,10 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     final code = _codeCtrl.text.trim().toUpperCase();
     if (code.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أدخل كود الغرفة'), behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text('join_room.code_hint'.tr()),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -75,8 +79,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       _socket.onOpponentDisconnected = (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('غادر الخصم الغرفة 😔'),
+          SnackBar(
+            content: Text('join_room.opponent_left'.tr()),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -103,8 +107,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       if (mounted) {
         setState(() => _joining = false);
         String msg = e.toString();
-        if (msg.contains('404')) msg = 'الغرفة غير موجودة أو بدأت بالفعل';
-        if (msg.contains('400')) msg = 'لا يمكنك الانضمام لغرفتك الخاصة';
+        if (msg.contains('404')) msg = 'join_room.room_started'.tr();
+        if (msg.contains('400')) msg = 'join_room.own_room'.tr();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
         );
@@ -123,9 +127,9 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'الانضمام لغرفة 🔗',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'join_room.title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -142,16 +146,16 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
         children: [
           const Text('🔗', style: TextStyle(fontSize: 70)),
           const SizedBox(height: 24),
-          const Text(
-            'أدخل كود الغرفة',
-            style: TextStyle(
+          Text(
+            'join_room.code_hint'.tr(),
+            style: const TextStyle(
               color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'اطلب الكود من صديقك',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+          Text(
+            'join_room.ask_code'.tr(),
+            style: const TextStyle(color: Colors.white54, fontSize: 14),
           ),
           const SizedBox(height: 32),
           TextField(
@@ -196,9 +200,9 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Text(
-                      'انضم الآن',
-                      style: TextStyle(
+                  : Text(
+                      'join_room.join_btn'.tr(),
+                      style: const TextStyle(
                           fontSize: 17, fontWeight: FontWeight.bold,
                           color: Colors.white),
                     ),
@@ -220,16 +224,16 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
             const Text('✅', style: TextStyle(fontSize: 60)),
             const SizedBox(height: 16),
             Text(
-              'انضممت لغرفة ${_hostName ?? ""}',
+              'join_room.joined_host'.tr(namedArgs: {'name': _hostName ?? ''}),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'في انتظار الـ Host يبدأ اللعبة...',
-              style: TextStyle(color: Colors.white54, fontSize: 15),
+            Text(
+              'join_room.waiting_host'.tr(),
+              style: const TextStyle(color: Colors.white54, fontSize: 15),
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(color: Color(0xFF6C63FF)),

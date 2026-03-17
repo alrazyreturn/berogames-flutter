@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'providers/user_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/chat_screen.dart';
@@ -16,6 +17,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // تهيئة easy_localization
+  await EasyLocalization.ensureInitialized();
+
   // تهيئة Firebase
   await Firebase.initializeApp();
 
@@ -25,10 +29,9 @@ void main() async {
   // ─── منع الإعلانات المخلة وغير الملائمة ──────────────────────────────────
   MobileAds.instance.updateRequestConfiguration(
     RequestConfiguration(
-      // محتوى مناسب للعائلات (PG = يحتاج توجيه أولياء الأمور)
-      maxAdContentRating: MaxAdContentRating.pg,
+      maxAdContentRating:          MaxAdContentRating.pg,
       tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
-      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.unspecified,
+      tagForUnderAgeOfConsent:     TagForUnderAgeOfConsent.unspecified,
     ),
   );
 
@@ -69,8 +72,6 @@ void main() async {
         );
         break;
       case 'game_invite':
-        // الـ home_screen بيتعامل مع الدعوة عبر socket
-        // هنا نكتفي بالذهاب للرئيسية
         Navigator.of(navigatorKey.currentContext!).popUntil((r) => r.isFirst);
         break;
     }
@@ -81,9 +82,20 @@ void main() async {
   await userProvider.loadFromStorage();
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: userProvider,
-      child: const BeroGamesApp(),
+    EasyLocalization(
+      // اللغات المدعومة
+      supportedLocales: const [
+        Locale('ar'), // العربية (افتراضي)
+        Locale('en'), // English
+        Locale('tr'), // Türkçe
+      ],
+      path:            'assets/translations',
+      fallbackLocale:  const Locale('ar'),
+      startLocale:     const Locale('ar'),
+      child: ChangeNotifierProvider.value(
+        value: userProvider,
+        child: const BeroGamesApp(),
+      ),
     ),
   );
 }
@@ -97,6 +109,12 @@ class BeroGamesApp extends StatelessWidget {
       title:                    'BeroGames',
       debugShowCheckedModeBanner: false,
       navigatorKey:             navigatorKey,
+
+      // ─── إعدادات اللغة والاتجاه ─────────────────────────────────────────
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales:       context.supportedLocales,
+      locale:                 context.locale,
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
         useMaterial3: true,
