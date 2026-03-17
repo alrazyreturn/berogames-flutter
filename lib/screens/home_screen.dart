@@ -350,6 +350,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // تسجيل dependency على EasyLocalization حتى تُبنى الشاشة عند تغيير اللغة
+    context.locale;
     final user = context.watch<UserProvider>().user;
 
     return Scaffold(

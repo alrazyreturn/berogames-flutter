@@ -29,7 +29,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
   @override
   void initState() {
     super.initState();
-    _startSearch();
+    // نستخدم addPostFrameCallback لأن context.locale يحتاج InheritedWidget
+    // لا يُسمح باستدعائه داخل initState مباشرةً
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startSearch());
   }
 
   @override
