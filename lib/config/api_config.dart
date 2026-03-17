@@ -16,6 +16,7 @@ class ApiConfig {
   static const String leaderboard = '/game/leaderboard';
   static const String myRank      = '/game/my-rank';
   static const String stats       = '/game/stats';
+  static const String gameBonus   = '/game/bonus';
 
   // Room (Multiplayer)
   static const String roomCreate = '/room/create';

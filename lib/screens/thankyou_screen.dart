@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/category_model.dart';
 import '../providers/user_provider.dart';
 import '../services/energy_service.dart';
+import '../services/game_service.dart';
 import '../services/ad_service.dart';
 import 'home_screen.dart';
 import 'categories_screen.dart';
@@ -27,6 +28,47 @@ class ThankYouScreen extends StatefulWidget {
 
 class _ThankYouScreenState extends State<ThankYouScreen> {
   final _energyService = EnergyService();
+  final _gameService   = GameService();
+
+  late int _displayScore;   // النقاط المعروضة (تتغير بعد المضاعفة)
+  bool     _isDoubled     = false;  // هل تم المضاعفة؟
+  bool     _isDoubling    = false;  // loading أثناء المضاعفة
+
+  @override
+  void initState() {
+    super.initState();
+    _displayScore = widget.score;
+  }
+
+  // ─── مضاعفة النقاط بعد Rewarded Ad ──────────────────────────────────────
+  void _onDoublePoints() {
+    if (_isDoubled || _isDoubling) return;
+
+    AdService().showRewarded(
+      onRewarded: () async {
+        final token = context.read<UserProvider>().token;
+        if (token == null) return;
+
+        setState(() => _isDoubling = true);
+        try {
+          final newTotal = await _gameService.addBonusScore(
+            bonusScore: widget.score, // يضيف نفس النقاط → مضاعفة
+            token:      token,
+          );
+          if (!mounted) return;
+          // تحديث الـ Provider بالنقاط الجديدة
+          await context.read<UserProvider>().updateTotalScore(newTotal);
+          setState(() {
+            _displayScore = widget.score * 2;
+            _isDoubled    = true;
+            _isDoubling   = false;
+          });
+        } catch (_) {
+          if (mounted) setState(() => _isDoubling = false);
+        }
+      },
+    );
+  }
 
   // ─── check الطاقة قبل "العب مجدداً" ──────────────────────────────────────
   Future<void> _checkEnergyAndPlayAgain() async {
@@ -51,7 +93,6 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
         _showNoEnergyDialog(token);
       }
     } catch (_) {
-      // خطأ شبكة → امنحه اللعب (تجربة أفضل)
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -147,8 +188,7 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
 
               // ─── أيقونة ────────────────────────────────────────────────
               Container(
-                width: 130,
-                height: 130,
+                width: 130, height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const LinearGradient(
@@ -169,25 +209,21 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               const Text(
                 'أحسنت! 🎉',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(height: 8),
-
+              const SizedBox(height: 6),
               Text(
                 'لعبت قسم ${widget.category.nameAr}',
                 style: const TextStyle(color: Colors.white54, fontSize: 16),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               // ─── الإحصائيات ─────────────────────────────────────────────
               Row(
@@ -196,8 +232,12 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                   _InfoCard(
                     icon: '⭐',
                     label: 'النقاط',
-                    value: '${widget.score}',
-                    color: const Color(0xFFFFD700),
+                    value: '$_displayScore',
+                    color: _isDoubled
+                        ? const Color(0xFFFFD700)
+                        : Colors.white,
+                    // تأثير توهج لو النقاط اتضاعفت
+                    glow: _isDoubled,
                   ),
                   _InfoCard(
                     icon: '❓',
@@ -214,7 +254,99 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                 ],
               ),
 
-              const SizedBox(height: 52),
+              const SizedBox(height: 28),
+
+              // ─── زر مضاعفة النقاط (يختفي بعد الاستخدام) ─────────────────
+              if (widget.score > 0)
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: _isDoubled
+                      // ✅ حالة بعد المضاعفة
+                      ? Container(
+                          key: const ValueKey('doubled'),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: Colors.amber.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle,
+                                  color: Colors.amber, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'تم مضاعفة النقاط! ✨',
+                                style: TextStyle(
+                                  color: Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      // 🎁 زر المضاعفة
+                      : GestureDetector(
+                          key: const ValueKey('double_btn'),
+                          onTap: _isDoubling ? null : _onDoublePoints,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFFFFD700),
+                                  Color(0xFFFFA500),
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFD700)
+                                      .withValues(alpha: 0.35),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: _isDoubling
+                                ? const Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      const Text('🎁',
+                                          style: TextStyle(fontSize: 20)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'ضاعف نقاطك (${widget.score * 2}) ▶ شاهد إعلان',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                ),
+
+              const SizedBox(height: 24),
 
               // ─── الأزرار ────────────────────────────────────────────────
               Row(
@@ -223,41 +355,31 @@ class _ThankYouScreenState extends State<ThankYouScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const HomeScreen()),
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
                         (_) => false,
                       ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white30),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text(
-                        'الرئيسية 🏠',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
-                      ),
+                      child: const Text('الرئيسية 🏠',
+                          style: TextStyle(color: Colors.white, fontSize: 15)),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      // ✅ check الطاقة قبل العب مجدداً
                       onPressed: _checkEnergyAndPlayAgain,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6C63FF),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text(
-                        'العب مجدداً 🎮',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
-                      ),
+                      child: const Text('العب مجدداً 🎮',
+                          style: TextStyle(color: Colors.white, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -282,12 +404,14 @@ class _InfoCard extends StatelessWidget {
   final String label;
   final String value;
   final Color  color;
+  final bool   glow;
 
   const _InfoCard({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
+    this.glow = false,
   });
 
   @override
@@ -297,7 +421,19 @@ class _InfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: glow
+              ? const Color(0xFFFFD700).withValues(alpha: 0.6)
+              : Colors.white12,
+        ),
+        boxShadow: glow
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.25),
+                  blurRadius: 12,
+                ),
+              ]
+            : [],
       ),
       child: Column(
         children: [

@@ -66,6 +66,19 @@ class GameService {
     return (res.data['total_score'] as num).toInt();
   }
 
+  // ─── مضاعفة النقاط بعد مشاهدة Rewarded Ad ────────────────────────────────
+  Future<int> addBonusScore({
+    required int    bonusScore,
+    required String token,
+  }) async {
+    final res = await _dio.post(
+      ApiConfig.gameBonus,
+      data: {'bonus_score': bonusScore},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return (res.data['total_score'] as num).toInt();
+  }
+
   // ─── جيب إحصائيات اليوزر ─────────────────────────────────────────────────
   Future<Map<String, dynamic>> getStats({required String token}) async {
     final res = await _dio.get(
