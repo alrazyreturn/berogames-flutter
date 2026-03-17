@@ -374,6 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Row(
                     children: [
+                      // ─── زر تغيير اللغة ──────────────────────────────────
+                      const _LangButton(),
                       IconButton(
                         icon: const Icon(Icons.help_outline, color: Colors.white70),
                         tooltip: 'home.how_to_play'.tr(),
@@ -594,6 +596,127 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── زر تغيير اللغة (علم) ────────────────────────────────────────────────────
+class _LangButton extends StatelessWidget {
+  const _LangButton();
+
+  static const _langs = [
+    {'code': 'ar', 'flag': '🇸🇦', 'label': 'العربية'},
+    {'code': 'en', 'flag': '🇬🇧', 'label': 'English'},
+    {'code': 'tr', 'flag': '🇹🇷', 'label': 'Türkçe'},
+  ];
+
+  String _flagFor(String code) {
+    switch (code) {
+      case 'en': return '🇬🇧';
+      case 'tr': return '🇹🇷';
+      default:   return '🇸🇦';
+    }
+  }
+
+  void _show(BuildContext context) {
+    final current = context.locale.languageCode;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E3F),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // مقبض
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'language.choose'.tr(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._langs.map((lang) {
+              final isSelected = lang['code'] == current;
+              return GestureDetector(
+                onTap: () {
+                  context.setLocale(Locale(lang['code']!));
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF6C63FF).withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF6C63FF)
+                          : Colors.white12,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(lang['flag']!, style: const TextStyle(fontSize: 26)),
+                      const SizedBox(width: 16),
+                      Text(
+                        lang['label']!,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.white70,
+                          fontSize: 16,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (isSelected)
+                        const Icon(Icons.check_circle,
+                            color: Color(0xFF6C63FF), size: 20),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final flag = _flagFor(context.locale.languageCode);
+    return GestureDetector(
+      onTap: () => _show(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        margin: const EdgeInsets.only(right: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Text(flag, style: const TextStyle(fontSize: 20)),
       ),
     );
   }
