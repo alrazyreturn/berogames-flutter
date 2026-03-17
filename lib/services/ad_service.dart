@@ -14,34 +14,43 @@ class AdService {
   static const String _rewardedAdId =
       'ca-app-pub-3940256099942544/5224354917'; // Test Rewarded
 
-  // ─── Live IDs (ستُفعَّل عند التبديل) ─────────────────────────────────────
+  // ─── Live IDs (غيّرها هنا وقت النشر) ────────────────────────────────────
   // static const String _interstitialAdId = 'ca-app-pub-XXXXX/XXXXX';
   // static const String _rewardedAdId     = 'ca-app-pub-XXXXX/XXXXX';
 
   InterstitialAd? _interstitialAd;
   RewardedAd?     _rewardedAd;
-  int             _gameCount = 0; // عداد المباريات
+  int             _gameCount           = 0;
+  bool            _isLoadingInterstitial = false; // منع التحميل المكرر
 
-  // ─── تحميل مسبق للإعلانات ────────────────────────────────────────────────
+  // ─── تحميل Interstitial (مع guard ضد التحميل المكرر) ─────────────────────
   void loadInterstitial() {
+    // لو محمل بالفعل أو في طور التحميل → لا تحمّل مرة ثانية
+    if (_interstitialAd != null || _isLoadingInterstitial) return;
+    _isLoadingInterstitial = true;
+
     InterstitialAd.load(
       adUnitId: _interstitialAdId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          _interstitialAd = ad;
+          _interstitialAd       = ad;
+          _isLoadingInterstitial = false;
           _interstitialAd!.setImmersiveMode(true);
           debugPrint('✅ Interstitial loaded');
         },
         onAdFailedToLoad: (err) {
-          _interstitialAd = null;
+          _interstitialAd       = null;
+          _isLoadingInterstitial = false;
           debugPrint('❌ Interstitial failed: ${err.message}');
         },
       ),
     );
   }
 
+  // ─── تحميل Rewarded ───────────────────────────────────────────────────────
   void loadRewarded() {
+    if (_rewardedAd != null) return;
     RewardedAd.load(
       adUnitId: _rewardedAdId,
       request: const AdRequest(),
@@ -60,15 +69,16 @@ class AdService {
 
   // ─── عند انتهاء كل مبارة (فردي أو زوجي) ─────────────────────────────────
   // يُظهر Interstitial بعد كل 3 مباريات
+  // تأخير 800ms لضمان اكتمال انتقال الشاشة قبل عرض الإعلان
   void onGameComplete() {
     _gameCount++;
     debugPrint('🎮 Game complete — count: $_gameCount');
+
     if (_gameCount % 3 == 0) {
-      _showInterstitial();
-    } else {
-      // preload للمرة القادمة
-      loadInterstitial();
+      // ✅ تأخير لحين اكتمال انتقال الشاشة (سبب عدم ظهور الإعلان سابقاً)
+      Future.delayed(const Duration(milliseconds: 800), _showInterstitial);
     }
+    // لا نحمّل هنا — الإعلان محمّل مسبقاً من الـ startup ومن بعد كل عرض
   }
 
   void _showInterstitial() {
@@ -79,6 +89,9 @@ class AdService {
     }
 
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) {
+        debugPrint('📺 Interstitial showing');
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitialAd = null;
@@ -97,7 +110,7 @@ class AdService {
 
   // ─── إعلان المكافأة (Rewarded) ────────────────────────────────────────────
   // onRewarded: يُستدعى بعد مشاهدة الإعلان كاملاً
-  // لو فشل التحميل → يُمنح المستخدم المكافأة تلقائياً (تجربة جيدة)
+  // لو فشل التحميل → يُمنح المستخدم المكافأة تلقائياً (تجربة أفضل)
   void showRewarded({required VoidCallback onRewarded}) {
     if (_rewardedAd != null) {
       _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
@@ -122,7 +135,7 @@ class AdService {
       );
       _rewardedAd = null;
     } else {
-      // مش محمل — حمّل واعرض
+      // مش محمل بعد — حمّل واعرض
       debugPrint('⚠️ Rewarded not ready, loading...');
       RewardedAd.load(
         adUnitId: _rewardedAdId,
@@ -130,7 +143,7 @@ class AdService {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) {
             _rewardedAd = ad;
-            showRewarded(onRewarded: onRewarded); // الآن اعرضه
+            showRewarded(onRewarded: onRewarded);
           },
           onAdFailedToLoad: (_) {
             debugPrint('❌ Rewarded failed to load, giving reward anyway');

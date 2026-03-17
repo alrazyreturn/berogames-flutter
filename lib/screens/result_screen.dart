@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import 'package:provider/provider.dart';
 import '../models/category_model.dart';
 import '../services/ad_service.dart';
+import '../services/energy_service.dart';
+import '../providers/user_provider.dart';
 import 'home_screen.dart';
 import 'categories_screen.dart';
 
@@ -25,6 +28,7 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   late ConfettiController _confetti;
+  final _energyService = EnergyService();
 
   // أقصى نقاط ممكنة لو كل إجابة صح بصعوبة 10
   int get _maxPossible => widget.totalQuestions * 100;
@@ -51,14 +55,118 @@ class _ResultScreenState extends State<ResultScreen> {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 3));
     if (_isPassed) _confetti.play();
-    // ─── Interstitial بعد كل 3 مباريات ──────────────────────────────────
-    AdService().onGameComplete();
+    // ─── Interstitial بعد كل 3 مباريات (بعد اكتمال بناء الشاشة) ─────────
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AdService().onGameComplete();
+    });
   }
 
   @override
   void dispose() {
     _confetti.dispose();
     super.dispose();
+  }
+
+  // ─── التحقق من الطاقة قبل "العب مجدداً" ──────────────────────────────────
+  Future<void> _checkEnergyAndPlayAgain() async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    try {
+      final energyRes = await _energyService.getEnergy(token);
+      final energy    = energyRes['energy'] as int? ?? 0;
+
+      if (!mounted) return;
+
+      if (energy > 0) {
+        // استهلاك الطاقة ثم اللعب
+        final consumeRes = await _energyService.consumeEnergy(token);
+        if (!mounted) return;
+        if (consumeRes['can_play'] == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+          );
+        }
+      } else {
+        // الطاقة = 0 → اعرض dialog
+        _showNoEnergyDialog(token);
+      }
+    } catch (_) {
+      // خطأ في الشبكة → اسمح باللعب
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+      );
+    }
+  }
+
+  // ─── dialog انتهاء الطاقة ────────────────────────────────────────────────
+  void _showNoEnergyDialog(String token) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E3F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡ طاقتك انتهت!',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                5,
+                (i) => const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3),
+                  child: Icon(Icons.favorite_border, color: Colors.white24, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'شاهد إعلاناً للحصول على ❤️ طاقة إضافية',
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C63FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.play_circle_outline, size: 18),
+            label: const Text('شاهد إعلان +❤️'),
+            onPressed: () {
+              Navigator.pop(context);
+              AdService().showRewarded(
+                onRewarded: () async {
+                  try {
+                    await _energyService.rechargeEnergy(token);
+                    if (!mounted) return;
+                    // بعد الشحن، العب مجدداً
+                    await _checkEnergyAndPlayAgain();
+                  } catch (_) {}
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -191,11 +299,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const CategoriesScreen()),
-                          ),
+                          // ✅ check الطاقة قبل اللعب مجدداً
+                          onPressed: () => _checkEnergyAndPlayAgain(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6C63FF),
                             padding: const EdgeInsets.symmetric(vertical: 14),

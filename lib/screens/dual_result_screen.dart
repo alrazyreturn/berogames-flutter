@@ -38,8 +38,10 @@ class _DualResultScreenState extends State<DualResultScreen> {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 4));
     if (_iWon || _isDraw) _confetti.play();
-    // ─── Interstitial بعد كل مبارة زوجية ────────────────────────────────
-    AdService().onGameComplete();
+    // ─── Interstitial بعد كل مبارة زوجية (بعد اكتمال بناء الشاشة) ───────
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AdService().onGameComplete();
+    });
   }
 
   @override

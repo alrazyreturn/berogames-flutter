@@ -19,8 +19,20 @@ void main() async {
   // تهيئة Firebase
   await Firebase.initializeApp();
 
-  // تهيئة AdMob وتحميل الإعلانات مسبقاً
+  // تهيئة AdMob
   await MobileAds.instance.initialize();
+
+  // ─── منع الإعلانات المخلة وغير الملائمة ──────────────────────────────────
+  MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(
+      // محتوى مناسب للعائلات (PG = يحتاج توجيه أولياء الأمور)
+      maxAdContentRating: MaxAdContentRating.pg,
+      tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
+      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.unspecified,
+    ),
+  );
+
+  // تحميل الإعلانات مسبقاً
   AdService().loadInterstitial();
   AdService().loadRewarded();
 
