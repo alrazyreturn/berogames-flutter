@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import '../services/ad_service.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
 
@@ -37,6 +38,8 @@ class _DualResultScreenState extends State<DualResultScreen> {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 4));
     if (_iWon || _isDraw) _confetti.play();
+    // ─── Interstitial بعد كل مبارة زوجية ────────────────────────────────
+    AdService().onGameComplete();
   }
 
   @override

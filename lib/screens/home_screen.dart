@@ -6,6 +6,7 @@ import '../services/socket_service.dart';
 import '../services/room_service.dart';
 import '../services/notification_service.dart';
 import '../services/energy_service.dart';
+import '../services/ad_service.dart';
 import '../models/room_model.dart';
 import '../config/api_config.dart';
 import 'categories_screen.dart';
@@ -203,19 +204,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ─── مشاهدة إعلان وشحن الطاقة (Phase 3: سيتم استبداله بإعلان AdMob حقيقي) ──
-  Future<void> _watchAdAndRecharge(VoidCallback navigate) async {
+  // ─── مشاهدة Rewarded Ad حقيقي وشحن الطاقة ──────────────────────────────
+  void _watchAdAndRecharge(VoidCallback navigate) {
     final token = context.read<UserProvider>().token;
     if (token == null) return;
 
-    // TODO (Phase 3): عرض Rewarded Ad من AdMob هنا قبل الشحن
-    try {
-      final res = await _energyService.rechargeEnergy(token);
-      if (!mounted) return;
-      setState(() => _energy = res['energy'] as int? ?? (_energy + 1));
-      // بعد الشحن نفذ اللعبة
-      await _checkEnergyAndNavigate(navigate);
-    } catch (_) {}
+    AdService().showRewarded(
+      onRewarded: () async {
+        // المستخدم شاهد الإعلان كاملاً → شحن الطاقة
+        try {
+          final res = await _energyService.rechargeEnergy(token);
+          if (!mounted) return;
+          setState(() => _energy = res['energy'] as int? ?? (_energy + 1));
+          await _checkEnergyAndNavigate(navigate);
+        } catch (_) {}
+      },
+    );
   }
 
   // ─── حوار الدعوة (بدون check طاقة — استقبال دعوة مجاني) ─────────────────

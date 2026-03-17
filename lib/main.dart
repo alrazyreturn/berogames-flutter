@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'providers/user_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/friends_screen.dart';
 import 'services/notification_service.dart';
+import 'services/ad_service.dart';
 import 'models/friend_model.dart';
 
 // ─── Global Navigator Key للـ Navigation من الإشعارات ────────────────────────
@@ -16,6 +18,11 @@ void main() async {
 
   // تهيئة Firebase
   await Firebase.initializeApp();
+
+  // تهيئة AdMob وتحميل الإعلانات مسبقاً
+  await MobileAds.instance.initialize();
+  AdService().loadInterstitial();
+  AdService().loadRewarded();
 
   // تهيئة خدمة الإشعارات
   final notifService = NotificationService();

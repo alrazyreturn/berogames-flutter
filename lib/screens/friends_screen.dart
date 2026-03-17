@@ -7,6 +7,7 @@ import '../services/friends_service.dart';
 import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import '../services/energy_service.dart';
+import '../services/ad_service.dart';
 import 'add_friend_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -191,14 +192,18 @@ class _FriendsScreenState extends State<FriendsScreen>
             ),
             icon: const Icon(Icons.play_circle_outline, size: 18),
             label: const Text('شاهد إعلان +❤️'),
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(context);
-              // TODO (Phase 3): عرض Rewarded Ad من AdMob هنا
-              try {
-                await _energyService.rechargeEnergy(token);
-                if (!mounted) return;
-                onRecharged();
-              } catch (_) {}
+              // ✅ Rewarded Ad حقيقي من AdMob
+              AdService().showRewarded(
+                onRewarded: () async {
+                  try {
+                    await _energyService.rechargeEnergy(token);
+                    if (!mounted) return;
+                    onRecharged();
+                  } catch (_) {}
+                },
+              );
             },
           ),
         ],

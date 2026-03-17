@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import '../models/category_model.dart';
+import '../services/ad_service.dart';
 import 'home_screen.dart';
 import 'categories_screen.dart';
 
@@ -50,6 +51,8 @@ class _ResultScreenState extends State<ResultScreen> {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 3));
     if (_isPassed) _confetti.play();
+    // ─── Interstitial بعد كل 3 مباريات ──────────────────────────────────
+    AdService().onGameComplete();
   }
 
   @override
