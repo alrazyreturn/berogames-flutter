@@ -166,13 +166,15 @@ class SocketService {
     required String roomCode,
     required int    userId,
     required String userName,
-    required String role,  // 'host' أو 'guest'
+    required String role,   // 'host' أو 'guest'
+    String          lang = 'ar',
   }) {
     _socket?.emit('join_room', {
       'room_code': roomCode,
       'user_id':   userId,
       'user_name': userName,
       'role':      role,
+      'lang':      lang,
     });
   }
 

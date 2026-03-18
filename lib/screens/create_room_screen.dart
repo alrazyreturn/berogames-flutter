@@ -108,6 +108,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         userId:   user.id,
         userName: user.name,
         role:     'host',
+        lang:     context.locale.languageCode,
       );
 
       // لو في صديق مدعو → ابعت له دعوة تلقائياً

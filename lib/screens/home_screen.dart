@@ -313,6 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
         userId:   user.id,
         userName: user.name,
         role:     'guest',
+        lang:     context.locale.languageCode,
       );
 
       if (!mounted) return;
