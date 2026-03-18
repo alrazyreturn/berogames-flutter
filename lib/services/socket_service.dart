@@ -29,6 +29,9 @@ class SocketService {
   Function(Map<String, dynamic>)? onGameInviteResult;
   Function(Map<String, dynamic>)? onInviteSent;
 
+  // ─── Friends Realtime Callbacks ──────────────────────────────────────────
+  Function(Map<String, dynamic>)? onFriendshipAccepted;
+
   // ─── Chat Callbacks ───────────────────────────────────────────────────────
   Function(Map<String, dynamic>)? onChatMessageReceived;
   Function(Map<String, dynamic>)? onChatMessageSent;
@@ -141,6 +144,11 @@ class SocketService {
 
     _socket!.on('invite_sent', (data) {
       onInviteSent?.call(Map<String, dynamic>.from(data));
+    });
+
+    // ─── Friends Realtime Events ─────────────────────────────────────────
+    _socket!.on('friendship_accepted', (data) {
+      onFriendshipAccepted?.call(Map<String, dynamic>.from(data));
     });
 
     // ─── Chat Events ─────────────────────────────────────────────────────
@@ -311,6 +319,7 @@ class SocketService {
     onChatMessageSent      = null;
     onChatTyping           = null;
     onChatMessageDeleted   = null;
+    onFriendshipAccepted   = null;
   }
 
   void clearCallbacks() => _clearCallbacks();

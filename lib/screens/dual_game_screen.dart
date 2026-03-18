@@ -139,6 +139,20 @@ class _DualGameScreenState extends State<DualGameScreen> {
   void _setupSocket() {
     _socket.onGameStarted = _onGameStarted;
 
+    // عند قبول الصداقة من الطرف الآخر → حدّث الزر فوراً
+    _socket.onFriendshipAccepted = (data) {
+      if (!mounted) return;
+      setState(() => _followStatus = 'accepted');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('🎉 أصبحتما أصدقاء!'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.greenAccent.withValues(alpha: 0.9),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    };
+
     _socket.onScoreUpdate = (data) {
       if (!mounted) return;
       setState(() {
