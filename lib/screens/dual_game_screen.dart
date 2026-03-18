@@ -306,29 +306,33 @@ class _DualGameScreenState extends State<DualGameScreen> {
     final bool canFollow   = _followStatus == 'none';
     final bool disabled    = isAccepted || isPending || _followLoading;
 
+    // ألوان ذهبية للزر الرئيسي، رمادية للـ disabled، خضراء للأصدقاء
+    const Color gold        = Color(0xFFFFD700);
+    const Color goldLight   = Color(0xFFFFF176);
+
     final Color btnColor = isAccepted
         ? Colors.greenAccent.withValues(alpha: 0.15)
         : isPending
             ? Colors.white.withValues(alpha: 0.07)
-            : const Color(0xFF6C63FF).withValues(alpha: 0.15);
+            : gold.withValues(alpha: 0.15);
 
     final Color borderColor = isAccepted
-        ? Colors.greenAccent.withValues(alpha: 0.6)
+        ? Colors.greenAccent.withValues(alpha: 0.7)
         : isPending
             ? Colors.white24
-            : const Color(0xFF6C63FF).withValues(alpha: 0.6);
+            : gold.withValues(alpha: 0.8);
 
     final String label = isAccepted
         ? '👥 أصدقاء'
         : isPending
             ? '✓ تمت المتابعة'
-            : '➕ تابع';
+            : '⭐ تابع';
 
     final Color textColor = isAccepted
         ? Colors.greenAccent
         : isPending
             ? Colors.white38
-            : const Color(0xFF6C63FF);
+            : goldLight;
 
     return Padding(
       padding: const EdgeInsets.only(top: 6),
@@ -340,19 +344,19 @@ class _DualGameScreenState extends State<DualGameScreen> {
           decoration: BoxDecoration(
             color:        btnColor,
             borderRadius: BorderRadius.circular(20),
-            border:       Border.all(color: borderColor, width: 1),
+            border:       Border.all(color: borderColor, width: 1.2),
           ),
           child: _followLoading
               ? const SizedBox(
                   width: 14, height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6C63FF)),
+                  child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFFFFD700)),
                 )
               : Text(
                   label,
                   style: TextStyle(
                     color:      textColor,
                     fontSize:   12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
         ),
