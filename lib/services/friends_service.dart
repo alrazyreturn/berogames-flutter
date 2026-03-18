@@ -30,6 +30,25 @@ class FriendsService {
     return res.data['message'] as String;
   }
 
+  // ─── متابعة لاعب بـ userId (من شاشة اللعب) ───────────────────────────────
+  Future<Map<String, dynamic>> followByUserId(int targetId, String token) async {
+    final res = await _dio.post(
+      ApiConfig.friendsRequestById,
+      data:    {'targetId': targetId},
+      options: _auth(token),
+    );
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  // ─── حالة العلاقة مع مستخدم محدد ────────────────────────────────────────
+  Future<String> getFollowStatus(int targetId, String token) async {
+    final res = await _dio.get(
+      '${ApiConfig.friendsStatus}/$targetId',
+      options: _auth(token),
+    );
+    return (res.data['status'] as String?) ?? 'none';
+  }
+
   // ─── قبول طلب صداقة ──────────────────────────────────────────────────────
   Future<void> acceptRequest(int friendshipId, String token) async {
     await _dio.put(

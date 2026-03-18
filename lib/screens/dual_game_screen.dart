@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/question_model.dart';
 import '../models/room_model.dart';
 import '../providers/user_provider.dart';
+import '../services/friends_service.dart';
 import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import '../services/sound_service.dart';
@@ -14,9 +15,10 @@ import 'dual_result_screen.dart';
 /// المسابقة تنتهي عند انتهاء الوقت الإجمالي
 class DualGameScreen extends StatefulWidget {
   final RoomModel room;
-  final String    role;       // 'host' أو 'guest'
+  final String    role;         // 'host' أو 'guest'
   final String    myName;
   final String    guestName;
+  final int?      opponentId;   // ID الخصم لزر المتابعة
   final Map<String, dynamic>? initialQuestions;
 
   const DualGameScreen({
@@ -25,6 +27,7 @@ class DualGameScreen extends StatefulWidget {
     required this.role,
     required this.myName,
     required this.guestName,
+    this.opponentId,
     this.initialQuestions,
   });
 
@@ -36,9 +39,10 @@ class _DualGameScreenState extends State<DualGameScreen> {
   // ─── مدة المسابقة الإجمالية ───────────────────────────────────────────────
   static const int _matchDuration = 60; // بالثواني — غيّرها حسب الحاجة
 
-  final _socket      = SocketService();
-  final _roomService = RoomService();
-  final _sound       = SoundService();
+  final _socket         = SocketService();
+  final _roomService    = RoomService();
+  final _friendsService = FriendsService();
+  final _sound          = SoundService();
 
   List<QuestionModel> _questions     = [];
   int  _currentIndex    = 0;
@@ -49,6 +53,11 @@ class _DualGameScreenState extends State<DualGameScreen> {
   bool _isLoading       = true;
   bool _iFinished       = false;
   bool _opponentFinished = false;
+
+  // ─── حالة زر المتابعة ──────────────────────────────────────────────────
+  // 'loading' | 'none' | 'pending_sent' | 'accepted'
+  String _followStatus = 'loading';
+  bool   _followLoading = false;
 
   // ── مؤقت المسابقة الإجمالي (يُعرض للاعبين) ──────────────────────────────
   int    _matchTimeLeft = _matchDuration;
@@ -61,6 +70,8 @@ class _DualGameScreenState extends State<DualGameScreen> {
     if (widget.initialQuestions != null) {
       _onGameStarted(widget.initialQuestions!);
     }
+    // جلب حالة المتابعة مع الخصم
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadFollowStatus());
   }
 
   @override
@@ -68,6 +79,60 @@ class _DualGameScreenState extends State<DualGameScreen> {
     _matchTimer?.cancel();
     _socket.clearCallbacks();
     super.dispose();
+  }
+
+  // ─── جلب حالة المتابعة الأولية مع الخصم ─────────────────────────────────
+  Future<void> _loadFollowStatus() async {
+    if (widget.opponentId == null) {
+      if (mounted) setState(() => _followStatus = 'none');
+      return;
+    }
+    final token = context.read<UserProvider>().token;
+    if (token == null) { if (mounted) setState(() => _followStatus = 'none'); return; }
+    try {
+      final status = await _friendsService.getFollowStatus(widget.opponentId!, token);
+      if (mounted) setState(() => _followStatus = status);
+    } catch (_) {
+      if (mounted) setState(() => _followStatus = 'none');
+    }
+  }
+
+  // ─── الضغط على زر المتابعة ────────────────────────────────────────────────
+  Future<void> _onFollowTap() async {
+    if (widget.opponentId == null || _followLoading) return;
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    setState(() => _followLoading = true);
+    try {
+      final result = await _friendsService.followByUserId(widget.opponentId!, token);
+      final newStatus = result['status'] as String? ?? 'pending_sent';
+      if (!mounted) return;
+      setState(() => _followStatus = newStatus);
+      // رسالة تأكيد
+      final msg = newStatus == 'accepted' ? '🎉 أصبحتما أصدقاء!' : '✅ تم إرسال طلب المتابعة';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: newStatus == 'accepted'
+              ? Colors.greenAccent.withValues(alpha: 0.9)
+              : const Color(0xFF6C63FF).withValues(alpha: 0.9),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      // لو الخطأ "أصدقاء بالفعل" أو "مُرسَل" → حدّث الحالة بدون رسالة خطأ
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('accepted') || msg.contains('أصدقاء')) {
+        setState(() => _followStatus = 'accepted');
+      } else if (msg.contains('pending') || msg.contains('مُرسَل')) {
+        setState(() => _followStatus = 'pending_sent');
+      }
+    } finally {
+      if (mounted) setState(() => _followLoading = false);
+    }
   }
 
   // ─── إعداد Socket ─────────────────────────────────────────────────────────
@@ -216,6 +281,85 @@ class _DualGameScreenState extends State<DualGameScreen> {
     );
   }
 
+  // ─── زر المتابعة ──────────────────────────────────────────────────────────
+  Widget _buildFollowButton() {
+    if (widget.opponentId == null) return const SizedBox.shrink();
+
+    // حالة التحميل الأولي
+    if (_followStatus == 'loading') {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: SizedBox(
+          height: 28,
+          width: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white38,
+          ),
+        ),
+      );
+    }
+
+    // تحديد شكل الزر حسب الحالة
+    final bool isAccepted  = _followStatus == 'accepted';
+    final bool isPending   = _followStatus == 'pending_sent' || _followStatus == 'pending_received';
+    final bool canFollow   = _followStatus == 'none';
+    final bool disabled    = isAccepted || isPending || _followLoading;
+
+    final Color btnColor = isAccepted
+        ? Colors.greenAccent.withValues(alpha: 0.15)
+        : isPending
+            ? Colors.white.withValues(alpha: 0.07)
+            : const Color(0xFF6C63FF).withValues(alpha: 0.15);
+
+    final Color borderColor = isAccepted
+        ? Colors.greenAccent.withValues(alpha: 0.6)
+        : isPending
+            ? Colors.white24
+            : const Color(0xFF6C63FF).withValues(alpha: 0.6);
+
+    final String label = isAccepted
+        ? '👥 أصدقاء'
+        : isPending
+            ? '✓ تمت المتابعة'
+            : '➕ تابع';
+
+    final Color textColor = isAccepted
+        ? Colors.greenAccent
+        : isPending
+            ? Colors.white38
+            : const Color(0xFF6C63FF);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: GestureDetector(
+        onTap: canFollow && !disabled ? _onFollowTap : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: BoxDecoration(
+            color:        btnColor,
+            borderRadius: BorderRadius.circular(20),
+            border:       Border.all(color: borderColor, width: 1),
+          ),
+          child: _followLoading
+              ? const SizedBox(
+                  width: 14, height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6C63FF)),
+                )
+              : Text(
+                  label,
+                  style: TextStyle(
+                    color:      textColor,
+                    fontSize:   12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
   int _optionIndex(String opt) =>
       ['a', 'b', 'c', 'd'].indexOf(opt.toLowerCase());
 
@@ -265,7 +409,10 @@ class _DualGameScreenState extends State<DualGameScreen> {
             // ─── هيدر: النقاط + المؤقت الإجمالي ─────────────────────────
             _buildScoresHeader(),
 
-            const SizedBox(height: 10),
+            // ─── زر المتابعة (أسفل الهيدر، قابل للضغط خلال اللعب) ───────
+            _buildFollowButton(),
+
+            const SizedBox(height: 6),
 
             // ─── رقم السؤال ───────────────────────────────────────────────
             Text(

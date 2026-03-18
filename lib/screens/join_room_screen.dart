@@ -61,10 +61,11 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => DualGameScreen(
-              room:           room,
-              role:           'guest',
-              myName:         user.name,
-              guestName:      user.name,
+              room:             room,
+              role:             'guest',
+              myName:           user.name,
+              guestName:        room.host.name,
+              opponentId:       room.host.id,
               initialQuestions: data,
             ),
           ),

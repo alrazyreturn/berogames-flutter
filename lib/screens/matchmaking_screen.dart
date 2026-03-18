@@ -69,6 +69,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
       // بناء RoomModel من بيانات الـ Match
       final role         = data['role'] as String;          // 'host' أو 'guest'
       final opponentName = data['opponent_name'] as String? ?? 'opponent';
+      final opponentId   = data['opponent_id'] as int?;
       final roomId       = data['room_id'] as int;
       final roomCode     = data['room_code'] as String;
       final categoryId   = data['category_id'] as int;
@@ -104,6 +105,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen> {
               role:             role,
               myName:           user.name,
               guestName:        opponentName,
+              opponentId:       opponentId,
               initialQuestions: initialQuestions,
             ),
           ),

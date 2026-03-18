@@ -29,10 +29,12 @@ class ApiConfig {
   static const String chatMessages = '/chat/messages';
 
   // Friends
-  static const String friendsList     = '/friends';
-  static const String friendsRequests = '/friends/requests';
-  static const String friendsRequest  = '/friends/request';
-  static const String friendsAccept   = '/friends/accept';
+  static const String friendsList          = '/friends';
+  static const String friendsRequests      = '/friends/requests';
+  static const String friendsRequest       = '/friends/request';
+  static const String friendsRequestById   = '/friends/request-by-id';
+  static const String friendsStatus        = '/friends/status';
+  static const String friendsAccept        = '/friends/accept';
 
   // Energy
   static const String energy         = '/energy';
