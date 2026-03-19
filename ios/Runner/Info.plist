@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- WebRTC Voice Chat -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>نحتاج إذن الميكروفون للتواصل الصوتي مع الخصم خلال اللعب</string>
 </dict>
 </plist>

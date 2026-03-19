@@ -32,6 +32,11 @@ class SocketService {
   // ─── Friends Realtime Callbacks ──────────────────────────────────────────
   Function(Map<String, dynamic>)? onFriendshipAccepted;
 
+  // ─── WebRTC Signaling Callbacks ───────────────────────────────────────────
+  Function(Map<String, dynamic>)? onWebRtcOffer;
+  Function(Map<String, dynamic>)? onWebRtcAnswer;
+  Function(Map<String, dynamic>)? onWebRtcIceCandidate;
+
   // ─── Chat Callbacks ───────────────────────────────────────────────────────
   Function(Map<String, dynamic>)? onChatMessageReceived;
   Function(Map<String, dynamic>)? onChatMessageSent;
@@ -149,6 +154,19 @@ class SocketService {
     // ─── Friends Realtime Events ─────────────────────────────────────────
     _socket!.on('friendship_accepted', (data) {
       onFriendshipAccepted?.call(Map<String, dynamic>.from(data));
+    });
+
+    // ─── WebRTC Signaling Events ──────────────────────────────────────────
+    _socket!.on('webrtc_offer', (data) {
+      onWebRtcOffer?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('webrtc_answer', (data) {
+      onWebRtcAnswer?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('webrtc_ice_candidate', (data) {
+      onWebRtcIceCandidate?.call(Map<String, dynamic>.from(data));
     });
 
     // ─── Chat Events ─────────────────────────────────────────────────────
@@ -284,6 +302,19 @@ class SocketService {
     });
   }
 
+  // ─── WebRTC Signaling Emit ────────────────────────────────────────────────
+  void sendWebRtcOffer({ required String roomCode, required Map<String, dynamic> sdp }) {
+    _socket?.emit('webrtc_offer', { 'room_code': roomCode, 'sdp': sdp });
+  }
+
+  void sendWebRtcAnswer({ required String roomCode, required Map<String, dynamic> sdp }) {
+    _socket?.emit('webrtc_answer', { 'room_code': roomCode, 'sdp': sdp });
+  }
+
+  void sendWebRtcIceCandidate({ required String roomCode, required Map<String, dynamic> candidate }) {
+    _socket?.emit('webrtc_ice_candidate', { 'room_code': roomCode, 'candidate': candidate });
+  }
+
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
     _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName, 'lang': lang });
@@ -320,6 +351,9 @@ class SocketService {
     onChatTyping           = null;
     onChatMessageDeleted   = null;
     onFriendshipAccepted   = null;
+    onWebRtcOffer          = null;
+    onWebRtcAnswer         = null;
+    onWebRtcIceCandidate   = null;
   }
 
   void clearCallbacks() => _clearCallbacks();

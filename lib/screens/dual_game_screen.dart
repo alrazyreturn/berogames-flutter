@@ -8,6 +8,7 @@ import '../services/friends_service.dart';
 import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import '../services/sound_service.dart';
+import '../services/webrtc_service.dart';
 import 'dual_result_screen.dart';
 
 /// شاشة اللعب الثنائي — مسابقة بالوقت الإجمالي
@@ -59,6 +60,11 @@ class _DualGameScreenState extends State<DualGameScreen> {
   String _followStatus = 'loading';
   bool   _followLoading = false;
 
+  // ─── WebRTC (Voice Chat) ────────────────────────────────────────────────
+  WebRtcService? _webRtc;
+  bool _micOn      = false;
+  bool _webRtcReady = false;
+
   // ── مؤقت المسابقة الإجمالي (يُعرض للاعبين) ──────────────────────────────
   int    _matchTimeLeft = _matchDuration;
   Timer? _matchTimer;
@@ -77,6 +83,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
   @override
   void dispose() {
     _matchTimer?.cancel();
+    _webRtc?.dispose();
     _socket.clearCallbacks();
     super.dispose();
   }
@@ -184,6 +191,21 @@ class _DualGameScreenState extends State<DualGameScreen> {
     };
   }
 
+  // ─── تهيئة WebRTC بعد بدء اللعبة ───────────────────────────────────────
+  Future<void> _initWebRtc() async {
+    try {
+      _webRtc = WebRtcService(
+        socket:   _socket,
+        roomCode: widget.room.roomCode,
+        isHost:   widget.role == 'host',
+      );
+      await _webRtc!.init();
+      if (mounted) setState(() => _webRtcReady = _webRtc!.isInitialized);
+    } catch (e) {
+      print('❌ WebRTC init error: $e');
+    }
+  }
+
   // ─── استقبال الأسئلة وبدء المؤقت ─────────────────────────────────────────
   void _onGameStarted(Map<String, dynamic> data) {
     if (!mounted) return;
@@ -196,6 +218,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
       _isLoading = false;
     });
     _startMatchTimer();
+    _initWebRtc(); // بدء WebRTC عند انطلاق اللعبة
   }
 
   // ─── مؤقت المسابقة ────────────────────────────────────────────────────────
@@ -378,6 +401,13 @@ class _DualGameScreenState extends State<DualGameScreen> {
     );
   }
 
+  // ─── تبديل الميكروفون ────────────────────────────────────────────────────
+  void _toggleMic() {
+    if (_webRtc == null || !_webRtcReady) return;
+    _webRtc!.toggleMic();
+    setState(() => _micOn = _webRtc!.micEnabled);
+  }
+
   int _optionIndex(String opt) =>
       ['a', 'b', 'c', 'd'].indexOf(opt.toLowerCase());
 
@@ -521,36 +551,70 @@ class _DualGameScreenState extends State<DualGameScreen> {
             ),
           ),
 
-          // ── المؤقت الإجمالي في المنتصف ──────────────────────────────────
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: (isUrgent ? Colors.redAccent : const Color(0xFF6C63FF))
-                  .withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isUrgent ? Colors.redAccent : const Color(0xFF6C63FF),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  isUrgent ? '🔥' : '⏱',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Text(
-                  _formatTime(_matchTimeLeft),
-                  style: TextStyle(
-                    color:      isUrgent ? Colors.redAccent : Colors.white,
-                    fontSize:   20,
-                    fontWeight: FontWeight.bold,
+          // ── المنتصف: المؤقت + زر الميك ──────────────────────────────────
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: (isUrgent ? Colors.redAccent : const Color(0xFF6C63FF))
+                      .withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isUrgent ? Colors.redAccent : const Color(0xFF6C63FF),
+                    width: 1.5,
                   ),
                 ),
-              ],
-            ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isUrgent ? '🔥' : '⏱',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    Text(
+                      _formatTime(_matchTimeLeft),
+                      style: TextStyle(
+                        color:      isUrgent ? Colors.redAccent : Colors.white,
+                        fontSize:   20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              // ── زر الميكروفون ──────────────────────────────────────────
+              GestureDetector(
+                onTap: _webRtcReady ? _toggleMic : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width:  38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _micOn
+                        ? Colors.greenAccent.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.08),
+                    border: Border.all(
+                      color: _micOn
+                          ? Colors.greenAccent
+                          : (_webRtcReady ? Colors.white38 : Colors.white12),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Icon(
+                    _micOn ? Icons.mic : Icons.mic_off,
+                    size:  18,
+                    color: _micOn
+                        ? Colors.greenAccent
+                        : (_webRtcReady ? Colors.white54 : Colors.white24),
+                  ),
+                ),
+              ),
+            ],
           ),
 
           // ── نقاط الخصم ─────────────────────────────────────────────────
