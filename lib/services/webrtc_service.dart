@@ -4,27 +4,31 @@ import 'socket_service.dart';
 
 /// WebRtcService — اتصال صوتي peer-to-peer عبر WebRTC
 /// الإشارات تمر عبر Socket.IO (webrtc_offer / webrtc_answer / webrtc_ice_candidate)
+///
+/// ⚡ getUserMedia لا يُستدعى إلا عند أول ضغطة على زر الميك
+///    → لا يظهر ضوء الميك الأخضر في بداية التحدي
 class WebRtcService {
   final SocketService _socket;
   final String        _roomCode;
   final bool          _isHost;
 
   RTCPeerConnection? _pc;
-  MediaStream?       _localStream;
+  MediaStream?       _localStream; // null حتى أول ضغطة على الميك
 
-  bool _myMicWanted   = false; // اللاعب ضغط "فتح" — ما يريده هو
-  bool _opponentMicOn = false; // حالة ميك الخصم (تصل عبر socket)
-  bool _isDisposed    = false;
-  bool _isInitialized = false;
+  bool _myMicWanted     = false; // ما يريده اللاعب (يتحكم في زر الـ UI)
+  bool _opponentMicOn   = false; // حالة ميك الخصم (تصل عبر socket)
+  bool _isDisposed      = false;
+  bool _isInitialized   = false;
+  bool _connectionReady = false; // true بعد اكتمال الـ offer/answer الأولي
 
-  // نحتاج هذا لتأجيل ICE candidates حتى يُعيَّن الـ remote description
+  // ICE candidates تصل قبل remote description → نؤجلها
   bool                        _remoteDescSet     = false;
   final List<RTCIceCandidate> _pendingCandidates = [];
 
   static const Map<String, dynamic> _iceConfig = {
     'iceServers': [
-      { 'urls': 'stun:stun.l.google.com:19302'  },
-      { 'urls': 'stun:stun1.l.google.com:19302' },
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
     ],
     'sdpSemantics': 'unified-plan',
   };
@@ -44,46 +48,22 @@ class WebRtcService {
         _roomCode  = roomCode,
         _isHost    = isHost;
 
-  bool get micEnabled    => _myMicWanted;  // حالة الزر (ما يريده اللاعب)
+  bool get micEnabled    => _myMicWanted;
   bool get isInitialized => _isInitialized;
 
-  // ─── تهيئة WebRTC ──────────────────────────────────────────────────────────
+  // ─── تهيئة WebRTC بدون getUserMedia (لا ضوء أخضر في البداية) ─────────────
   Future<void> init() async {
     if (_isDisposed) return;
 
-    // طلب إذن الميكروفون
-    final status = await Permission.microphone.request();
-    if (!status.isGranted) return;
-
-    // تدفق صوتي محلي مع تحسينات الصوت
-    _localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
-      'video': false,
-    });
-
-    // يبدأ الميك صامتاً — اللاعب يفتحه بنفسه
-    _localStream!.getAudioTracks().forEach((t) => t.enabled = false);
-
-    // إنشاء RTCPeerConnection
+    // إنشاء RTCPeerConnection فقط — بدون stream محلي بعد
     _pc = await createPeerConnection(_iceConfig);
 
-    // إضافة الـ tracks المحلية
-    for (final track in _localStream!.getTracks()) {
-      await _pc!.addTrack(track, _localStream!);
-    }
-
-    // ─── استقبال الـ tracks القادمة من الطرف الآخر ──────────────────────────
-    // هذا هو ما يجعل الصوت القادم يُشغَّل تلقائياً
+    // استقبال tracks قادمة من الخصم (الصوت يُشغَّل تلقائياً)
     _pc!.onTrack = (RTCTrackEvent event) {
-      // flutter_webrtc يُشغِّل صوت الـ audio tracks تلقائياً عند استقبالها
-      // لا نحتاج لأي renderer إضافي للصوت
+      // flutter_webrtc يُشغِّل audio tracks تلقائياً
     };
 
-    // ─── ICE candidates → أرسلها للطرف الآخر ──────────────────────────────
+    // إرسال ICE candidates للخصم عبر socket
     _pc!.onIceCandidate = (RTCIceCandidate c) {
       if (_isDisposed || c.candidate == null || c.candidate!.isEmpty) return;
       _socket.sendWebRtcIceCandidate(
@@ -92,17 +72,24 @@ class WebRtcService {
       );
     };
 
-    // ─── تسجيل callbacks الإشارات ────────────────────────────────────────
+    // عند إضافة track محلي لاحقاً → نعيد التفاوض (renegotiation)
+    _pc!.onRenegotiationNeeded = () async {
+      // فقط بعد اكتمال الـ handshake الأولي
+      if (!_connectionReady || _isDisposed) return;
+      await _sendOffer();
+    };
+
+    // تسجيل callbacks الإشارات
     _socket.onWebRtcOffer        = _handleOffer;
     _socket.onWebRtcAnswer       = _handleAnswer;
     _socket.onWebRtcIceCandidate = _handleIceCandidate;
 
     _isInitialized = true;
 
-    // توجيه الصوت إلى السماعة الخارجية (speaker) لا الأذن (earpiece)
+    // توجيه الصوت للسماعة الخارجية
     try { await Helper.setSpeakerphoneOn(true); } catch (_) {}
 
-    // Host ينشئ ويرسل الـ offer بعد تأخير ليضمن جاهزية الـ guest
+    // Host يرسل offer أولية لفتح القناة (بدون tracks محلية بعد)
     if (_isHost) {
       await Future.delayed(const Duration(milliseconds: 1500));
       if (!_isDisposed) await _sendOffer();
@@ -117,14 +104,15 @@ class WebRtcService {
       await _pc!.setRemoteDescription(
         RTCSessionDescription(sdpMap['sdp'], sdpMap['type']),
       );
-      _remoteDescSet = true;
+      _remoteDescSet  = true;
+      _connectionReady = true;
       await _flushPendingCandidates();
 
       final answer = await _pc!.createAnswer(_offerConstraints);
       await _pc!.setLocalDescription(answer);
       _socket.sendWebRtcAnswer(roomCode: _roomCode, sdp: answer.toMap());
     } catch (e) {
-      print('❌ WebRTC handleOffer error: $e');
+      print('❌ handleOffer: $e');
     }
   }
 
@@ -136,31 +124,31 @@ class WebRtcService {
       await _pc!.setRemoteDescription(
         RTCSessionDescription(sdpMap['sdp'], sdpMap['type']),
       );
-      _remoteDescSet = true;
+      _remoteDescSet  = true;
+      _connectionReady = true;
       await _flushPendingCandidates();
     } catch (e) {
-      print('❌ WebRTC handleAnswer error: $e');
+      print('❌ handleAnswer: $e');
     }
   }
 
-  // ─── ICE candidate — قد يصل قبل remote description فنؤجله ──────────────
+  // ─── ICE candidate (مؤجل إذا لم يُعيَّن remote desc بعد) ─────────────────
   Future<void> _handleIceCandidate(Map<String, dynamic> data) async {
     if (_isDisposed || _pc == null) return;
     final c = data['candidate'];
     if (c == null) return;
     final candidate = RTCIceCandidate(
-      c['candidate'] as String? ?? '',
-      c['sdpMid']   as String?,
+      c['candidate']   as String? ?? '',
+      c['sdpMid']      as String?,
       c['sdpMLineIndex'] is int ? c['sdpMLineIndex'] as int : 0,
     );
     if (_remoteDescSet) {
       try { await _pc!.addCandidate(candidate); } catch (_) {}
     } else {
-      _pendingCandidates.add(candidate); // نؤجله حتى يُعيَّن remote desc
+      _pendingCandidates.add(candidate);
     }
   }
 
-  // ─── إرسال الـ ICE candidates المؤجلة بعد تعيين remote desc ─────────────
   Future<void> _flushPendingCandidates() async {
     for (final c in _pendingCandidates) {
       try { await _pc!.addCandidate(c); } catch (_) {}
@@ -168,7 +156,6 @@ class WebRtcService {
     _pendingCandidates.clear();
   }
 
-  // ─── Host ينشئ offer ──────────────────────────────────────────────────────
   Future<void> _sendOffer() async {
     if (_pc == null || _isDisposed) return;
     try {
@@ -176,30 +163,54 @@ class WebRtcService {
       await _pc!.setLocalDescription(offer);
       _socket.sendWebRtcOffer(roomCode: _roomCode, sdp: offer.toMap());
     } catch (e) {
-      print('❌ WebRTC sendOffer error: $e');
+      print('❌ sendOffer: $e');
     }
   }
 
-  // ─── تطبيق حالة الـ track الفعلية (الاتنين لازم فاتحين) ─────────────────
+  // ─── الصوت يمشي فقط لو الاتنين فاتحين ───────────────────────────────────
   void _applyMicState() {
-    // الصوت يمشي فقط لو أنا فاتح الميك والخصم برضه فاتح الميك
     final shouldEnable = _myMicWanted && _opponentMicOn;
     _localStream?.getAudioTracks().forEach((t) => t.enabled = shouldEnable);
   }
 
   // ─── اللاعب يضغط زر الميك ────────────────────────────────────────────────
-  void toggleMic() {
-    if (_localStream == null) return;
+  // عند أول ضغطة: getUserMedia() ← هنا فقط يظهر الضوء الأخضر للنظام
+  Future<void> toggleMic() async {
+    if (_pc == null) return;
+
+    if (_localStream == null) {
+      // أول ضغطة: اطلب إذن الميك واحصل على الـ stream
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) return;
+
+      _localStream = await navigator.mediaDevices.getUserMedia({
+        'audio': {
+          'echoCancellation': true,
+          'noiseSuppression': true,
+          'autoGainControl':  true,
+        },
+        'video': false,
+      });
+
+      // ابدأ بالـ track مغلقاً
+      _localStream!.getAudioTracks().forEach((t) => t.enabled = false);
+
+      // أضف الـ track → يُطلق onRenegotiationNeeded تلقائياً
+      for (final track in _localStream!.getTracks()) {
+        await _pc!.addTrack(track, _localStream!);
+      }
+    }
+
     _myMicWanted = !_myMicWanted;
     _applyMicState();
-    // أخبر الخصم بما أريده (مش الحالة الفعلية) لتحديث أيقونته
+    // أبلغ الخصم بما تريده أنت (لتحديث أيقونته)
     _socket.sendWebRtcMicStatus(roomCode: _roomCode, micOn: _myMicWanted);
   }
 
-  // ─── حالة ميك الخصم وصلت → أعد حساب حالة الـ track ─────────────────────
+  // ─── حالة ميك الخصم تغيرت → أعد حساب الـ track ──────────────────────────
   void updateOpponentMicStatus(bool opponentOn) {
     _opponentMicOn = opponentOn;
-    _applyMicState(); // لو الخصم فتح وأنا فاتح → الصوت يمشي
+    _applyMicState();
   }
 
   // ─── تنظيف الموارد ───────────────────────────────────────────────────────

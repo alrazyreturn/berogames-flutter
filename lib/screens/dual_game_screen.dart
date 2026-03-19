@@ -411,10 +411,11 @@ class _DualGameScreenState extends State<DualGameScreen> {
   }
 
   // ─── تبديل الميكروفون ────────────────────────────────────────────────────
-  void _toggleMic() {
+  // async لأن أول ضغطة تستدعي getUserMedia() داخلياً
+  Future<void> _toggleMic() async {
     if (_webRtc == null || !_webRtcReady) return;
-    _webRtc!.toggleMic();
-    setState(() => _micOn = _webRtc!.micEnabled);
+    await _webRtc!.toggleMic();
+    if (mounted) setState(() => _micOn = _webRtc!.micEnabled);
   }
 
   int _optionIndex(String opt) =>
