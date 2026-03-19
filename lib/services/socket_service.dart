@@ -36,6 +36,7 @@ class SocketService {
   Function(Map<String, dynamic>)? onWebRtcOffer;
   Function(Map<String, dynamic>)? onWebRtcAnswer;
   Function(Map<String, dynamic>)? onWebRtcIceCandidate;
+  Function(bool)?                  onWebRtcMicStatus; // حالة ميك الخصم
 
   // ─── Chat Callbacks ───────────────────────────────────────────────────────
   Function(Map<String, dynamic>)? onChatMessageReceived;
@@ -167,6 +168,10 @@ class SocketService {
 
     _socket!.on('webrtc_ice_candidate', (data) {
       onWebRtcIceCandidate?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('webrtc_mic_status', (data) {
+      onWebRtcMicStatus?.call(data['mic_on'] == true);
     });
 
     // ─── Chat Events ─────────────────────────────────────────────────────
@@ -315,6 +320,10 @@ class SocketService {
     _socket?.emit('webrtc_ice_candidate', { 'room_code': roomCode, 'candidate': candidate });
   }
 
+  void sendWebRtcMicStatus({ required String roomCode, required bool micOn }) {
+    _socket?.emit('webrtc_mic_status', { 'room_code': roomCode, 'mic_on': micOn });
+  }
+
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
     _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName, 'lang': lang });
@@ -354,6 +363,7 @@ class SocketService {
     onWebRtcOffer          = null;
     onWebRtcAnswer         = null;
     onWebRtcIceCandidate   = null;
+    onWebRtcMicStatus      = null;
   }
 
   void clearCallbacks() => _clearCallbacks();

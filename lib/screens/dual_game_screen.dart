@@ -62,8 +62,9 @@ class _DualGameScreenState extends State<DualGameScreen> {
 
   // ─── WebRTC (Voice Chat) ────────────────────────────────────────────────
   WebRtcService? _webRtc;
-  bool _micOn      = false;
-  bool _webRtcReady = false;
+  bool _micOn         = false;   // ميكروفوني
+  bool _opponentMicOn = false;   // ميكروفون الخصم (يُحدَّث عبر socket)
+  bool _webRtcReady   = false;
 
   // ── مؤقت المسابقة الإجمالي (يُعرض للاعبين) ──────────────────────────────
   int    _matchTimeLeft = _matchDuration;
@@ -188,6 +189,12 @@ class _DualGameScreenState extends State<DualGameScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    };
+
+    // ─── تحديث أيقونة ميك الخصم في real-time ─────────────────────────────
+    _socket.onWebRtcMicStatus = (micOn) {
+      if (!mounted) return;
+      setState(() => _opponentMicOn = micOn);
     };
   }
 
@@ -621,12 +628,38 @@ class _DualGameScreenState extends State<DualGameScreen> {
           Expanded(
             child: Column(
               children: [
-                Text(
-                  widget.role == 'host' ? widget.guestName : widget.room.host.name,
-                  style: const TextStyle(
-                    color: Color(0xFFFF6584), fontWeight: FontWeight.bold, fontSize: 13,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                // اسم الخصم + أيقونة ميكه
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        widget.role == 'host' ? widget.guestName : widget.room.host.name,
+                        style: const TextStyle(
+                          color: Color(0xFFFF6584), fontWeight: FontWeight.bold, fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_webRtcReady) ...[
+                      const SizedBox(width: 4),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _opponentMicOn
+                              ? Colors.greenAccent.withValues(alpha: 0.2)
+                              : Colors.transparent,
+                        ),
+                        child: Icon(
+                          _opponentMicOn ? Icons.mic : Icons.mic_off,
+                          size:  12,
+                          color: _opponentMicOn ? Colors.greenAccent : Colors.white24,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

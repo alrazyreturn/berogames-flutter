@@ -184,6 +184,8 @@ class WebRtcService {
     if (_localStream == null) return;
     _micEnabled = !_micEnabled;
     _localStream!.getAudioTracks().forEach((t) => t.enabled = _micEnabled);
+    // أخبر الخصم بحالة الميك فوراً لتحديث الأيقونة عنده
+    _socket.sendWebRtcMicStatus(roomCode: _roomCode, micOn: _micEnabled);
   }
 
   // ─── تنظيف الموارد ───────────────────────────────────────────────────────
