@@ -191,10 +191,12 @@ class _DualGameScreenState extends State<DualGameScreen> {
       );
     };
 
-    // ─── تحديث أيقونة ميك الخصم في real-time ─────────────────────────────
+    // ─── تحديث حالة ميك الخصم + إعادة حساب الـ track ────────────────────
     _socket.onWebRtcMicStatus = (micOn) {
       if (!mounted) return;
       setState(() => _opponentMicOn = micOn);
+      // أخبر WebRtcService يعيد حساب هل الصوت يمشي أم لا
+      _webRtc?.updateOpponentMicStatus(micOn);
     };
   }
 

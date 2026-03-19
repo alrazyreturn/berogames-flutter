@@ -12,7 +12,8 @@ class WebRtcService {
   RTCPeerConnection? _pc;
   MediaStream?       _localStream;
 
-  bool _micEnabled    = false;
+  bool _myMicWanted   = false; // اللاعب ضغط "فتح" — ما يريده هو
+  bool _opponentMicOn = false; // حالة ميك الخصم (تصل عبر socket)
   bool _isDisposed    = false;
   bool _isInitialized = false;
 
@@ -43,7 +44,7 @@ class WebRtcService {
         _roomCode  = roomCode,
         _isHost    = isHost;
 
-  bool get micEnabled    => _micEnabled;
+  bool get micEnabled    => _myMicWanted;  // حالة الزر (ما يريده اللاعب)
   bool get isInitialized => _isInitialized;
 
   // ─── تهيئة WebRTC ──────────────────────────────────────────────────────────
@@ -179,13 +180,26 @@ class WebRtcService {
     }
   }
 
-  // ─── تبديل الميكروفون ─────────────────────────────────────────────────────
+  // ─── تطبيق حالة الـ track الفعلية (الاتنين لازم فاتحين) ─────────────────
+  void _applyMicState() {
+    // الصوت يمشي فقط لو أنا فاتح الميك والخصم برضه فاتح الميك
+    final shouldEnable = _myMicWanted && _opponentMicOn;
+    _localStream?.getAudioTracks().forEach((t) => t.enabled = shouldEnable);
+  }
+
+  // ─── اللاعب يضغط زر الميك ────────────────────────────────────────────────
   void toggleMic() {
     if (_localStream == null) return;
-    _micEnabled = !_micEnabled;
-    _localStream!.getAudioTracks().forEach((t) => t.enabled = _micEnabled);
-    // أخبر الخصم بحالة الميك فوراً لتحديث الأيقونة عنده
-    _socket.sendWebRtcMicStatus(roomCode: _roomCode, micOn: _micEnabled);
+    _myMicWanted = !_myMicWanted;
+    _applyMicState();
+    // أخبر الخصم بما أريده (مش الحالة الفعلية) لتحديث أيقونته
+    _socket.sendWebRtcMicStatus(roomCode: _roomCode, micOn: _myMicWanted);
+  }
+
+  // ─── حالة ميك الخصم وصلت → أعد حساب حالة الـ track ─────────────────────
+  void updateOpponentMicStatus(bool opponentOn) {
+    _opponentMicOn = opponentOn;
+    _applyMicState(); // لو الخصم فتح وأنا فاتح → الصوت يمشي
   }
 
   // ─── تنظيف الموارد ───────────────────────────────────────────────────────
