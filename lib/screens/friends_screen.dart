@@ -9,6 +9,7 @@ import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import '../services/energy_service.dart';
 import '../services/ad_service.dart';
+import '../services/chat_service.dart';
 import 'add_friend_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -27,10 +28,12 @@ class _FriendsScreenState extends State<FriendsScreen>
   final _roomService   = RoomService();
   final _socket        = SocketService();
   final _energyService = EnergyService();
+  final _chatService   = ChatService();
   late TabController _tabs;
 
-  List<FriendModel>        _friends  = [];
-  List<FriendRequestModel> _requests = [];
+  List<FriendModel>        _friends      = [];
+  List<FriendRequestModel> _requests     = [];
+  Map<int, int>            _unreadCounts = {}; // senderId → count
   bool _loading = true;
 
   @override
@@ -44,8 +47,9 @@ class _FriendsScreenState extends State<FriendsScreen>
   @override
   void dispose() {
     _tabs.dispose();
-    _socket.onOnlineStatus       = null;
-    _socket.onGameInviteResult   = null;
+    _socket.onOnlineStatus        = null;
+    _socket.onGameInviteResult    = null;
+    _socket.onChatMessageReceived = null;
     super.dispose();
   }
 
@@ -62,6 +66,16 @@ class _FriendsScreenState extends State<FriendsScreen>
         for (final f in _friends) {
           f.isOnline = statuses[f.userId] ?? false;
         }
+      });
+    };
+
+    // رسالة جديدة وصلت → زد العداد في real-time
+    _socket.onChatMessageReceived = (data) {
+      if (!mounted) return;
+      final senderId = data['sender_id'] as int?;
+      if (senderId == null) return;
+      setState(() {
+        _unreadCounts[senderId] = (_unreadCounts[senderId] ?? 0) + 1;
       });
     };
 
@@ -91,12 +105,14 @@ class _FriendsScreenState extends State<FriendsScreen>
       final results = await Future.wait([
         _service.getFriends(token),
         _service.getRequests(token),
+        _chatService.getUnreadPerFriend(token: token),
       ]);
       if (!mounted) return;
       setState(() {
-        _friends  = results[0] as List<FriendModel>;
-        _requests = results[1] as List<FriendRequestModel>;
-        _loading  = false;
+        _friends      = results[0] as List<FriendModel>;
+        _requests     = results[1] as List<FriendRequestModel>;
+        _unreadCounts = results[2] as Map<int, int>;
+        _loading      = false;
       });
       // جلب حالة الأونلاين
       if (_friends.isNotEmpty) {
@@ -355,15 +371,18 @@ class _FriendsScreenState extends State<FriendsScreen>
         padding: const EdgeInsets.all(16),
         itemCount: _friends.length,
         itemBuilder: (_, i) => _FriendTile(
-          friend:      _friends[i],
-          onChallenge: () => _challengeFriend(_friends[i]),
-          onDelete:    () => _deleteRelation(_friends[i].friendshipId),
-          onChat:      () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(friend: _friends[i]),
-            ),
-          ),
+          friend:       _friends[i],
+          unreadCount:  _unreadCounts[_friends[i].userId] ?? 0,
+          onChallenge:  () => _challengeFriend(_friends[i]),
+          onDelete:     () => _deleteRelation(_friends[i].friendshipId),
+          onChat:       () {
+            // امسح العداد محلياً فور فتح الشات
+            setState(() => _unreadCounts.remove(_friends[i].userId));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ChatScreen(friend: _friends[i])),
+            );
+          },
         ),
       ),
     );
@@ -400,12 +419,14 @@ class _FriendsScreenState extends State<FriendsScreen>
 // ─── بطاقة صديق ──────────────────────────────────────────────────────────────
 class _FriendTile extends StatelessWidget {
   final FriendModel  friend;
+  final int          unreadCount;
   final VoidCallback onChallenge;
   final VoidCallback onDelete;
   final VoidCallback onChat;
 
   const _FriendTile({
     required this.friend,
+    required this.unreadCount,
     required this.onChallenge,
     required this.onDelete,
     required this.onChat,
@@ -499,12 +520,39 @@ class _FriendTile extends StatelessWidget {
             ),
           ),
 
-          // زر الشات
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline_rounded,
-                color: Color(0xFF43D8C9), size: 22),
-            tooltip: 'friends.chat_tooltip'.tr(),
-            onPressed: onChat,
+          // زر الشات مع badge العداد
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chat_bubble_outline_rounded,
+                    color: Color(0xFF43D8C9), size: 22),
+                tooltip: 'friends.chat_tooltip'.tr(),
+                onPressed: onChat,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 4, right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                    decoration: const BoxDecoration(
+                      color:       Color(0xFFFF6584),
+                      shape:       BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount > 99 ? '99+' : '$unreadCount',
+                      style: const TextStyle(
+                        color:      Colors.white,
+                        fontSize:   9,
+                        fontWeight: FontWeight.bold,
+                        height:     1.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           // زر التحدي

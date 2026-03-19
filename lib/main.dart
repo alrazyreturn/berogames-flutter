@@ -9,6 +9,7 @@ import 'screens/chat_screen.dart';
 import 'screens/friends_screen.dart';
 import 'services/notification_service.dart';
 import 'services/ad_service.dart';
+import 'services/socket_service.dart';
 import 'models/friend_model.dart';
 
 // ─── Global Navigator Key للـ Navigation من الإشعارات ────────────────────────
@@ -100,8 +101,43 @@ void main() async {
   );
 }
 
-class BeroGamesApp extends StatelessWidget {
+// ─── مراقب دورة حياة التطبيق لإدارة حالة الأونلاين ─────────────────────────
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  final SocketService _socket = SocketService();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // التطبيق في الخلفية → أعلم السيرفر فيستخدم FCM
+      _socket.emitBackground();
+    } else if (state == AppLifecycleState.resumed) {
+      // التطبيق عاد → أعد التسجيل كـ online
+      _socket.emitForeground();
+    }
+  }
+}
+
+class BeroGamesApp extends StatefulWidget {
   const BeroGamesApp({super.key});
+  @override
+  State<BeroGamesApp> createState() => _BeroGamesAppState();
+}
+
+class _BeroGamesAppState extends State<BeroGamesApp> {
+  final _lifecycleObserver = _AppLifecycleObserver();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

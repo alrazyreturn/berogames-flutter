@@ -324,6 +324,11 @@ class SocketService {
     _socket?.emit('webrtc_mic_status', { 'room_code': roomCode, 'mic_on': micOn });
   }
 
+  // ─── App Lifecycle: Background / Foreground ───────────────────────────────
+  // عند الخلفية: يُزال من onlineUsers → تصله الإشعارات عبر FCM لا socket
+  void emitBackground() => _socket?.emit('user_background');
+  void emitForeground() => _socket?.emit('user_foreground');
+
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
     _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName, 'lang': lang });

@@ -25,8 +25,9 @@ class ApiConfig {
 
   // Chat
   static const String chat         = '/chat';
-  static const String chatUnread   = '/chat/unread/count';
-  static const String chatMessages = '/chat/messages';
+  static const String chatUnread          = '/chat/unread/count';
+  static const String chatUnreadPerFriend = '/chat/unread/per-friend';
+  static const String chatMessages        = '/chat/messages';
 
   // Friends
   static const String friendsList          = '/friends';
