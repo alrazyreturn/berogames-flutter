@@ -133,6 +133,32 @@ class NotificationService {
   String _encodePayload(Map<String, dynamic> data) =>
       data.entries.map((e) => '${e.key}=${e.value}').join('|');
 
+  // ─── إشعار شات محلي عند الـ Foreground (شاشة الشات مغلقة) ─────────────────
+  Future<void> showChatLocalNotification({
+    required String senderName,
+    required String message,
+    required String senderId,
+  }) async {
+    final preview = message.length > 60 ? '${message.substring(0, 60)}...' : message;
+    await _localNotif.show(
+      senderId.hashCode,
+      '💬 $senderName',
+      preview,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'berogames_channel',
+          'BeroGames Notifications',
+          channelDescription: 'إشعارات BeroGames',
+          importance: Importance.high,
+          priority:   Priority.high,
+          icon:       '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: 'type=chat|from_user_id=$senderId|from_name=$senderName',
+    );
+  }
+
   // ─── الحصول على FCM Token ───────────────────────────────────────────────────
   Future<String?> getToken() async {
     try {

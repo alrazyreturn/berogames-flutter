@@ -1,5 +1,7 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../config/api_config.dart';
+import 'notification_service.dart';
+import 'sound_service.dart';
 
 /// SocketService - Singleton يدير اتصال WebSocket مع السيرفر
 class SocketService {
@@ -9,6 +11,14 @@ class SocketService {
 
   IO.Socket? _socket;
   bool get isConnected => _socket?.connected ?? false;
+
+  // ─── حفظ بيانات المستخدم لإعادة التسجيل بعد الرجوع من الخلفية ───────────
+  int?    _savedUserId;
+  String? _savedUserName;
+
+  // ─── معرف صديق الشات المفتوح حالياً (null = شاشة الشات مغلقة) ───────────
+  // تُعيِّنه ChatScreen عند الفتح وتُصفِّره عند الإغلاق
+  int? activeChatFriendId;
 
   // ─── Callbacks (تُعيّن من الشاشات) ───────────────────────────────────────
   Function(Map<String, dynamic>)? onPlayerJoined;
@@ -176,7 +186,13 @@ class SocketService {
 
     // ─── Chat Events ─────────────────────────────────────────────────────
     _socket!.on('chat_message_received', (data) {
-      onChatMessageReceived?.call(Map<String, dynamic>.from(data));
+      final msg      = Map<String, dynamic>.from(data);
+      final senderId = msg['sender_id'] as int?;
+      // إذا شاشة الشات مع هذا الصديق مغلقة → أظهر foreground notification
+      if (senderId != null && senderId != activeChatFriendId) {
+        _showForegroundChatNotif(msg);
+      }
+      onChatMessageReceived?.call(msg);
     });
 
     _socket!.on('chat_message_sent', (data) {
@@ -252,6 +268,8 @@ class SocketService {
 
   // ─── Friends / Online ─────────────────────────────────────────────────────
   void registerOnline({ required int userId, required String userName }) {
+    _savedUserId   = userId;   // احفظ للاستخدام عند العودة من الخلفية
+    _savedUserName = userName;
     _socket?.emit('user_online', { 'user_id': userId, 'user_name': userName });
   }
 
@@ -325,9 +343,19 @@ class SocketService {
   }
 
   // ─── App Lifecycle: Background / Foreground ───────────────────────────────
-  // عند الخلفية: يُزال من onlineUsers → تصله الإشعارات عبر FCM لا socket
-  void emitBackground() => _socket?.emit('user_background');
-  void emitForeground() => _socket?.emit('user_foreground');
+  // عند الخلفية: قطع الاتصال كلياً → disconnect event يُزيله من onlineUsers فوراً
+  void emitBackground() {
+    _socket?.disconnect();
+  }
+
+  // عند العودة: أعد الاتصال وسجّل online بنفس بيانات المستخدم
+  void emitForeground() {
+    if (_savedUserId != null && _savedUserName != null) {
+      connect(userId: _savedUserId, userName: _savedUserName);
+    } else {
+      _socket?.connect();
+    }
+  }
 
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
   void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
@@ -336,6 +364,22 @@ class SocketService {
 
   void cancelMatch() {
     _socket?.emit('cancel_match');
+  }
+
+  // ─── Foreground chat notification ────────────────────────────────────────
+  // تُظهر إشعاراً محلياً + صوتاً عند استقبال رسالة والشات مع ذلك الصديق مغلق
+  void _showForegroundChatNotif(Map<String, dynamic> msg) {
+    final senderName = (msg['sender_name'] as String?)?.isNotEmpty == true
+        ? msg['sender_name'] as String
+        : 'صديق';
+    final senderId = msg['sender_id']?.toString() ?? '';
+    final text     = msg['message'] as String? ?? '';
+    NotificationService().showChatLocalNotification(
+      senderName: senderName,
+      message:    text,
+      senderId:   senderId,
+    );
+    SoundService().playChatNotify();
   }
 
   // ─── قطع الاتصال ─────────────────────────────────────────────────────────

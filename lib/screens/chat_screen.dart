@@ -35,6 +35,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // أعلم الـ socket أن هذه المحادثة مفتوحة → لا foreground notification لهذا الصديق
+    _socket.activeChatFriendId = widget.friend.userId;
     _loadHistory();
     _setupSocket();
   }
@@ -67,6 +69,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _socket.onChatMessageSent      = null;
     _socket.onChatTyping           = null;
     _socket.onChatMessageDeleted   = null;
+    // أعد تصفير activeChatFriendId → notifications تعود للعمل
+    _socket.activeChatFriendId = null;
     // إلغاء "يكتب الآن" عند المغادرة
     _socket.sendTyping(toUserId: widget.friend.userId, isTyping: false);
     super.dispose();
