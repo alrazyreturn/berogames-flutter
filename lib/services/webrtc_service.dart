@@ -27,10 +27,26 @@ class WebRtcService {
 
   static const Map<String, dynamic> _iceConfig = {
     'iceServers': [
+      // ─── STUN: اكتشاف الـ IP العام (يعمل مع NAT بسيط) ─────────────────
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
+      {'urls': 'stun:stun2.l.google.com:19374'},
+      {'urls': 'stun:stun3.l.google.com:5478'},
+
+      // ─── TURN: relay إجباري لشبكات مختلفة / 4G / Symmetric NAT ────────
+      // يضمن الاتصال حتى لو STUN فشل تماماً
+      {
+        'urls': [
+          'turn:openrelay.metered.ca:80',           // UDP - الأسرع
+          'turn:openrelay.metered.ca:443',           // UDP على منفذ HTTPS
+          'turn:openrelay.metered.ca:443?transport=tcp', // TCP - يخترق أي firewall
+        ],
+        'username':   'openrelayproject',
+        'credential': 'openrelayproject',
+      },
     ],
-    'sdpSemantics': 'unified-plan',
+    'sdpSemantics':      'unified-plan',
+    'iceTransportPolicy': 'all', // جرب direct أولاً ثم relay تلقائياً
   };
 
   static const Map<String, dynamic> _offerConstraints = {
