@@ -7,6 +7,7 @@ import '../models/friend_model.dart';
 import '../providers/user_provider.dart';
 import '../services/chat_service.dart';
 import '../services/socket_service.dart';
+import '../services/sound_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final FriendModel friend;
@@ -101,6 +102,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (_messages.any((m) => m.id == msg.id)) return;
       setState(() => _messages.add(msg));
       _scrollToBottom();
+      // 🔔 صوت إشعار عند استقبال رسالة جديدة
+      SoundService().playChatNotify();
     };
 
     // تأكيد إرسال رسالتي — نستبدل الرسالة المؤقتة بالحقيقية

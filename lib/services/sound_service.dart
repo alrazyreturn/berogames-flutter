@@ -8,7 +8,8 @@ class SoundService {
   factory SoundService() => _instance;
   SoundService._internal();
 
-  final AudioPlayer _player = AudioPlayer();
+  final AudioPlayer _player     = AudioPlayer();
+  final AudioPlayer _chatPlayer = AudioPlayer(); // player مستقل للـ chat
   final Random _random = Random();
 
   // ─── أصوات الإجابة الصحيحة ───────────────────────────────────────────────
@@ -52,7 +53,16 @@ class SoundService {
     } catch (_) {}
   }
 
+  /// تشغيل صوت إشعار الرسالة الواردة (ding خفيف وسريع)
+  Future<void> playChatNotify() async {
+    try {
+      await _chatPlayer.stop();
+      await _chatPlayer.play(AssetSource('sounds/notification/chat_notify.wav'));
+    } catch (_) {}
+  }
+
   void dispose() {
     _player.dispose();
+    _chatPlayer.dispose();
   }
 }
