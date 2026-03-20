@@ -256,7 +256,8 @@
     "provider":       "Hesap Sağlayıcı",
     "email_provider": "E-posta",
     "save":           "Değişiklikleri Kaydet",
-    "language":       "Dil 🌍"
+    "language":       "Dil 🌍",
+    "logout":         "Çıkış Yap"
   },
 
   "leaderboard": {

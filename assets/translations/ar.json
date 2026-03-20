@@ -256,7 +256,8 @@
     "provider":      "مزود الحساب",
     "email_provider":"إيميل",
     "save":          "حفظ التغييرات",
-    "language":      "اللغة 🌍"
+    "language":      "اللغة 🌍",
+    "logout":        "تسجيل الخروج"
   },
 
   "leaderboard": {

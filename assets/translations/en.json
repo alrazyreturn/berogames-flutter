@@ -256,7 +256,8 @@
     "provider":       "Account Provider",
     "email_provider": "Email",
     "save":           "Save Changes",
-    "language":       "Language 🌍"
+    "language":       "Language 🌍",
+    "logout":         "Logout"
   },
 
   "leaderboard": {
