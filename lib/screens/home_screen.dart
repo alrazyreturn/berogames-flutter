@@ -877,13 +877,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (_) => const LeaderboardScreen())),
               ),
               _NavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'home.nav_stats'.tr(),
+                icon: Icons.people_rounded,
+                label: 'home.nav_friends'.tr(),
                 isActive: false,
                 onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const StatsScreen())),
+                        builder: (_) => const FriendsScreen())),
               ),
               _NavItem(
                 icon: Icons.person_rounded,

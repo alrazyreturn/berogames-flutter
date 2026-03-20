@@ -9,7 +9,7 @@ import '../config/api_config.dart';
 import '../providers/user_provider.dart';
 import 'login_screen.dart';
 import 'leaderboard_screen.dart';
-import 'stats_screen.dart';
+import 'friends_screen.dart';
 
 // ─── Design tokens (Galactic Play) ───────────────────────────────────────────
 const _cBg      = Color(0xFF0B0B23);
@@ -749,12 +749,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (_) => const LeaderboardScreen())),
               ),
               _NavItem(
-                icon:     Icons.bar_chart_rounded,
-                label:    'home.nav_stats'.tr(),
+                icon:     Icons.people_rounded,
+                label:    'home.nav_friends'.tr(),
                 isActive: false,
                 onTap:    () => Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const StatsScreen())),
+                    MaterialPageRoute(builder: (_) => const FriendsScreen())),
               ),
               _NavItem(
                 icon:     Icons.person_rounded,

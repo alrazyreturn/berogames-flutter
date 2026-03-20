@@ -4,111 +4,187 @@ import 'create_room_screen.dart';
 import 'join_room_screen.dart';
 import 'matchmaking_screen.dart';
 
-/// شاشة اختيار: إنشاء غرفة أو الانضمام لغرفة
+// ─── Design Tokens (Neon-Glass Editorial) ────────────────────────────────────
+const _cBg      = Color(0xFF0B1326);
+const _cSurface = Color(0xFF131B2E);
+const _cCard    = Color(0xFF171F33);
+const _cCyan    = Color(0xFF00FBFB);
+const _cIndigo  = Color(0xFF6366F1);
+const _cPink    = Color(0xFFFF6B9D);
+
 class DualMenuScreen extends StatelessWidget {
   const DualMenuScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: _cBg,
+      // ─── AppBar ──────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white54, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'dual_menu.title'.tr(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color:      Colors.white,
+            fontSize:   18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.3,
+          ),
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // ─── صورة توضيحية ───────────────────────────────────────────────
-            const Text('⚔️', style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 16),
-            Text(
-              'dual_menu.subtitle'.tr(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+
+              // ─── Hero Circle ───────────────────────────────────────────────
+              _buildHero(),
+
+              const SizedBox(height: 32),
+
+              // ─── Option Cards ─────────────────────────────────────────────
+              _OptionCard(
+                icon:      Icons.bolt_rounded,
+                iconColor: _cCyan,
+                glowColor: _cCyan,
+                label:     'dual_menu.auto'.tr(),
+                subtitle:  'dual_menu.auto_sub'.tr(),
+                onTap:     () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MatchmakingScreen()),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'dual_menu.description'.tr(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white54, fontSize: 15),
-            ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 48),
-
-            // ─── بحث تلقائي ─────────────────────────────────────────────────
-            _BigButton(
-              icon: '⚡',
-              label: 'dual_menu.auto'.tr(),
-              subtitle: 'dual_menu.auto_sub'.tr(),
-              color: const Color(0xFFFFD700),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MatchmakingScreen()),
+              _OptionCard(
+                icon:      Icons.add_home_rounded,
+                iconColor: _cIndigo,
+                glowColor: _cIndigo,
+                label:     'dual_menu.create'.tr(),
+                subtitle:  'dual_menu.create_sub'.tr(),
+                onTap:     () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateRoomScreen()),
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
-
-            // ─── إنشاء غرفة ────────────────────────────────────────────────
-            _BigButton(
-              icon: '🏠',
-              label: 'dual_menu.create'.tr(),
-              subtitle: 'dual_menu.create_sub'.tr(),
-              color: const Color(0xFF6C63FF),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateRoomScreen()),
+              _OptionCard(
+                icon:      Icons.link_rounded,
+                iconColor: _cPink,
+                glowColor: _cPink,
+                label:     'dual_menu.join'.tr(),
+                subtitle:  'dual_menu.join_sub'.tr(),
+                onTap:     () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const JoinRoomScreen()),
+                ),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ─── الانضمام لغرفة ─────────────────────────────────────────────
-            _BigButton(
-              icon: '🔗',
-              label: 'dual_menu.join'.tr(),
-              subtitle: 'dual_menu.join_sub'.tr(),
-              color: const Color(0xFFFF6584),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const JoinRoomScreen()),
-              ),
-            ),
-          ],
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildHero() {
+    return Column(
+      children: [
+        // Glow ring + circle + swords icon
+        Container(
+          width:  140,
+          height: 140,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [_cCyan, _cIndigo],
+              begin:  Alignment.topLeft,
+              end:    Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:       _cCyan.withValues(alpha: 0.25),
+                blurRadius:  48,
+                spreadRadius: 4,
+              ),
+              BoxShadow(
+                color:       _cIndigo.withValues(alpha: 0.20),
+                blurRadius:  32,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: _cSurface,
+            ),
+            child: const Icon(
+              Icons.sports_kabaddi_rounded,
+              color: _cCyan,
+              size:  68,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Title
+        Text(
+          'dual_menu.subtitle'.tr(),
+          style: const TextStyle(
+            color:      Colors.white,
+            fontSize:   24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+
+        // Description
+        Text(
+          'dual_menu.description'.tr(),
+          style: TextStyle(
+            color:    Colors.white.withValues(alpha: 0.50),
+            fontSize: 14,
+            height:   1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
 }
 
-// ─── زر كبير ─────────────────────────────────────────────────────────────────
-class _BigButton extends StatelessWidget {
-  final String       icon;
+// ─── Option Card ─────────────────────────────────────────────────────────────
+class _OptionCard extends StatelessWidget {
+  final IconData     icon;
+  final Color        iconColor;
+  final Color        glowColor;
   final String       label;
   final String       subtitle;
-  final Color        color;
   final VoidCallback onTap;
 
-  const _BigButton({
+  const _OptionCard({
     required this.icon,
+    required this.iconColor,
+    required this.glowColor,
     required this.label,
     required this.subtitle,
-    required this.color,
     required this.onTap,
   });
 
@@ -118,34 +194,78 @@ class _BigButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width:   double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         decoration: BoxDecoration(
-          color:        color.withValues(alpha: 0.13),
-          borderRadius: BorderRadius.circular(20),
-          border:       Border.all(color: color.withValues(alpha: 0.45), width: 1.5),
+          color:        _cCard,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color:      glowColor.withValues(alpha: 0.08),
+              blurRadius: 24,
+              offset:     const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 40)),
-            const SizedBox(width: 18),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color, fontSize: 18, fontWeight: FontWeight.bold,
+            // Icon container with glow
+            Container(
+              width:  56,
+              height: 56,
+              decoration: BoxDecoration(
+                color:        glowColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color:      glowColor.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset:     const Offset(0, 4),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white54, fontSize: 13),
-                ),
-              ],
+                ],
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
             ),
-            const Spacer(),
-            Icon(Icons.arrow_forward_ios, color: color, size: 18),
+            const SizedBox(width: 16),
+
+            // Texts
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color:      Colors.white,
+                      fontSize:   16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color:    Colors.white.withValues(alpha: 0.45),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Arrow chevron
+            Container(
+              width:  36,
+              height: 36,
+              decoration: BoxDecoration(
+                color:        glowColor.withValues(alpha: 0.10),
+                shape:        BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chevron_left_rounded,
+                color: iconColor,
+                size:  22,
+              ),
+            ),
           ],
         ),
       ),
