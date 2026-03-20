@@ -19,7 +19,7 @@ const _cCard    = Color(0xFF171F33);
 const _cCyan    = Color(0xFF00FBFB);
 const _cIndigo  = Color(0xFF6366F1);
 const _cNavBg   = Color(0xFF10102B);
-const _cOrange  = Color(0xFFFF7A00);
+const _cOrange  = Color(0xFFFF9500);
 
 class ResultScreen extends StatefulWidget {
   final int           score;
@@ -292,9 +292,14 @@ class _ResultScreenState extends State<ResultScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:      _gradeColor.withValues(alpha: 0.35),
-                            blurRadius: 48,
-                            spreadRadius: 4,
+                            color:      _gradeColor.withValues(alpha: 0.55),
+                            blurRadius: 70,
+                            spreadRadius: 18,
+                          ),
+                          BoxShadow(
+                            color:      _gradeColor.withValues(alpha: 0.25),
+                            blurRadius: 120,
+                            spreadRadius: 30,
                           ),
                         ],
                       ),
@@ -384,14 +389,12 @@ class _ResultScreenState extends State<ResultScreen>
                           padding: const EdgeInsets.symmetric(
                               vertical: 18, horizontal: 20),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF8C00), _cOrange],
-                            ),
+                            color: _cOrange,
                             borderRadius: BorderRadius.circular(48),
                             boxShadow: [
                               BoxShadow(
-                                color:      _cOrange.withValues(alpha: 0.35),
-                                blurRadius: 18,
+                                color:      _cOrange.withValues(alpha: 0.40),
+                                blurRadius: 20,
                                 offset:     const Offset(0, 6),
                               ),
                             ],
