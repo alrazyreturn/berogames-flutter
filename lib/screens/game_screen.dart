@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -36,9 +37,8 @@ class _GameScreenState extends State<GameScreen>
   // ─── ثوابت ───────────────────────────────────────────────────────────────
   static const int _batchSize       = 3;
   static const int _streakToLevelUp = 2;
-  static const int _secondsPerQ    = 15;
-  static const int _maxQuestions   = 10;   // مجموع الأسئلة في الجلسة
-  static const int _hintCost       = 50;   // تكلفة التلميح بالنقاط
+  static const int _totalDuration  = 60;  // مدة المسابقة الكلية بالثواني
+  static const int _hintCost       = 50;  // تكلفة التلميح بالنقاط
 
   // ─── حالة اللعبة ─────────────────────────────────────────────────────────
   int  _currentDifficulty  = 1;
@@ -49,23 +49,25 @@ class _GameScreenState extends State<GameScreen>
   int  _correctAnswers     = 0;
   int  _wrongAnswers       = 0;
 
+  // المؤقت الإجمالي (مثل التحدي الثنائي)
+  int    _matchTimeLeft = _totalDuration;
+  Timer? _matchTimer;
+  bool   _timerStarted = false;
+
   // Hint per question
   bool _hintUsed        = false;
-  int? _eliminatedIndex;        // الخيار المحذوف بالتلميح
+  int? _eliminatedIndex;
 
   List<QuestionModel> _batch      = [];
   int                 _batchIndex = 0;
 
-  bool _isLoading         = true;
-  bool _showCelebration   = false;
-  bool _isTransitioning   = false;
-  bool _isWaitingForRetry = false;
-  bool _isFinishing       = false;
+  bool _isLoading       = true;
+  bool _showCelebration = false;
+  bool _isFinishing     = false;
   int? _selected;
 
   // ─── Controllers ─────────────────────────────────────────────────────────
-  late AnimationController _timerCtrl;
-  late ConfettiController  _confettiCtrl;
+  late ConfettiController _confettiCtrl;
 
   QuestionModel? get _current =>
       _batchIndex < _batch.length ? _batch[_batchIndex] : null;
@@ -74,10 +76,6 @@ class _GameScreenState extends State<GameScreen>
   @override
   void initState() {
     super.initState();
-    _timerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: _secondsPerQ),
-    );
     _confettiCtrl = ConfettiController(
         duration: const Duration(milliseconds: 1200));
     _initGame();
@@ -85,7 +83,7 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   void dispose() {
-    _timerCtrl.dispose();
+    _matchTimer?.cancel();
     _confettiCtrl.dispose();
     super.dispose();
   }
@@ -134,42 +132,40 @@ class _GameScreenState extends State<GameScreen>
     }
 
     setState(() {
-      _batch             = questions;
-      _batchIndex        = 0;
-      _isLoading         = false;
-      _isWaitingForRetry = false;
-      _selected          = null;
-      _hintUsed          = false;
-      _eliminatedIndex   = null;
+      _batch           = questions;
+      _batchIndex      = 0;
+      _isLoading       = false;
+      _selected        = null;
+      _hintUsed        = false;
+      _eliminatedIndex = null;
     });
-    _startTimer();
+
+    // نبدأ المؤقت مرة واحدة فقط عند أول دفعة
+    if (!_timerStarted) {
+      _timerStarted = true;
+      _startMatchTimer();
+    }
   }
 
-  // ─── Timer ────────────────────────────────────────────────────────────────
-  void _startTimer() {
-    _timerCtrl.reset();
-    _timerCtrl.forward().then((_) {
-      if (mounted && !_showCelebration && !_isLoading) _onTimeUp();
+  // ─── المؤقت الإجمالي (مثل التحدي الثنائي) ───────────────────────────────
+  void _startMatchTimer() {
+    _matchTimer?.cancel();
+    _matchTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      if (_matchTimeLeft <= 1) {
+        t.cancel();
+        setState(() => _matchTimeLeft = 0);
+        _finishGame();
+      } else {
+        setState(() => _matchTimeLeft--);
+      }
     });
   }
 
-  void _onTimeUp() {
-    if (_showCelebration || _isLoading) return;
-    _soundService.playWrong();
-    _deductScore();
-    _wrongAnswers++;
-    setState(() {
-      _isWaitingForRetry = true;
-      _selected          = null;
-    });
-    _startTimer();
-  }
-
-  // ─── اختيار إجابة ────────────────────────────────────────────────────────
+  // ─── اختيار إجابة (بلا retry - مثل التحدي الثنائي) ─────────────────────
   void _answer(int index) {
-    if (_showCelebration || _current == null || _isLoading) return;
-    if (index == _eliminatedIndex) return; // الخيار المحذوف بالتلميح
-    _timerCtrl.stop();
+    if (_showCelebration ||        _current == null || _isLoading || _selected != null) return;
+    if (index == _eliminatedIndex) return;
 
     final correct = index == _current!.correctIndex;
     setState(() => _selected = index);
@@ -180,7 +176,6 @@ class _GameScreenState extends State<GameScreen>
       _score += earned;
       _correctStreak++;
       _correctAnswers++;
-      _isWaitingForRetry = false;
 
       if (_correctStreak >= _streakToLevelUp && _currentDifficulty < 10) {
         _currentDifficulty++;
@@ -192,25 +187,19 @@ class _GameScreenState extends State<GameScreen>
       _saveScoreLocally();
       _showCelebrationOverlay(earned);
     } else {
+      // ❌ خطأ → لا خصم، لا إعادة محاولة - ننتقل للسؤال التالي بعد 0.8 ث
       _soundService.playWrong();
-      _deductScore();
       _correctStreak = 0;
       _wrongAnswers++;
       _saveScoreLocally();
-      setState(() => _isWaitingForRetry = true);
 
       Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted && !_showCelebration) {
+        if (mounted && !_isFinishing) {
           setState(() => _selected = null);
-          _startTimer();
+          _nextQuestion();
         }
       });
     }
-  }
-
-  void _deductScore() {
-    final deduct = (_current?.difficulty ?? 1) * 5;
-    setState(() => _score = (_score - deduct).clamp(0, 999999));
   }
 
   // ─── التلميح ─────────────────────────────────────────────────────────────
@@ -245,50 +234,39 @@ class _GameScreenState extends State<GameScreen>
     setState(() => _showCelebration = true);
     _confettiCtrl.play();
 
-    Future.delayed(const Duration(milliseconds: 1200), () {
+    // احتفال سريع (800ms) ثم سؤال جديد مباشرة بدون overlay انتقال
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
       setState(() {
         _showCelebration = false;
-        _isTransitioning = true;
         _selected        = null;
       });
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (!mounted) return;
-        setState(() => _isTransitioning = false);
-        _nextQuestion();
-      });
+      _nextQuestion();
     });
   }
 
   void _nextQuestion() {
+    if (_isFinishing) return;
     _questionIndex++;
-
-    // انتهت الـ 10 أسئلة
-    if (_questionIndex >= _maxQuestions) {
-      _finishGame();
-      return;
-    }
-
     _batchIndex++;
+
     setState(() {
-      _selected          = null;
-      _isWaitingForRetry = false;
-      _hintUsed          = false;
-      _eliminatedIndex   = null;
+      _selected        = null;
+      _hintUsed        = false;
+      _eliminatedIndex = null;
     });
 
     if (_batchIndex >= _batch.length) {
       _loadNextBatch();
-    } else {
-      _startTimer();
     }
+    // لا نحتاج startTimer هنا - المؤقت الإجمالي يعمل باستمرار
   }
 
   // ─── إنهاء اللعبة ─────────────────────────────────────────────────────────
   Future<void> _finishGame() async {
     if (_isFinishing) return;
     _isFinishing = true;
-    _timerCtrl.stop();
+    _matchTimer?.cancel();
 
     final provider     = context.read<UserProvider>();
     final token        = provider.token;
@@ -430,10 +408,8 @@ class _GameScreenState extends State<GameScreen>
                         const SizedBox(width: 12),
                         // Question counter
                         Text(
-                          'game.question_of'.tr(namedArgs: {
-                            'num':   '${_questionIndex + 1}',
-                            'total': '$_maxQuestions',
-                          }),
+                          'game.question'.tr(
+                              namedArgs: {'num': '${_questionIndex + 1}'}),
                           style: const TextStyle(
                             color:      _cCyan,
                             fontSize:   15,
@@ -493,65 +469,58 @@ class _GameScreenState extends State<GameScreen>
                       ),
                       child: Column(
                         children: [
-                          // Timer row
-                          AnimatedBuilder(
-                            animation: _timerCtrl,
-                            builder: (_, __) {
-                              final remaining =
-                                  (_secondsPerQ * (1 - _timerCtrl.value))
-                                      .ceil();
-                              final isUrgent = remaining <= 5;
-                              return Row(
-                                children: [
-                                  // Progress bar
-                                  Expanded(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: LinearProgressIndicator(
-                                        value: 1 - _timerCtrl.value,
-                                        backgroundColor: Colors.white12,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          isUrgent
-                                              ? Colors.redAccent
-                                              : _cCyan,
-                                        ),
-                                        minHeight: 6,
+                          // Timer row (مؤقت إجمالي)
+                          Builder(builder: (_) {
+                            final isUrgent = _matchTimeLeft <= 10;
+                            final fraction = _matchTimeLeft / _totalDuration;
+                            return Row(
+                              children: [
+                                // Progress bar
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: LinearProgressIndicator(
+                                      value: fraction,
+                                      backgroundColor: Colors.white12,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        isUrgent ? Colors.redAccent : _cCyan,
                                       ),
+                                      minHeight: 6,
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
-                                  // Circular timer
-                                  SizedBox(
-                                    width:  52,
-                                    height: 52,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        CircularProgressIndicator(
-                                          value: 1 - _timerCtrl.value,
-                                          backgroundColor: Colors.white12,
+                                ),
+                                const SizedBox(width: 14),
+                                // Circular timer
+                                SizedBox(
+                                  width:  52,
+                                  height: 52,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        value:           fraction,
+                                        backgroundColor: Colors.white12,
+                                        color: isUrgent
+                                            ? Colors.redAccent
+                                            : _cCyan,
+                                        strokeWidth: 3,
+                                      ),
+                                      Text(
+                                        '${_matchTimeLeft}s',
+                                        style: TextStyle(
                                           color: isUrgent
                                               ? Colors.redAccent
-                                              : _cCyan,
-                                          strokeWidth: 3,
+                                              : Colors.white,
+                                          fontSize:   13,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        Text(
-                                          '${remaining}s',
-                                          style: TextStyle(
-                                            color: isUrgent
-                                                ? Colors.redAccent
-                                                : Colors.white,
-                                            fontSize:   13,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              );
-                            },
-                          ),
+                                ),
+                              ],
+                            );
+                          }),
 
                           const SizedBox(height: 18),
 
@@ -585,39 +554,6 @@ class _GameScreenState extends State<GameScreen>
                   ),
 
                   const SizedBox(height: 12),
-
-                  // Wrong retry banner
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: _isWaitingForRetry
-                        ? Container(
-                            key: const ValueKey('retry'),
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 2),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: Colors.redAccent
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.refresh,
-                                    color: Colors.redAccent, size: 15),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'game.wrong_retry'.tr(),
-                                  style: const TextStyle(
-                                      color: Colors.redAccent, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          )
-                        : const SizedBox(
-                            key: ValueKey('no-retry'), height: 0),
-                  ),
 
                   const SizedBox(height: 8),
 
@@ -683,7 +619,8 @@ class _GameScreenState extends State<GameScreen>
                                 ],
                         ),
                         child: ElevatedButton.icon(
-                          onPressed: _hintUsed || _showCelebration
+                          onPressed: _hintUsed || _showCelebration ||
+                                  _selected != null
                               ? null
                               : _useHint,
                           style: ElevatedButton.styleFrom(
@@ -742,9 +679,7 @@ class _GameScreenState extends State<GameScreen>
             if (_showCelebration)
               _CelebrationOverlay(points: _current?.points ?? 0),
 
-            // ─── Transition Overlay ────────────────────────────────────────
-            if (_isTransitioning)
-              const _TransitionOverlay(),
+            // _TransitionOverlay removed - no delay between questions
           ],
         ),
       ),
