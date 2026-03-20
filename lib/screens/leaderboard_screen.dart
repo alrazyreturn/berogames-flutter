@@ -626,14 +626,14 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
       if (mounted) {
         setState(() {
           _sending  = false;
-          _errorMsg = msg ?? 'حدث خطأ، حاول مرة أخرى';
+          _errorMsg = msg ?? 'leaderboard.error_retry'.tr();
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _sending  = false;
-          _errorMsg = 'حدث خطأ، حاول مرة أخرى';
+          _errorMsg = 'leaderboard.error_retry'.tr();
         });
       }
     }
@@ -672,9 +672,9 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.person_add, color: Colors.white),
-            label: const Text(
-              'إضافة صديق',
-              style: TextStyle(
+            label: Text(
+              'leaderboard.add_friend'.tr(),
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold),
@@ -698,7 +698,7 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
               Icon(Icons.people, color: Colors.green.shade400, size: 20),
               const SizedBox(width: 8),
               Text(
-                'أصدقاء',
+                'leaderboard.already_friends'.tr(),
                 style: TextStyle(
                     color: Colors.green.shade400,
                     fontSize: 16,
@@ -724,9 +724,9 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
             ),
             icon: const Icon(Icons.check_circle_outline,
                 color: Colors.white38),
-            label: const Text(
-              'تم إرسال طلب الصداقة',
-              style: TextStyle(
+            label: Text(
+              'leaderboard.request_sent'.tr(),
+              style: const TextStyle(
                   color: Colors.white38,
                   fontSize: 15,
                   fontWeight: FontWeight.w600),
@@ -752,7 +752,7 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
                   color: Colors.orange.shade400, size: 20),
               const SizedBox(width: 8),
               Text(
-                'أرسل لك طلب صداقة',
+                'leaderboard.request_received'.tr(),
                 style: TextStyle(
                     color: Colors.orange.shade400,
                     fontSize: 15,

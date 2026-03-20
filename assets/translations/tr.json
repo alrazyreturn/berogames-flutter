@@ -249,11 +249,16 @@
   },
 
   "leaderboard": {
-    "title":      "🏆 Sıralama",
-    "my_rank":    "Mevcut sıralaman",
-    "no_players": "Henüz oyuncu yok",
-    "load_error": "Veriler yüklenemedi",
-    "me":         "(Ben)"
+    "title":             "🏆 Sıralama",
+    "my_rank":           "Mevcut sıralaman",
+    "no_players":        "Henüz oyuncu yok",
+    "load_error":        "Veriler yüklenemedi",
+    "me":                "(Ben)",
+    "add_friend":        "Arkadaş Ekle",
+    "already_friends":   "Arkadaşlar",
+    "request_sent":      "Arkadaşlık İsteği Gönderildi",
+    "request_received":  "Sana Arkadaşlık İsteği Gönderdi",
+    "error_retry":       "Bir hata oluştu, tekrar dene"
   },
 
   "stats": {

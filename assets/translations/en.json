@@ -249,11 +249,16 @@
   },
 
   "leaderboard": {
-    "title":      "🏆 Leaderboard",
-    "my_rank":    "Your current rank",
-    "no_players": "No players yet",
-    "load_error": "Failed to load data",
-    "me":         "(Me)"
+    "title":             "🏆 Leaderboard",
+    "my_rank":           "Your current rank",
+    "no_players":        "No players yet",
+    "load_error":        "Failed to load data",
+    "me":                "(Me)",
+    "add_friend":        "Add Friend",
+    "already_friends":   "Friends",
+    "request_sent":      "Friend Request Sent",
+    "request_received":  "Sent You a Friend Request",
+    "error_retry":       "An error occurred, try again"
   },
 
   "stats": {
