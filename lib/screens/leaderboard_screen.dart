@@ -611,7 +611,7 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
     try {
       await widget.dio.post(
         ApiConfig.friendsRequestById,
-        data: {'userId': widget.player['id']},
+        data: {'targetId': widget.player['id']},
         options: Options(
             headers: {'Authorization': 'Bearer ${widget.token}'}),
       );
