@@ -172,7 +172,8 @@
     "grade_try_again": "Tekrar Dene",
     "stat_questions":  "Sorular",
     "stat_level":      "En Yüksek Seviye",
-    "stat_percent":    "Yüzde"
+    "stat_percent":    "Yüzde",
+    "watch_ad":        "Reklam İzle"
   },
 
   "dual_result": {

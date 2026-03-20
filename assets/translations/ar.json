@@ -172,7 +172,8 @@
     "grade_try_again":"حاول مجدداً",
     "stat_questions": "الأسئلة",
     "stat_level":     "أعلى مستوى",
-    "stat_percent":   "النسبة"
+    "stat_percent":   "النسبة",
+    "watch_ad":       "شاهد إعلان"
   },
 
   "dual_result": {

@@ -172,7 +172,8 @@
     "grade_try_again": "Try Again",
     "stat_questions":  "Questions",
     "stat_level":      "Top Level",
-    "stat_percent":    "Percent"
+    "stat_percent":    "Percent",
+    "watch_ad":        "Watch Ad"
   },
 
   "dual_result": {

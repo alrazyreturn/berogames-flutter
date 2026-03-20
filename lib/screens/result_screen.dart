@@ -19,6 +19,7 @@ const _cCard    = Color(0xFF171F33);
 const _cCyan    = Color(0xFF00FBFB);
 const _cIndigo  = Color(0xFF6366F1);
 const _cNavBg   = Color(0xFF10102B);
+const _cOrange  = Color(0xFFFF7A00);
 
 class ResultScreen extends StatefulWidget {
   final int           score;
@@ -41,14 +42,17 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen>
     with SingleTickerProviderStateMixin {
   late ConfettiController _confetti;
-  late AnimationController _scaleCtrl;
-  late Animation<double>   _scaleAnim;
+  late AnimationController _fadeCtrl;
+  late Animation<double>   _fadeAnim;
   final _energyService = EnergyService();
 
-  int get _maxPossible => widget.totalQuestions * 100;
-  double get _percentage =>
-      _maxPossible > 0 ? widget.score / _maxPossible : 0;
-  bool get _isPassed => widget.score > 0;
+  bool _doubled      = false;
+  late int _score;
+
+  int    get _maxPossible => widget.totalQuestions * 100;
+  double get _percentage  =>
+      _maxPossible > 0 ? _score / _maxPossible : 0;
+  bool   get _isPassed    => _score > 0;
 
   String get _gradeLabel {
     if (_percentage >= 0.8) return 'result.grade_excellent'.tr();
@@ -74,15 +78,17 @@ class _ResultScreenState extends State<ResultScreen>
   @override
   void initState() {
     super.initState();
+    _score = widget.score;
+
     _confetti = ConfettiController(duration: const Duration(seconds: 4));
     if (_isPassed) _confetti.play();
 
-    _scaleCtrl = AnimationController(
+    _fadeCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 500),
     );
-    _scaleAnim = CurvedAnimation(parent: _scaleCtrl, curve: Curves.elasticOut);
-    _scaleCtrl.forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _fadeCtrl.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AdService().onGameComplete();
@@ -92,8 +98,22 @@ class _ResultScreenState extends State<ResultScreen>
   @override
   void dispose() {
     _confetti.dispose();
-    _scaleCtrl.dispose();
+    _fadeCtrl.dispose();
     super.dispose();
+  }
+
+  // ─── مضاعفة النقاط ───────────────────────────────────────────────────────
+  void _onDoublePoints() {
+    AdService().showRewarded(
+      onRewarded: () {
+        if (!mounted) return;
+        setState(() {
+          _score   = _score * 2;
+          _doubled = true;
+        });
+        _confetti.play();
+      },
+    );
   }
 
   // ─── التحقق من الطاقة قبل "العب مجدداً" ──────────────────────────────────
@@ -146,7 +166,8 @@ class _ResultScreenState extends State<ResultScreen>
                 5,
                 (i) => const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 3),
-                  child: Icon(Icons.favorite_border, color: Colors.white24, size: 28),
+                  child: Icon(Icons.favorite_border,
+                      color: Colors.white24, size: 28),
                 ),
               ),
             ),
@@ -162,13 +183,15 @@ class _ResultScreenState extends State<ResultScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white38)),
+            child: const Text('إلغاء',
+                style: TextStyle(color: Colors.white38)),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _cIndigo,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.play_circle_outline, size: 18),
             label: const Text('شاهد إعلان +❤️'),
@@ -192,13 +215,15 @@ class _ResultScreenState extends State<ResultScreen>
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<UserProvider>().user;
+
     return Scaffold(
       backgroundColor: _cBg,
       bottomNavigationBar: _buildBottomNav(),
       body: Stack(
         alignment: Alignment.topCenter,
         children: [
-          // ─── Confetti ────────────────────────────────────────────────────
+          // ─── Confetti ──────────────────────────────────────────────────
           ConfettiWidget(
             confettiController:  _confetti,
             blastDirectionality: BlastDirectionality.explosive,
@@ -206,264 +231,306 @@ class _ResultScreenState extends State<ResultScreen>
             colors: [_cCyan, _cIndigo, Colors.amber, Colors.white],
           ),
 
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
-              child: Column(
-                children: [
-                  // ─── أيقونة + تقدير ──────────────────────────────────────
-                  ScaleTransition(
-                    scale: _scaleAnim,
-                    child: Container(
-                      width: 120, height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _gradeColor.withValues(alpha: 0.1),
-                        border: Border.all(
-                          color: _gradeColor.withValues(alpha: 0.45),
-                          width: 2.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:      _gradeColor.withValues(alpha: 0.25),
-                            blurRadius: 32,
+          FadeTransition(
+            opacity: _fadeAnim,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // ─── AppBar row ────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Row(
+                        children: [
+                          // Avatar
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: _cCard,
+                            backgroundImage: user?.avatar != null
+                                ? NetworkImage(user!.avatar!) as ImageProvider
+                                : null,
+                            child: user?.avatar == null
+                                ? Text(
+                                    user?.name.isNotEmpty == true
+                                        ? user!.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                        color: _cCyan, fontSize: 16),
+                                  )
+                                : null,
+                          ),
+                          // Title
+                          const Expanded(
+                            child: Text(
+                              'Mind Crush',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color:      _cCyan,
+                                fontSize:   20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          // Menu icon
+                          Icon(
+                            Icons.menu_rounded,
+                            color: Colors.white54,
+                            size: 26,
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Text(
-                          _gradeEmoji,
-                          style: const TextStyle(fontSize: 54),
-                        ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // ─── Trophy / icon ─────────────────────────────────
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color:      _gradeColor.withValues(alpha: 0.35),
+                            blurRadius: 48,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        _gradeEmoji,
+                        style: const TextStyle(fontSize: 90),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 18),
+                    const SizedBox(height: 16),
 
-                  // ─── التقدير ─────────────────────────────────────────────
-                  Text(
-                    _gradeLabel,
-                    style: TextStyle(
-                      color:      _gradeColor,
-                      fontSize:   26,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          color:      _gradeColor.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    widget.category.localizedName(context.locale.languageCode),
-                    style: TextStyle(
-                      color:    Colors.white.withValues(alpha: 0.4),
-                      fontSize: 14,
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ─── بطاقة النقاط الرئيسية ────────────────────────────────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 28, horizontal: 24),
-                    decoration: BoxDecoration(
-                      color:        _cCard,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.07),
+                    // ─── عنوان النتيجة ─────────────────────────────────
+                    Text(
+                      _doubled
+                          ? 'result.doubled'.tr()
+                          : _gradeLabel,
+                      style: TextStyle(
+                        color:      _cCyan,
+                        fontSize:   36,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                        shadows: [
+                          Shadow(
+                            color:      _cCyan.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color:      Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset:     const Offset(0, 6),
-                        ),
-                      ],
                     ),
-                    child: Column(
+
+                    const SizedBox(height: 8),
+
+                    // ─── اسم القسم ─────────────────────────────────────
+                    Text(
+                      'result.played'.tr(namedArgs: {
+                        'category': widget.category
+                            .localizedName(context.locale.languageCode),
+                      }),
+                      style: TextStyle(
+                        color:    Colors.white.withValues(alpha: 0.45),
+                        fontSize: 15,
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ─── بطاقات الإحصائيات ─────────────────────────────
+                    Row(
                       children: [
-                        Text(
-                          '${widget.score}',
-                          style: TextStyle(
-                            color:      Colors.white,
-                            fontSize:   60,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color:      _gradeColor.withValues(alpha: 0.3),
-                                blurRadius: 16,
+                        Expanded(
+                          child: _StatCard(
+                            icon:  Icons.track_changes_rounded,
+                            iconColor: _cIndigo,
+                            value: '${widget.difficultyReached}',
+                            label: 'result.stat_level'.tr(),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            icon:  Icons.quiz_rounded,
+                            iconColor: Colors.white54,
+                            value: '${widget.totalQuestions}',
+                            label: 'result.stat_questions'.tr(),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            icon:  Icons.star_rounded,
+                            iconColor: _cCyan,
+                            value: '$_score',
+                            label: 'common.points_unit'.tr(),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ─── زر مضاعفة النقاط (إذا لم يضاعف بعد) ──────────
+                    if (!_doubled) ...[
+                      GestureDetector(
+                        onTap: _onDoublePoints,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 18, horizontal: 20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF8C00), _cOrange],
+                            ),
+                            borderRadius: BorderRadius.circular(48),
+                            boxShadow: [
+                              BoxShadow(
+                                color:      _cOrange.withValues(alpha: 0.35),
+                                blurRadius: 18,
+                                offset:     const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 32, height: 32,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                ),
+                                child: const Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'result.double_btn'.tr(namedArgs: {
+                                        'score': '${_score * 2}',
+                                      }),
+                                      style: const TextStyle(
+                                        color:      Colors.white,
+                                        fontSize:   16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'result.watch_ad'.tr(),
+                                      style: TextStyle(
+                                        color:    Colors.white
+                                            .withValues(alpha: 0.75),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.card_giftcard_rounded,
+                                color: Colors.white,
+                                size: 24,
                               ),
                             ],
                           ),
                         ),
-                        Text(
-                          'common.points_unit'.tr(),
-                          style: TextStyle(
-                            color:    _gradeColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // ─── الأزرار السفلية ───────────────────────────────
+                    Row(
+                      children: [
+                        // الرئيسية
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const HomeScreen()),
+                              (_) => false,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16),
+                              decoration: BoxDecoration(
+                                color: _cSurface,
+                                borderRadius: BorderRadius.circular(48),
+                                border: Border.all(
+                                  color: Colors.white
+                                      .withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: Text(
+                                'dual_result.home_btn'.tr(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color:      Colors.white,
+                                  fontSize:   16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // شريط النسبة
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value:           _percentage.clamp(0.0, 1.0),
-                            backgroundColor: Colors.white.withValues(alpha: 0.07),
-                            valueColor:      AlwaysStoppedAnimation(_gradeColor),
-                            minHeight:       6,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${(_percentage * 100).toStringAsFixed(0)}%',
-                          style: TextStyle(
-                            color:    _gradeColor,
-                            fontSize: 13,
+
+                        const SizedBox(width: 12),
+
+                        // العب مجدداً
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _checkEnergyAndPlayAgain,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16),
+                              decoration: BoxDecoration(
+                                color: _cIndigo,
+                                borderRadius: BorderRadius.circular(48),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _cIndigo
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'result.play_again'.tr(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color:      Colors.white,
+                                  fontSize:   16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // ─── إحصائيات ─────────────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon:  '❓',
-                          label: 'result.stat_questions'.tr(),
-                          value: '${widget.totalQuestions}',
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatCard(
-                          icon:  '🎯',
-                          label: 'result.stat_level'.tr(),
-                          value: '${widget.difficultyReached}',
-                          color: _difficultyColor(widget.difficultyReached),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatCard(
-                          icon:  '📈',
-                          label: 'result.stat_percent'.tr(),
-                          value: '${(_percentage * 100).toStringAsFixed(0)}%',
-                          color: _gradeColor,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // ─── الأزرار ────────────────────────────────────────────
-                  Row(
-                    children: [
-                      // زر الرئيسية
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const HomeScreen()),
-                            (_) => false,
-                          ),
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 15),
-                            decoration: BoxDecoration(
-                              color: _cSurface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.12),
-                              ),
-                            ),
-                            child: Text(
-                              'dual_result.home_btn'.tr(),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color:      Colors.white70,
-                                fontSize:   15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      // زر العب مجدداً (gradient)
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: _checkEnergyAndPlayAgain,
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  _cCyan.withValues(alpha: 0.85),
-                                  _cIndigo,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:      _cCyan.withValues(alpha: 0.2),
-                                  blurRadius: 14,
-                                  offset:     const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('🎮', style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'dual_result.play_again'.tr(),
-                                  style: const TextStyle(
-                                    color:      Colors.white,
-                                    fontSize:   15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  Color _difficultyColor(int d) {
-    if (d <= 3) return Colors.greenAccent;
-    if (d <= 6) return Colors.orangeAccent;
-    return Colors.redAccent;
   }
 
   // ─── Bottom Navigation ────────────────────────────────────────────────────
@@ -495,7 +562,8 @@ class _ResultScreenState extends State<ResultScreen>
                 isActive: false,
                 onTap:    () => Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const HomeScreen()),
                     (_) => false),
               ),
               _NavItem(
@@ -513,7 +581,8 @@ class _ResultScreenState extends State<ResultScreen>
                 isActive: false,
                 onTap:    () => Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const FriendsScreen())),
+                    MaterialPageRoute(
+                        builder: (_) => const FriendsScreen())),
               ),
               _NavItem(
                 icon:     Icons.person_rounded,
@@ -534,45 +603,47 @@ class _ResultScreenState extends State<ResultScreen>
 
 // ─── بطاقة إحصائية ───────────────────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
-  final String icon;
-  final String label;
-  final String value;
-  final Color  color;
+  final IconData icon;
+  final Color    iconColor;
+  final String   value;
+  final String   label;
 
   const _StatCard({
     required this.icon,
-    required this.label,
+    required this.iconColor,
     required this.value,
-    this.color = Colors.white,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 18),
       decoration: BoxDecoration(
         color:        _cCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 6),
+          Icon(icon, color: iconColor, size: 26),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              color:      color,
-              fontSize:   18,
+            style: const TextStyle(
+              color:      Colors.white,
+              fontSize:   22,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color:    Colors.white.withValues(alpha: 0.4),
-              fontSize: 10,
+              fontSize: 11,
             ),
             textAlign: TextAlign.center,
           ),
