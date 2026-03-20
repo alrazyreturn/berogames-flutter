@@ -90,7 +90,18 @@
     "invite_category":"القسم: {category}",
     "reject":         "❌ رفض",
     "accept":         "✅ قبول",
-    "join_error":     "خطأ في الانضمام: {error}"
+    "join_error":     "خطأ في الانضمام: {error}",
+    "dual_card_sub":  "اهزم خصومك",
+    "solo_card_sub":  "طور مهاراتك",
+    "play_now":       "العب الآن",
+    "start_now":      "ابدأ الآن",
+    "explore_more":   "استكشف المزيد",
+    "your_rank":      "أنت في المركز {rank} عالمياً",
+    "online_friends": "{count} أصدقاء متصلون الآن",
+    "nav_home":       "الرئيسية",
+    "nav_ranking":    "الترتيب",
+    "nav_stats":      "إحصائي",
+    "nav_profile":    "بروفايل"
   },
 
   "friends": {

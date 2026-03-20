@@ -90,7 +90,18 @@
     "invite_category": "Kategori: {category}",
     "reject":          "❌ Reddet",
     "accept":          "✅ Kabul Et",
-    "join_error":      "Odaya katılma hatası: {error}"
+    "join_error":      "Odaya katılma hatası: {error}",
+    "dual_card_sub":   "Rakiplerinizi yenin",
+    "solo_card_sub":   "Becerilerini geliştir",
+    "play_now":        "Şimdi Oyna",
+    "start_now":       "Şimdi Başla",
+    "explore_more":    "Daha Fazlası",
+    "your_rank":       "{rank}. sıradasın",
+    "online_friends":  "{count} arkadaş çevrimiçi",
+    "nav_home":        "Ana Sayfa",
+    "nav_ranking":     "Sıralama",
+    "nav_stats":       "İstatistik",
+    "nav_profile":     "Profil"
   },
 
   "friends": {

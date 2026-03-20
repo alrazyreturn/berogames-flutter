@@ -90,7 +90,18 @@
     "invite_category": "Category: {category}",
     "reject":          "❌ Decline",
     "accept":          "✅ Accept",
-    "join_error":      "Error joining room: {error}"
+    "join_error":      "Error joining room: {error}",
+    "dual_card_sub":   "Defeat your opponents",
+    "solo_card_sub":   "Improve your skills",
+    "play_now":        "Play Now",
+    "start_now":       "Start Now",
+    "explore_more":    "Explore More",
+    "your_rank":       "You're ranked #{rank} globally",
+    "online_friends":  "{count} friends online now",
+    "nav_home":        "Home",
+    "nav_ranking":     "Ranking",
+    "nav_stats":       "Stats",
+    "nav_profile":     "Profile"
   },
 
   "friends": {
