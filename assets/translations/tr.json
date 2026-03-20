@@ -165,7 +165,14 @@
     "double_btn":      "Puanını İkiye Katla ({score}) ▶ Reklam İzle",
     "doubled":         "Puanlar İkiye Katlandı! ✨",
     "home_btn":        "Ana Sayfa 🏠",
-    "play_again":      "Tekrar Oyna 🎮"
+    "play_again":      "Tekrar Oyna 🎮",
+    "grade_excellent": "Mükemmel",
+    "grade_very_good": "Çok İyi",
+    "grade_good":      "İyi",
+    "grade_try_again": "Tekrar Dene",
+    "stat_questions":  "Sorular",
+    "stat_level":      "En Yüksek Seviye",
+    "stat_percent":    "Yüzde"
   },
 
   "dual_result": {

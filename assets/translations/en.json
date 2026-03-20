@@ -165,7 +165,14 @@
     "double_btn":      "Double Points ({score}) ▶ Watch Ad",
     "doubled":         "Points Doubled! ✨",
     "home_btn":        "Home 🏠",
-    "play_again":      "Play Again 🎮"
+    "play_again":      "Play Again 🎮",
+    "grade_excellent": "Excellent",
+    "grade_very_good": "Very Good",
+    "grade_good":      "Good",
+    "grade_try_again": "Try Again",
+    "stat_questions":  "Questions",
+    "stat_level":      "Top Level",
+    "stat_percent":    "Percent"
   },
 
   "dual_result": {

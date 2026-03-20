@@ -165,7 +165,14 @@
     "double_btn":     "ضاعف نقاطك ({score}) ▶ شاهد إعلان",
     "doubled":        "تم مضاعفة النقاط! ✨",
     "home_btn":       "الرئيسية 🏠",
-    "play_again":     "العب مجدداً 🎮"
+    "play_again":     "العب مجدداً 🎮",
+    "grade_excellent":"ممتاز",
+    "grade_very_good":"جيد جداً",
+    "grade_good":     "جيد",
+    "grade_try_again":"حاول مجدداً",
+    "stat_questions": "الأسئلة",
+    "stat_level":     "أعلى مستوى",
+    "stat_percent":   "النسبة"
   },
 
   "dual_result": {
