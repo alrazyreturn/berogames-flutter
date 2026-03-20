@@ -30,9 +30,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   RoomModel?          _room;
   bool _loadingCategories = true;
   bool _creatingRoom      = false;
-  bool _guestJoined       = false;
+  bool    _guestJoined = false;
   String? _guestName;
   int?    _guestId;
+  String? _guestAvatar;
+  int     _guestLevel  = 1;
 
   @override
   bool _catsLoaded = false;
@@ -93,9 +95,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       _socket.onPlayerJoined = (data) {
         if (!mounted) return;
         setState(() {
-          _guestJoined = true;
-          _guestName   = data['guest_name'] ?? 'common.opponent'.tr();
-          _guestId     = data['guest_id'] != null ? int.tryParse('${data['guest_id']}') : null;
+          _guestJoined  = true;
+          _guestName    = data['guest_name'] ?? 'common.opponent'.tr();
+          _guestId      = data['guest_id'] != null ? int.tryParse('${data['guest_id']}') : null;
+          _guestAvatar  = data['guest_avatar'] as String?;
+          _guestLevel   = (data['guest_level'] as int?) ?? 1;
         });
       };
       _socket.onError = (msg) {
@@ -165,11 +169,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => DualGameScreen(
-          room:       _room!,
-          role:       'host',
-          myName:     user?.name ?? 'common.you'.tr(),
-          guestName:  _guestName ?? 'common.opponent'.tr(),
-          opponentId: _guestId ?? widget.inviteFriend?.userId,
+          room:           _room!,
+          role:           'host',
+          myName:         user?.name ?? 'common.you'.tr(),
+          guestName:      _guestName ?? 'common.opponent'.tr(),
+          opponentId:     _guestId ?? widget.inviteFriend?.userId,
+          opponentAvatar: _guestAvatar,
+          opponentLevel:  _guestLevel,
         ),
       ),
     );

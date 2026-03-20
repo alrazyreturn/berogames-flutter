@@ -1,18 +1,24 @@
 class RoomPlayerModel {
-  final int    id;
-  final String name;
-  final int    totalScore;
+  final int     id;
+  final String  name;
+  final int     totalScore;
+  final String? avatar;
+  final int     currentLevel;
 
   RoomPlayerModel({
     required this.id,
     required this.name,
-    this.totalScore = 0,
+    this.totalScore   = 0,
+    this.avatar,
+    this.currentLevel = 1,
   });
 
   factory RoomPlayerModel.fromJson(Map<String, dynamic> j) => RoomPlayerModel(
-    id:         j['id'],
-    name:       j['name']        ?? '؟',
-    totalScore: j['total_score'] ?? 0,
+    id:           j['id'],
+    name:         j['name']          ?? '؟',
+    totalScore:   j['total_score']   ?? 0,
+    avatar:       j['avatar'],
+    currentLevel: j['current_level'] ?? 1,
   );
 }
 

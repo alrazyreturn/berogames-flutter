@@ -26,11 +26,14 @@ const _cNavBg   = Color(0xFF10102B);
 /// شاشة اللعب الثنائي — Neon-Glass Editorial Design
 class DualGameScreen extends StatefulWidget {
   final RoomModel room;
-  final String    role;         // 'host' أو 'guest'
+  final String    role;            // 'host' أو 'guest'
   final String    myName;
   final String    guestName;
   final int?      opponentId;
   final Map<String, dynamic>? initialQuestions;
+  // بيانات الخصم الإضافية للهيدر
+  final String?   opponentAvatar;
+  final int       opponentLevel;
 
   const DualGameScreen({
     super.key,
@@ -40,6 +43,8 @@ class DualGameScreen extends StatefulWidget {
     required this.guestName,
     this.opponentId,
     this.initialQuestions,
+    this.opponentAvatar,
+    this.opponentLevel = 1,
   });
 
   @override
@@ -422,211 +427,292 @@ class _DualGameScreenState extends State<DualGameScreen> {
 
   // ─── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader(bool isUrgent) {
+    final user         = context.watch<UserProvider>().user;
     final opponentName = widget.role == 'host' ? widget.guestName : widget.room.host.name;
+    // avatar الخصم: إما من params أو من room.host (حسب الدور)
+    final oppAvatar    = widget.opponentAvatar
+        ?? (widget.role == 'guest' ? widget.room.host.avatar : null);
+    final oppLevel     = widget.opponentLevel > 1
+        ? widget.opponentLevel
+        : (widget.role == 'guest' ? widget.room.host.currentLevel : 1);
 
     return SafeArea(
       bottom: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: _cSurface,
           borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 12,
+              blurRadius: 14,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ── Opponent ──────────────────────────────────────────────────
+            // ── Opponent (left) ────────────────────────────────────────────
             Expanded(
-              child: _buildPlayerSide(
-                name:       opponentName,
-                score:      _opponentScore,
-                isMe:       false,
-                isFinished: _opponentFinished,
-                showOpponentMic: _webRtcReady,
-                opponentMicOn:   _opponentMicOn,
+              child: _buildPlayerBlock(
+                name:        opponentName,
+                score:       _opponentScore,
+                avatarUrl:   oppAvatar,
+                level:       oppLevel,
+                isMe:        false,
+                isFinished:  _opponentFinished,
+                showMic:     _webRtcReady,
+                micOn:       _opponentMicOn,
               ),
             ),
 
-            // ── Center: Timer + progress bar ──────────────────────────────
+            // ── vs ─────────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'vs',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isUrgent
-                          ? Colors.redAccent.withValues(alpha: 0.12)
-                          : _cCyan.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isUrgent
-                            ? Colors.redAccent.withValues(alpha: 0.5)
-                            : _cCyan.withValues(alpha: 0.3),
-                        width: 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isUrgent ? Colors.redAccent : _cCyan).withValues(alpha: 0.1),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      _formatTime(_matchTimeLeft),
-                      style: TextStyle(
-                        color: isUrgent ? Colors.redAccent : _cCyan,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  SizedBox(
-                    width: 60,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: _matchTimeLeft / _matchDuration,
-                        backgroundColor: Colors.white.withValues(alpha: 0.07),
-                        valueColor: AlwaysStoppedAnimation(
-                          isUrgent ? Colors.redAccent : _cCyan,
-                        ),
-                        minHeight: 3,
-                      ),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                'vs',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
               ),
             ),
 
-            // ── My side ───────────────────────────────────────────────────
+            // ── My side (right) ────────────────────────────────────────────
             Expanded(
-              child: _buildPlayerSide(
+              child: _buildPlayerBlock(
                 name:       widget.myName,
                 score:      _myScore,
+                avatarUrl:  user?.avatar,
+                level:      user?.currentLevel ?? 1,
                 isMe:       true,
                 isFinished: _iFinished,
-                showOpponentMic: false,
-                opponentMicOn:   false,
+                showMic:    false,
+                micOn:      false,
               ),
             ),
+
+            // ── Timer + mic button (far right) ─────────────────────────────
+            const SizedBox(width: 8),
+            _buildTimerBlock(isUrgent),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPlayerSide({
-    required String name,
-    required int    score,
-    required bool   isMe,
-    required bool   isFinished,
-    required bool   showOpponentMic,
-    required bool   opponentMicOn,
+  // ─── Player block: score + name on one side, avatar+LV on other ──────────
+  Widget _buildPlayerBlock({
+    required String  name,
+    required int     score,
+    required String? avatarUrl,
+    required int     level,
+    required bool    isMe,
+    required bool    isFinished,
+    required bool    showMic,
+    required bool    micOn,
   }) {
     final color    = isMe ? _cCyan : const Color(0xFFFF6B8A);
     final subtitle = isMe ? 'نقاطك' : 'الخصم';
 
-    return Column(
+    // Opponent: [text | avatar]   My side: [avatar | text]
+    final textCol = Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
       children: [
-        // Avatar + mic indicator for opponent
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 46, height: 46,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.12),
-                border: Border.all(color: color.withValues(alpha: 0.55), width: 1.5),
-                boxShadow: [
-                  BoxShadow(color: color.withValues(alpha: 0.18), blurRadius: 10),
-                ],
-              ),
-              child: Icon(Icons.person_rounded, color: color, size: 22),
-            ),
-            if (showOpponentMic)
-              Positioned(
-                top: -3, right: -3,
-                child: Container(
-                  width: 17, height: 17,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: opponentMicOn
-                        ? Colors.greenAccent.withValues(alpha: 0.9)
-                        : _cSurface,
-                    border: Border.all(color: _cBg, width: 1.5),
-                  ),
-                  child: Icon(
-                    opponentMicOn ? Icons.mic : Icons.mic_off,
-                    size: 9,
-                    color: opponentMicOn ? _cBg : Colors.white38,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 10),
         ),
-        const SizedBox(height: 1),
-        Text(
-          name,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 2),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '$score',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             if (isFinished) ...[
-              const SizedBox(width: 4),
-              const Text('✅', style: TextStyle(fontSize: 12)),
+              const SizedBox(width: 3),
+              const Text('✅', style: TextStyle(fontSize: 10)),
             ],
           ],
+        ),
+        Text(
+          name,
+          style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
+    );
+
+    final avatarCol = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Avatar circle
+            Container(
+              width: 46, height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: color.withValues(alpha: 0.6), width: 1.8),
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 10)],
+              ),
+              child: ClipOval(
+                child: avatarUrl != null
+                    ? Image.network(
+                        avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _avatarFallback(name, color),
+                      )
+                    : _avatarFallback(name, color),
+              ),
+            ),
+            // Opponent mic badge
+            if (showMic)
+              Positioned(
+                top: -2, right: -2,
+                child: Container(
+                  width: 16, height: 16,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: micOn
+                        ? Colors.greenAccent.withValues(alpha: 0.9)
+                        : _cSurface,
+                    border: Border.all(color: _cBg, width: 1.5),
+                  ),
+                  child: Icon(
+                    micOn ? Icons.mic : Icons.mic_off,
+                    size: 8,
+                    color: micOn ? _cBg : Colors.white38,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // LV badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Text(
+            'LV.$level',
+            style: TextStyle(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+      children: isMe
+          ? [avatarCol, const SizedBox(width: 8), Flexible(child: textCol)]
+          : [Flexible(child: textCol), const SizedBox(width: 8), avatarCol],
+    );
+  }
+
+  Widget _avatarFallback(String name, Color color) => Container(
+    color: color.withValues(alpha: 0.12),
+    child: Center(
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '؟',
+        style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    ),
+  );
+
+  // ─── Timer block ──────────────────────────────────────────────────────────
+  Widget _buildTimerBlock(bool isUrgent) {
+    final timerColor = isUrgent ? Colors.redAccent : _cCyan;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Timer text
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: timerColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _formatTime(_matchTimeLeft),
+            style: TextStyle(
+              color: timerColor,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 5),
+        // Progress bar
+        SizedBox(
+          width: 58,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _matchTimeLeft / _matchDuration,
+              backgroundColor: Colors.white.withValues(alpha: 0.07),
+              valueColor: AlwaysStoppedAnimation(timerColor),
+              minHeight: 3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Mic button
+        GestureDetector(
+          onTap: _webRtcReady ? _toggleMic : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 34, height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _micOn
+                  ? Colors.greenAccent.withValues(alpha: 0.18)
+                  : Colors.white.withValues(alpha: 0.07),
+              border: Border.all(
+                color: _micOn
+                    ? Colors.greenAccent
+                    : (_webRtcReady ? Colors.white38 : Colors.white12),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
+              size: 16,
+              color: _micOn
+                  ? Colors.greenAccent
+                  : (_webRtcReady ? Colors.white54 : Colors.white24),
+            ),
+          ),
         ),
       ],
     );
   }
+
 
   // ─── Question Card ─────────────────────────────────────────────────────────
   Widget _buildQuestionCard(QuestionModel q) {
@@ -816,6 +902,9 @@ class _DualGameScreenState extends State<DualGameScreen> {
             ? Icons.hourglass_top_rounded
             : Icons.person_add_rounded;
 
+    // إذا لم يكن هناك خصم (opponentId == null) لا نظهر القسم أصلاً
+    if (widget.opponentId == null && !_webRtcReady) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
       child: Row(
@@ -832,23 +921,13 @@ class _DualGameScreenState extends State<DualGameScreen> {
             const SizedBox(width: 20),
           ],
 
-          // ── My Mic toggle ─────────────────────────────────────────────────
-          _CircleAction(
-            icon:  _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
-            color: _micOn
-                ? Colors.greenAccent
-                : (_webRtcReady ? Colors.white54 : Colors.white24),
-            onTap: _webRtcReady ? _toggleMic : null,
-          ),
-
-          const SizedBox(width: 20),
-
-          // ── Opponent mic status (read-only indicator) ─────────────────────
-          _CircleAction(
-            icon:  _opponentMicOn ? Icons.hearing_rounded : Icons.hearing_disabled_rounded,
-            color: _opponentMicOn ? Colors.greenAccent : Colors.white24,
-            onTap: null,
-          ),
+          // ── Opponent mic status (read-only) ───────────────────────────────
+          if (_webRtcReady)
+            _CircleAction(
+              icon:  _opponentMicOn ? Icons.hearing_rounded : Icons.hearing_disabled_rounded,
+              color: _opponentMicOn ? Colors.greenAccent : Colors.white24,
+              onTap: null,
+            ),
         ],
       ),
     );

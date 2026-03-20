@@ -340,11 +340,13 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => DualGameScreen(
-            room:       room,
-            role:       'guest',
-            myName:     user.name,
-            guestName:  fromName,
-            opponentId: fromUserId,
+            room:           room,
+            role:           'guest',
+            myName:         user.name,
+            guestName:      fromName,
+            opponentId:     fromUserId,
+            opponentAvatar: room.host.avatar,
+            opponentLevel:  room.host.currentLevel,
           ),
         ),
       );

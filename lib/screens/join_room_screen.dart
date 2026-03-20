@@ -67,6 +67,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               guestName:        room.host.name,
               opponentId:       room.host.id,
               initialQuestions: data,
+              opponentAvatar:   room.host.avatar,
+              opponentLevel:    room.host.currentLevel,
             ),
           ),
         );
