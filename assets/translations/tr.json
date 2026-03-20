@@ -140,16 +140,20 @@
   },
 
   "game": {
-    "level":         "Seviye",
-    "question":      "Soru {num}",
-    "score":         "Puan",
-    "easy":          "Kolay",
-    "medium":        "Orta",
-    "hard":          "Zor",
-    "wrong_retry":   "Yanlış! Tekrar dene 💪",
-    "next_question": "Sonraki soru...",
-    "correct":       "Doğru!",
-    "points_earned": "+{points} puan ⭐"
+    "level":          "Seviye",
+    "question":       "Soru {num}",
+    "question_of":    "Soru {num}/{total}",
+    "score":          "Puan",
+    "easy":           "Kolay",
+    "medium":         "Orta",
+    "hard":           "Zor",
+    "wrong_retry":    "Yanlış! Tekrar dene 💪",
+    "next_question":  "Sonraki soru...",
+    "correct":        "Doğru!",
+    "points_earned":  "+{points} puan ⭐",
+    "select_answer":  "Doğru cevabı seçin",
+    "hint_btn":       "İpucu Kullan (50 XP)",
+    "hint_no_xp":     "İpucu için reklam izle"
   },
 
   "result": {

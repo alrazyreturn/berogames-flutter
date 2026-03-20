@@ -140,16 +140,20 @@
   },
 
   "game": {
-    "level":         "Level",
-    "question":      "Question {num}",
-    "score":         "Score",
-    "easy":          "Easy",
-    "medium":        "Medium",
-    "hard":          "Hard",
-    "wrong_retry":   "Wrong! Try again 💪",
-    "next_question": "Next question...",
-    "correct":       "Correct!",
-    "points_earned": "+{points} pts ⭐"
+    "level":          "Level",
+    "question":       "Question {num}",
+    "question_of":    "Question {num}/{total}",
+    "score":          "Score",
+    "easy":           "Easy",
+    "medium":         "Medium",
+    "hard":           "Hard",
+    "wrong_retry":    "Wrong! Try again 💪",
+    "next_question":  "Next question...",
+    "correct":        "Correct!",
+    "points_earned":  "+{points} pts ⭐",
+    "select_answer":  "Select the correct answer",
+    "hint_btn":       "Use Hint (XP 50)",
+    "hint_no_xp":     "Watch an ad to get a hint"
   },
 
   "result": {

@@ -11,6 +11,13 @@ import '../services/sound_service.dart';
 import '../services/ad_service.dart';
 import 'thankyou_screen.dart';
 
+// ─── Design tokens (Neon-Glass Editorial) ────────────────────────────────────
+const _cBg     = Color(0xFF0B1326);
+const _cSurface= Color(0xFF131B2E);
+const _cCard   = Color(0xFF171F33);
+const _cCyan   = Color(0xFF00FBFB);
+const _cIndigo = Color(0xFF6366F1);
+
 class GameScreen extends StatefulWidget {
   final CategoryModel category;
   const GameScreen({super.key, required this.category});
@@ -28,33 +35,38 @@ class _GameScreenState extends State<GameScreen>
 
   // ─── ثوابت ───────────────────────────────────────────────────────────────
   static const int _batchSize       = 3;
-  static const int _streakToLevelUp = 2;  // كل 2 صح متتالي → مستوى أصعب
-  static const int _secondsPerQ    = 15;  // وقت كل سؤال
+  static const int _streakToLevelUp = 2;
+  static const int _secondsPerQ    = 15;
+  static const int _maxQuestions   = 10;   // مجموع الأسئلة في الجلسة
+  static const int _hintCost       = 50;   // تكلفة التلميح بالنقاط
 
   // ─── حالة اللعبة ─────────────────────────────────────────────────────────
   int  _currentDifficulty  = 1;
   int  _correctStreak      = 0;
-  int  _questionIndex      = 0;   // عدد الأسئلة التي تم الإجابة عليها صح
+  int  _questionIndex      = 0;
   int  _score              = 0;
   int  _difficultyReached  = 1;
-  int  _correctAnswers     = 0;   // عداد الإجابات الصحيحة
-  int  _wrongAnswers       = 0;   // عداد الإجابات الخاطئة
+  int  _correctAnswers     = 0;
+  int  _wrongAnswers       = 0;
+
+  // Hint per question
+  bool _hintUsed        = false;
+  int? _eliminatedIndex;        // الخيار المحذوف بالتلميح
 
   List<QuestionModel> _batch      = [];
   int                 _batchIndex = 0;
 
-  bool _isLoading          = true;
-  bool _showCelebration    = false; // overlay الاحتفال عند الإجابة الصح
-  bool _isTransitioning    = false; // فترة الانتظار بين الأسئلة
-  bool _isWaitingForRetry  = false; // بعد خطأ → ينتظر إجابة صحيحة
-  bool _isFinishing        = false; // لتفادي استدعاء _finishGame مرتين
-  int? _selected;                   // الخيار المختار حالياً
+  bool _isLoading         = true;
+  bool _showCelebration   = false;
+  bool _isTransitioning   = false;
+  bool _isWaitingForRetry = false;
+  bool _isFinishing       = false;
+  int? _selected;
 
   // ─── Controllers ─────────────────────────────────────────────────────────
   late AnimationController _timerCtrl;
   late ConfettiController  _confettiCtrl;
 
-  // ─── Getter السؤال الحالي ────────────────────────────────────────────────
   QuestionModel? get _current =>
       _batchIndex < _batch.length ? _batch[_batchIndex] : null;
 
@@ -78,7 +90,7 @@ class _GameScreenState extends State<GameScreen>
     super.dispose();
   }
 
-  // ─── تهيئة: نجيب مستوى اليوزر في هذا القسم ──────────────────────────────
+  // ─── تهيئة اللعبة ────────────────────────────────────────────────────────
   Future<void> _initGame() async {
     final token = context.read<UserProvider>().token;
     if (token != null) {
@@ -97,10 +109,9 @@ class _GameScreenState extends State<GameScreen>
     _loadNextBatch();
   }
 
-  // ─── تحميل دفعة جديدة من الأسئلة ────────────────────────────────────────
+  // ─── تحميل دفعة أسئلة ────────────────────────────────────────────────────
   Future<void> _loadNextBatch() async {
     setState(() => _isLoading = true);
-
     final lang = context.locale.languageCode;
     List<QuestionModel> questions = [];
     int tryDifficulty = _currentDifficulty;
@@ -118,7 +129,6 @@ class _GameScreenState extends State<GameScreen>
     if (!mounted) return;
 
     if (questions.isEmpty) {
-      // خلصت الأسئلة في قاعدة البيانات
       _finishGame();
       return;
     }
@@ -129,11 +139,13 @@ class _GameScreenState extends State<GameScreen>
       _isLoading         = false;
       _isWaitingForRetry = false;
       _selected          = null;
+      _hintUsed          = false;
+      _eliminatedIndex   = null;
     });
     _startTimer();
   }
 
-  // ─── Timer لكل سؤال على حدة ──────────────────────────────────────────────
+  // ─── Timer ────────────────────────────────────────────────────────────────
   void _startTimer() {
     _timerCtrl.reset();
     _timerCtrl.forward().then((_) {
@@ -141,7 +153,6 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  // ─── انتهى الوقت = مثل الإجابة الخاطئة ──────────────────────────────────
   void _onTimeUp() {
     if (_showCelebration || _isLoading) return;
     _soundService.playWrong();
@@ -151,28 +162,26 @@ class _GameScreenState extends State<GameScreen>
       _isWaitingForRetry = true;
       _selected          = null;
     });
-    _startTimer(); // نعيد الـ timer عشان يحاول تاني
+    _startTimer();
   }
 
   // ─── اختيار إجابة ────────────────────────────────────────────────────────
   void _answer(int index) {
     if (_showCelebration || _current == null || _isLoading) return;
+    if (index == _eliminatedIndex) return; // الخيار المحذوف بالتلميح
     _timerCtrl.stop();
 
     final correct = index == _current!.correctIndex;
     setState(() => _selected = index);
 
     if (correct) {
-      // ✅ إجابة صحيحة
       _soundService.playCorrect();
-
       final earned = _current!.points;
       _score += earned;
       _correctStreak++;
       _correctAnswers++;
       _isWaitingForRetry = false;
 
-      // رفع الصعوبة بعد N صح متتالي
       if (_correctStreak >= _streakToLevelUp && _currentDifficulty < 10) {
         _currentDifficulty++;
         _correctStreak = 0;
@@ -180,18 +189,14 @@ class _GameScreenState extends State<GameScreen>
           _difficultyReached = _currentDifficulty;
         }
       }
-
       _saveScoreLocally();
       _showCelebrationOverlay(earned);
     } else {
-      // ❌ إجابة خاطئة → نخصم ونبقى في نفس السؤال
       _soundService.playWrong();
       _deductScore();
       _correctStreak = 0;
       _wrongAnswers++;
       _saveScoreLocally();
-
-      // نظهر الإجابة محمرة ثانية ثم نعيد الـ timer
       setState(() => _isWaitingForRetry = true);
 
       Future.delayed(const Duration(milliseconds: 800), () {
@@ -203,27 +208,50 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  // ─── خصم نقاط (الحد الأدنى 0) ───────────────────────────────────────────
   void _deductScore() {
     final deduct = (_current?.difficulty ?? 1) * 5;
     setState(() => _score = (_score - deduct).clamp(0, 999999));
   }
 
-  // ─── Celebration overlay عند الإجابة الصحيحة ────────────────────────────
+  // ─── التلميح ─────────────────────────────────────────────────────────────
+  void _useHint() {
+    if (_hintUsed || _current == null || _showCelebration) return;
+
+    if (_score >= _hintCost) {
+      setState(() => _score -= _hintCost);
+      _grantHint();
+    } else {
+      // نقاط غير كافية → شاهد إعلاناً
+      AdService().showRewarded(onRewarded: () {
+        if (mounted) _grantHint();
+      });
+    }
+  }
+
+  void _grantHint() {
+    if (_current == null || _hintUsed) return;
+    // نختار عشوائياً إجابة خاطئة لإزالتها
+    final wrongIndices = List.generate(_current!.options.length, (i) => i)
+      ..removeWhere((i) => i == _current!.correctIndex);
+    wrongIndices.shuffle();
+    setState(() {
+      _hintUsed        = true;
+      _eliminatedIndex = wrongIndices.first;
+    });
+  }
+
+  // ─── Celebration ─────────────────────────────────────────────────────────
   void _showCelebrationOverlay(int earned) {
     setState(() => _showCelebration = true);
     _confettiCtrl.play();
 
-    // 1️⃣  ينتهي الاحتفال بعد 1.2 ثانية
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (!mounted) return;
       setState(() {
         _showCelebration = false;
-        _isTransitioning = true; // نبدأ فترة الانتقال
+        _isTransitioning = true;
         _selected        = null;
       });
-
-      // 2️⃣  ثانية إضافية قبل ظهور السؤال الجاي
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (!mounted) return;
         setState(() => _isTransitioning = false);
@@ -232,18 +260,25 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  // ─── الانتقال للسؤال الجاي ───────────────────────────────────────────────
   void _nextQuestion() {
     _questionIndex++;
-    _batchIndex++;
 
+    // انتهت الـ 10 أسئلة
+    if (_questionIndex >= _maxQuestions) {
+      _finishGame();
+      return;
+    }
+
+    _batchIndex++;
     setState(() {
       _selected          = null;
       _isWaitingForRetry = false;
+      _hintUsed          = false;
+      _eliminatedIndex   = null;
     });
 
     if (_batchIndex >= _batch.length) {
-      _loadNextBatch(); // حمّل دفعة جديدة
+      _loadNextBatch();
     } else {
       _startTimer();
     }
@@ -255,10 +290,8 @@ class _GameScreenState extends State<GameScreen>
     _isFinishing = true;
     _timerCtrl.stop();
 
-    final provider = context.read<UserProvider>();
-    final token    = provider.token;
-
-    // Optimistic update: نحدث السكور فوراً
+    final provider     = context.read<UserProvider>();
+    final token        = provider.token;
     final currentTotal = provider.user?.totalScore ?? 0;
     await provider.updateTotalScore(currentTotal + _score);
 
@@ -279,7 +312,6 @@ class _GameScreenState extends State<GameScreen>
 
     if (!mounted) return;
 
-    // ✅ عرض Interstitial كل 3 مباريات قبل الانتقال لشاشة النتيجة
     final score             = _score;
     final questionsAnswered = _questionIndex;
     final difficultyReached = _difficultyReached;
@@ -304,7 +336,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  // ─── حفظ النتيجة الجارية محلياً بعد كل إجابة ────────────────────────────
   Future<void> _saveScoreLocally() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -323,23 +354,39 @@ class _GameScreenState extends State<GameScreen>
     } catch (_) {}
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────────
+  // ─── حالة زرار الإجابة ───────────────────────────────────────────────────
+  _OptionState _getOptionState(int index) {
+    if (index == _eliminatedIndex) return _OptionState.eliminated;
+    if (_selected == null) return _OptionState.normal;
+    if (index == _selected) {
+      return (index == _current!.correctIndex)
+          ? _OptionState.correct
+          : _OptionState.wrong;
+    }
+    return _OptionState.normal;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //                              BUILD
+  // ══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF1A1A2E),
+        backgroundColor: _cBg,
         body: Center(
-            child: CircularProgressIndicator(color: Color(0xFF6C63FF))),
+          child: CircularProgressIndicator(color: _cCyan, strokeWidth: 2),
+        ),
       );
     }
 
     final question = _current;
     if (question == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFF1A1A2E),
+        backgroundColor: _cBg,
         body: Center(
-            child: CircularProgressIndicator(color: Color(0xFF6C63FF))),
+          child: CircularProgressIndicator(color: _cCyan, strokeWidth: 2),
+        ),
       );
     }
 
@@ -349,55 +396,82 @@ class _GameScreenState extends State<GameScreen>
         if (!didPop) _finishGame();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: _cBg,
         body: Stack(
           children: [
 
-            // ─── المحتوى الأساسي ────────────────────────────────────────
+            // ─── Main content ─────────────────────────────────────────────
             SafeArea(
               child: Column(
                 children: [
 
-                  // ─── Header ──────────────────────────────────────────────
+                  // ─── Header ─────────────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                        horizontal: 16, vertical: 10),
                     child: Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white54, size: 20),
-                          onPressed: _finishGame,
+                        // Back button
+                        GestureDetector(
+                          onTap: _finishGame,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _cCyan.withValues(alpha: 0.10),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: _cCyan,
+                              size: 18,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        // Question counter
                         Text(
-                          '${'game.question'.tr(namedArgs: {'num': '${_questionIndex + 1}'})}  •  ${widget.category.localizedName(context.locale.languageCode)}',
+                          'game.question_of'.tr(namedArgs: {
+                            'num':   '${_questionIndex + 1}',
+                            'total': '$_maxQuestions',
+                          }),
                           style: const TextStyle(
-                              color: Colors.white70, fontSize: 13),
+                            color:      _cCyan,
+                            fontSize:   15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const Spacer(),
-                        // النقاط
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 400),
+                        // XP Badge
+                        Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 5),
+                              horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF)
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(20),
+                            color:        _cCard,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                                color: _cCyan.withValues(alpha: 0.25),
+                                width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color:      _cCyan.withValues(alpha: 0.12),
+                                blurRadius: 12,
+                              ),
+                            ],
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 16),
-                              const SizedBox(width: 4),
                               Text(
-                                '$_score',
+                                'XP ${_formatScore(_score)}',
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color:      Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                                  fontSize:   14,
                                 ),
                               ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.star_rounded,
+                                  color: _cCyan, size: 16),
                             ],
                           ),
                         ),
@@ -405,103 +479,127 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
 
-                  // ─── مستوى الصعوبة ─────────────────────────────────────
+                  const SizedBox(height: 4),
+
+                  // ─── Question Card ─────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Text('${'game.level'.tr()}: ',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 11)),
-                        ...List.generate(
-                            10,
-                            (i) => Container(
-                                  width: 16,
-                                  height: 7,
-                                  margin: const EdgeInsets.only(right: 3),
-                                  decoration: BoxDecoration(
-                                    color: i < _currentDifficulty
-                                        ? _difficultyColor(
-                                            _currentDifficulty)
-                                        : Colors.white12,
-                                    borderRadius: BorderRadius.circular(2),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color:        _cSurface,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        children: [
+                          // Timer row
+                          AnimatedBuilder(
+                            animation: _timerCtrl,
+                            builder: (_, __) {
+                              final remaining =
+                                  (_secondsPerQ * (1 - _timerCtrl.value))
+                                      .ceil();
+                              final isUrgent = remaining <= 5;
+                              return Row(
+                                children: [
+                                  // Progress bar
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: LinearProgressIndicator(
+                                        value: 1 - _timerCtrl.value,
+                                        backgroundColor: Colors.white12,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          isUrgent
+                                              ? Colors.redAccent
+                                              : _cCyan,
+                                        ),
+                                        minHeight: 6,
+                                      ),
+                                    ),
                                   ),
-                                )),
-                        const SizedBox(width: 6),
-                        Text(
-                          _difficultyLabel(_currentDifficulty),
-                          style: TextStyle(
-                            color: _difficultyColor(_currentDifficulty),
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 14),
+                                  // Circular timer
+                                  SizedBox(
+                                    width:  52,
+                                    height: 52,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        CircularProgressIndicator(
+                                          value: 1 - _timerCtrl.value,
+                                          backgroundColor: Colors.white12,
+                                          color: isUrgent
+                                              ? Colors.redAccent
+                                              : _cCyan,
+                                          strokeWidth: 3,
+                                        ),
+                                        Text(
+                                          '${remaining}s',
+                                          style: TextStyle(
+                                            color: isUrgent
+                                                ? Colors.redAccent
+                                                : Colors.white,
+                                            fontSize:   13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 18),
+
+                          // Question text
+                          Text(
+                            question.questionText,
+                            textAlign:     TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(
+                              color:      Colors.white,
+                              fontSize:   20,
+                              fontWeight: FontWeight.bold,
+                              height:     1.5,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // Subtitle
+                          Text(
+                            'game.select_answer'.tr().toUpperCase(),
+                            style: TextStyle(
+                              color:         Colors.white.withValues(alpha: 0.4),
+                              fontSize:      11,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                  // ─── Timer Bar ─────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: AnimatedBuilder(
-                      animation: _timerCtrl,
-                      builder: (_, __) {
-                        final remaining =
-                            (_secondsPerQ * (1 - _timerCtrl.value)).ceil();
-                        final isUrgent = remaining <= 5;
-                        return Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: 1 - _timerCtrl.value,
-                                backgroundColor: Colors.white12,
-                                color: isUrgent
-                                    ? Colors.redAccent
-                                    : Colors.greenAccent,
-                                minHeight: 7,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                '${remaining}s',
-                                style: TextStyle(
-                                  color: isUrgent
-                                      ? Colors.redAccent
-                                      : Colors.white38,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // ─── رسالة "حاول مجدداً" ──────────────────────────────
+                  // Wrong retry banner
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 250),
                     child: _isWaitingForRetry
                         ? Container(
                             key: const ValueKey('retry'),
                             margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 4),
+                                horizontal: 16, vertical: 2),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 7),
                             decoration: BoxDecoration(
                               color: Colors.redAccent
                                   .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: Colors.redAccent
-                                      .withValues(alpha: 0.5)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -512,80 +610,120 @@ class _GameScreenState extends State<GameScreen>
                                 Text(
                                   'game.wrong_retry'.tr(),
                                   style: const TextStyle(
-                                      color: Colors.redAccent, fontSize: 13),
+                                      color: Colors.redAccent, fontSize: 12),
                                 ),
                               ],
                             ),
                           )
-                        : const SizedBox(key: ValueKey('empty'), height: 0),
+                        : const SizedBox(
+                            key: ValueKey('no-retry'), height: 0),
                   ),
 
                   const SizedBox(height: 8),
 
-                  // ─── نص السؤال ─────────────────────────────────────────
+                  // ─── Answer Options ────────────────────────────────────
                   Expanded(
-                    flex: 3,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      child: ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: question.options.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final key = question.options[i]['key'] ?? '?';
+                          // Arabic letter badges: أ ب ج د
+                          final badge = _letterBadge(i);
+                          return _OptionTile(
+                            text:    question.options[i]['text'] ?? '',
+                            badge:   badge,
+                            keyLabel: key.toUpperCase(),
+                            state:   _getOptionState(i),
+                            onTap:   (_showCelebration ||
+                                    _getOptionState(i) ==
+                                        _OptionState.eliminated)
+                                ? null
+                                : () => _answer(i),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ─── Hint Button ───────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SizedBox(
+                      width:  double.infinity,
+                      height: 52,
+                      child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white12),
+                          gradient: _hintUsed
+                              ? null
+                              : const LinearGradient(
+                                  colors: [_cCyan, _cIndigo],
+                                  begin: Alignment.centerLeft,
+                                  end:   Alignment.centerRight,
+                                ),
+                          color: _hintUsed
+                              ? Colors.white10
+                              : null,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: _hintUsed
+                              ? []
+                              : [
+                                  BoxShadow(
+                                    color:      _cCyan.withValues(alpha: 0.25),
+                                    blurRadius: 16,
+                                    offset:     const Offset(0, 4),
+                                  ),
+                                ],
                         ),
-                        child: Center(
-                          child: Text(
-                            question.questionText,
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              height: 1.6,
+                        child: ElevatedButton.icon(
+                          onPressed: _hintUsed || _showCelebration
+                              ? null
+                              : _useHint,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:         Colors.transparent,
+                            disabledBackgroundColor: Colors.transparent,
+                            shadowColor:             Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30)),
+                            elevation: 0,
+                          ),
+                          icon: Icon(
+                            Icons.flash_on_rounded,
+                            color: _hintUsed
+                                ? Colors.white30
+                                : Colors.black,
+                            size: 20,
+                          ),
+                          label: Text(
+                            _hintUsed
+                                ? '─'
+                                : (_score >= _hintCost
+                                    ? 'game.hint_btn'.tr()
+                                    : 'game.hint_no_xp'.tr()),
+                            style: TextStyle(
+                              color: _hintUsed
+                                  ? Colors.white30
+                                  : Colors.black,
+                              fontSize:   15,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 14),
-
-                  // ─── خيارات الإجابة ─────────────────────────────────────
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: List.generate(question.options.length,
-                            (i) {
-                          return _OptionButton(
-                            text: question.options[i]['text']!,
-                            label: question.options[i]['key']!
-                                .toUpperCase(),
-                            state: _getOptionState(i),
-                            // لو عندنا احتفال → نوقف الضغط
-                            onTap: _showCelebration
-                                ? null
-                                : () => _answer(i),
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
 
-            // ─── Confetti يطلع من فوق ────────────────────────────────────
+            // ─── Confetti ─────────────────────────────────────────────────
             Align(
               alignment: Alignment.topCenter,
               child: ConfettiWidget(
@@ -594,21 +732,17 @@ class _GameScreenState extends State<GameScreen>
                 numberOfParticles: 28,
                 gravity: 0.25,
                 colors: const [
-                  Color(0xFF6C63FF),
-                  Color(0xFFFFD700),
-                  Color(0xFF4CAF50),
-                  Colors.white,
-                  Colors.pinkAccent,
-                  Colors.cyanAccent,
+                  _cCyan, _cIndigo, Color(0xFFFFD700),
+                  Colors.white, Colors.pinkAccent,
                 ],
               ),
             ),
 
-            // ─── Celebration Overlay ──────────────────────────────────────
+            // ─── Celebration Overlay ───────────────────────────────────────
             if (_showCelebration)
               _CelebrationOverlay(points: _current?.points ?? 0),
 
-            // ─── Transition Overlay (بين الأسئلة) ────────────────────────
+            // ─── Transition Overlay ────────────────────────────────────────
             if (_isTransitioning)
               const _TransitionOverlay(),
           ],
@@ -617,31 +751,141 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  // ─── حالة زرار الإجابة ───────────────────────────────────────────────────
-  _OptionState _getOptionState(int index) {
-    if (_selected == null) return _OptionState.normal;
-    if (index == _selected) {
-      return (index == _current!.correctIndex)
-          ? _OptionState.correct
-          : _OptionState.wrong;
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  String _letterBadge(int i) {
+    // Arabic letter badges: أ ب ج د
+    const badges = ['أ', 'ب', 'ج', 'د'];
+    return i < badges.length ? badges[i] : '${i + 1}';
+  }
+
+  String _formatScore(int n) {
+    if (n < 1000) return '$n';
+    final s   = n.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
     }
-    return _OptionState.normal;
-  }
-
-  Color _difficultyColor(int d) {
-    if (d <= 3) return Colors.greenAccent;
-    if (d <= 6) return Colors.orangeAccent;
-    return Colors.redAccent;
-  }
-
-  String _difficultyLabel(int d) {
-    if (d <= 3) return 'game.easy'.tr();
-    if (d <= 6) return 'game.medium'.tr();
-    return 'game.hard'.tr();
+    return buf.toString();
   }
 }
 
-// ─── Celebration Overlay Widget ──────────────────────────────────────────────
+// ─── Option States ────────────────────────────────────────────────────────────
+enum _OptionState { normal, correct, wrong, eliminated }
+
+// ─── Option Tile (pill-shaped) ────────────────────────────────────────────────
+class _OptionTile extends StatelessWidget {
+  final String        text;
+  final String        badge;
+  final String        keyLabel;
+  final _OptionState  state;
+  final VoidCallback? onTap;
+
+  const _OptionTile({
+    required this.text,
+    required this.badge,
+    required this.keyLabel,
+    required this.state,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg = switch (state) {
+      _OptionState.correct    => const Color(0xFF1B4332),
+      _OptionState.wrong      => const Color(0xFF3B1B1B),
+      _OptionState.eliminated => Colors.white.withValues(alpha: 0.03),
+      _OptionState.normal     => _cCard,
+    };
+
+    final Color borderColor = switch (state) {
+      _OptionState.correct    => const Color(0xFF4CAF50),
+      _OptionState.wrong      => Colors.redAccent,
+      _OptionState.eliminated =>
+          Colors.white.withValues(alpha: 0.08),
+      _OptionState.normal     =>
+          Colors.white.withValues(alpha: 0.08),
+    };
+
+    final Color badgeColor = switch (state) {
+      _OptionState.correct    => const Color(0xFF4CAF50),
+      _OptionState.wrong      => Colors.redAccent,
+      _OptionState.eliminated => Colors.white24,
+      _OptionState.normal     => _cCyan,
+    };
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color:        bg,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: borderColor, width: 1.5),
+          boxShadow: state == _OptionState.correct
+              ? [
+                  BoxShadow(
+                    color:      const Color(0xFF4CAF50)
+                        .withValues(alpha: 0.25),
+                    blurRadius: 12,
+                  )
+                ]
+              : [],
+        ),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: [
+              // Answer text (RTL inside LTR row)
+              Expanded(
+                child: Text(
+                  text,
+                  textDirection: TextDirection.rtl,
+                  textAlign:     TextAlign.right,
+                  maxLines:      2,
+                  overflow:      TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color:      state == _OptionState.eliminated
+                        ? Colors.white24
+                        : Colors.white,
+                    fontSize:   15,
+                    fontWeight: FontWeight.w500,
+                    height:     1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Letter badge
+              Container(
+                width:  36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: badgeColor, width: 2),
+                  color: badgeColor.withValues(alpha: 0.12),
+                ),
+                child: Center(
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      color:      badgeColor,
+                      fontSize:   14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Celebration Overlay ──────────────────────────────────────────────────────
 class _CelebrationOverlay extends StatelessWidget {
   final int points;
   const _CelebrationOverlay({required this.points});
@@ -649,7 +893,7 @@ class _CelebrationOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.55),
+      color: Colors.black.withValues(alpha: 0.60),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -659,26 +903,26 @@ class _CelebrationOverlay extends StatelessWidget {
             Text(
               'game.correct'.tr(),
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 30,
+                color:      Colors.white,
+                fontSize:   28,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 24, vertical: 10),
+                  horizontal: 28, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                color:        _cCyan.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                    color: const Color(0xFFFFD700), width: 2),
+                border:       Border.all(color: _cCyan, width: 2),
               ),
               child: Text(
-                'game.points_earned'.tr(namedArgs: {'points': '$points'}),
+                'game.points_earned'
+                    .tr(namedArgs: {'points': '$points'}),
                 style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontSize: 24,
+                  color:      _cCyan,
+                  fontSize:   22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -690,7 +934,7 @@ class _CelebrationOverlay extends StatelessWidget {
   }
 }
 
-// ─── Transition Overlay بين الأسئلة ──────────────────────────────────────────
+// ─── Transition Overlay ───────────────────────────────────────────────────────
 class _TransitionOverlay extends StatefulWidget {
   const _TransitionOverlay();
 
@@ -735,105 +979,23 @@ class _TransitionOverlayState extends State<_TransitionOverlay>
               Text(
                 'game.next_question'.tr(),
                 style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
+                  color:         Colors.white70,
+                  fontSize:      22,
+                  fontWeight:    FontWeight.w500,
                   letterSpacing: 1,
                 ),
               ),
               const SizedBox(height: 16),
               const SizedBox(
-                width: 40,
+                width:  40,
                 height: 40,
-                child: CircularProgressIndicator(
-                  color: Color(0xFF6C63FF),
+                child:  CircularProgressIndicator(
+                  color:       _cCyan,
                   strokeWidth: 3,
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── حالات زرار الإجابة ──────────────────────────────────────────────────────
-enum _OptionState { normal, correct, wrong }
-
-// ─── Widget زرار الإجابة ─────────────────────────────────────────────────────
-class _OptionButton extends StatelessWidget {
-  final String        text;
-  final String        label;
-  final _OptionState  state;
-  final VoidCallback? onTap; // nullable: null = disabled أثناء الاحتفال
-
-  const _OptionButton({
-    required this.text,
-    required this.label,
-    required this.state,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color bgColor = switch (state) {
-      _OptionState.correct => const Color(0xFF4CAF50),
-      _OptionState.wrong   => const Color(0xFFF44336),
-      _OptionState.normal  => Colors.white.withValues(alpha: 0.07),
-    };
-
-    final Color borderColor = switch (state) {
-      _OptionState.correct => const Color(0xFF4CAF50),
-      _OptionState.wrong   => const Color(0xFFF44336),
-      _OptionState.normal  => Colors.white12,
-    };
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 1.5),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              textAlign: TextAlign.center,
-              textDirection: TextDirection.rtl,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-          ],
         ),
       ),
     );
