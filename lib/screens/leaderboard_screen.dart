@@ -556,13 +556,56 @@ class _PlayerProfileSheet extends StatefulWidget {
   State<_PlayerProfileSheet> createState() => _PlayerProfileSheetState();
 }
 
-class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
-  bool   _sending  = false;
-  bool   _sent     = false;
-  String? _errorMsg;
+/// حالات العلاقة مع اللاعب
+enum _FriendStatus {
+  loading,       // جاري التحميل
+  none,          // لا توجد صداقة
+  accepted,      // أصدقاء بالفعل
+  pendingSent,   // أرسلت طلبًا من قبل
+  pendingReceived, // هو من أرسل الطلب
+}
 
+class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
+  _FriendStatus _status   = _FriendStatus.loading;
+  bool          _sending  = false;
+  String?       _errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFriendStatus();
+  }
+
+  // ─── جلب حالة الصداقة من الـ API ─────────────────────────────────────────
+  Future<void> _loadFriendStatus() async {
+    try {
+      final res = await widget.dio.get(
+        '${ApiConfig.friendsStatus}/${widget.player['id']}',
+        options: Options(
+            headers: {'Authorization': 'Bearer ${widget.token}'}),
+      );
+      final raw = res.data['status'] as String? ?? 'none';
+      if (!mounted) return;
+      setState(() {
+        switch (raw) {
+          case 'accepted':
+            _status = _FriendStatus.accepted;
+          case 'pending_sent':
+            _status = _FriendStatus.pendingSent;
+          case 'pending_received':
+            _status = _FriendStatus.pendingReceived;
+          default:
+            _status = _FriendStatus.none;
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _status = _FriendStatus.none);
+    }
+  }
+
+  // ─── إرسال طلب صداقة ─────────────────────────────────────────────────────
   Future<void> _sendFriendRequest() async {
-    if (_sending || _sent) return;
+    if (_sending || _status != _FriendStatus.none) return;
     setState(() { _sending = true; _errorMsg = null; });
 
     try {
@@ -570,10 +613,14 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
         ApiConfig.friendsRequestById,
         data: {'userId': widget.player['id']},
         options: Options(
-          headers: {'Authorization': 'Bearer ${widget.token}'},
-        ),
+            headers: {'Authorization': 'Bearer ${widget.token}'}),
       );
-      if (mounted) setState(() { _sending = false; _sent = true; });
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _status  = _FriendStatus.pendingSent;
+        });
+      }
     } on DioException catch (e) {
       final msg = e.response?.data?['message'] as String?;
       if (mounted) {
@@ -589,6 +636,131 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           _errorMsg = 'حدث خطأ، حاول مرة أخرى';
         });
       }
+    }
+  }
+
+  // ─── بناء الزر حسب الحالة ────────────────────────────────────────────────
+  Widget _buildActionButton() {
+    switch (_status) {
+
+      // جاري التحميل
+      case _FriendStatus.loading:
+        return const SizedBox(
+          height: 52,
+          child: Center(
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Color(0xFF6C63FF)),
+          ),
+        );
+
+      // لا توجد صداقة → زر الإضافة مفعّل
+      case _FriendStatus.none:
+        return SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: _sending ? null : _sendFriendRequest,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C63FF),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+            ),
+            icon: _sending
+                ? const SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.person_add, color: Colors.white),
+            label: const Text(
+              'إضافة صديق',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+
+      // أصدقاء بالفعل → فقط chip أخضر، بدون زر قابل للضغط
+      case _FriendStatus.accepted:
+        return Container(
+          width: double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.green.shade800.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.green.shade600, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.people, color: Colors.green.shade400, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'أصدقاء',
+                style: TextStyle(
+                    color: Colors.green.shade400,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        );
+
+      // طلب مُرسَل من قبل → زر معطَّل رمادي
+      case _FriendStatus.pendingSent:
+        return SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white12,
+              disabledBackgroundColor: Colors.white12,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            icon: const Icon(Icons.check_circle_outline,
+                color: Colors.white38),
+            label: const Text(
+              'تم إرسال طلب الصداقة',
+              style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+
+      // طلب واصل من اللاعب → نبلغ المستخدم
+      case _FriendStatus.pendingReceived:
+        return Container(
+          width: double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.orange.shade900.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: Colors.orange.shade600, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.notifications_active,
+                  color: Colors.orange.shade400, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'أرسل لك طلب صداقة',
+                style: TextStyle(
+                    color: Colors.orange.shade400,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        );
     }
   }
 
@@ -668,52 +840,20 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
           const SizedBox(height: 24),
 
-          // ─ زر الإضافة ─────────────────────────────────────────────
+          // ─ رسالة الخطأ (عند إرسال الطلب) ──────────────────────────
           if (_errorMsg != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 _errorMsg!,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                style: const TextStyle(
+                    color: Colors.redAccent, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
             ),
 
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: _sent ? null : _sendFriendRequest,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _sent
-                    ? Colors.green.shade700
-                    : const Color(0xFF6C63FF),
-                disabledBackgroundColor: Colors.green.shade700,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                elevation: 4,
-              ),
-              icon: _sending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Icon(
-                      _sent ? Icons.check : Icons.person_add,
-                      color: Colors.white,
-                    ),
-              label: Text(
-                _sent
-                    ? 'تم إرسال الطلب ✓'
-                    : 'إضافة صديق',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
+          // ─ الزر حسب الحالة ────────────────────────────────────────
+          _buildActionButton(),
         ],
       ),
     );
