@@ -257,7 +257,13 @@
     "email_provider": "E-posta",
     "save":           "Değişiklikleri Kaydet",
     "language":       "Dil 🌍",
-    "logout":         "Çıkış Yap"
+    "logout":         "Çıkış Yap",
+    "level":          "Seviye",
+    "xp_points":      "Deneyim Puanı",
+    "world_rank":     "Dünya Sıralaması",
+    "top_percent":    "En iyi %{percent} oyuncu arasındasın",
+    "account_info":   "Hesap Bilgileri",
+    "username":       "Kullanıcı Adı"
   },
 
   "leaderboard": {

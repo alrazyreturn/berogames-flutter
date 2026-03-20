@@ -257,7 +257,13 @@
     "email_provider":"إيميل",
     "save":          "حفظ التغييرات",
     "language":      "اللغة 🌍",
-    "logout":        "تسجيل الخروج"
+    "logout":        "تسجيل الخروج",
+    "level":         "المستوى",
+    "xp_points":     "نقاط الخبرة",
+    "world_rank":    "الترتيب العالمي",
+    "top_percent":   "أنت ضمن أفضل {percent}٪ من اللاعبين",
+    "account_info":  "معلومات الحساب",
+    "username":      "اسم المستخدم"
   },
 
   "leaderboard": {

@@ -257,7 +257,13 @@
     "email_provider": "Email",
     "save":           "Save Changes",
     "language":       "Language 🌍",
-    "logout":         "Logout"
+    "logout":         "Logout",
+    "level":          "Level",
+    "xp_points":      "XP Points",
+    "world_rank":     "World Rank",
+    "top_percent":    "Top {percent}% of players",
+    "account_info":   "Account Info",
+    "username":       "Username"
   },
 
   "leaderboard": {
