@@ -251,7 +251,8 @@
     "today": "Bugün",
     "yesterday": "Dün",
     "you_blocked":  "Bu kullanıcıyı engellediniz",
-    "they_blocked": "Bu kullanıcıya mesaj gönderilemiyor"
+    "they_blocked": "Bu kullanıcıya mesaj gönderilemiyor",
+    "filtered_msg": "⚠️ Mesaj gönderilmedi — uygunsuz kelimeler içeriyor"
   },
   "profile": {
     "title": "Profil",

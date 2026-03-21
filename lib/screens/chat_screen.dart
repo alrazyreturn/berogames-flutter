@@ -9,6 +9,7 @@ import '../services/chat_service.dart';
 import '../services/friends_service.dart';
 import '../services/socket_service.dart';
 import '../services/sound_service.dart';
+import '../widgets/user_profile_sheet.dart';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const _cBg      = Color(0xFF0B1326);
@@ -32,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final _scrollCtrl     = ScrollController();
 
   List<MessageModel> _messages     = [];
+  final Set<int>     _filteredIds  = {};   // IDs الرسائل المرفوضة بسبب كلمات سيئة
   bool   _loading      = true;
   bool   _sending      = false;
   bool   _friendTyping = false;
@@ -109,6 +111,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     } catch (_) {}
   }
 
+  Future<void> _showFriendProfile() async {
+    await showModalBottomSheet<String>(
+      context:           context,
+      backgroundColor:   Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => UserProfileSheet(
+        userId:       widget.friend.userId,
+        name:         widget.friend.name,
+        avatar:       widget.friend.avatar,
+        score:        widget.friend.totalScore,
+        isOnline:     widget.friend.isOnline,
+        friendshipId: widget.friend.friendshipId,
+      ),
+    );
+    // تحديث حالة الحظر بعد إغلاق الشيت
+    if (mounted) _loadBlockStatus();
+  }
+
   void _setupSocket() {
     final myId = context.read<UserProvider>().user?.id;
 
@@ -158,6 +178,22 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _socket.onChatBlocked = (_) {
       if (!mounted) return;
       setState(() => _iBlocked = true);
+    };
+
+    _socket.onChatFiltered = (_) {
+      if (!mounted) return;
+      // ابحث عن آخر رسالة مؤقتة (id سالب) وعلّمها كـ filtered
+      final tempMsg = _messages.lastWhere(
+        (m) => m.id < 0,
+        orElse: () => _messages.first,
+      );
+      if (tempMsg.id < 0) {
+        setState(() {
+          _sending = false;
+          _filteredIds.add(tempMsg.id);
+          _sendTimeoutTimer?.cancel();
+        });
+      }
     };
   }
 
@@ -321,7 +357,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ),
 
                   // أفاتار الصديق
-                  Stack(
+                  GestureDetector(
+                    onTap: _showFriendProfile,
+                    child: Stack(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(2),
@@ -371,6 +409,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     ],
+                  ),
                   ),
 
                   const SizedBox(width: 12),
@@ -435,9 +474,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                     ? () => _deleteMessage(msg)
                                     : null,
                                 child: _MessageBubble(
-                                  msg:       msg,
-                                  isMe:      isMe,
-                                  friend:    widget.friend,
+                                  msg:        msg,
+                                  isMe:       isMe,
+                                  friend:     widget.friend,
+                                  isFiltered: _filteredIds.contains(msg.id),
                                 ),
                               ),
                             ],
@@ -595,11 +635,13 @@ class _MessageBubble extends StatelessWidget {
   final MessageModel msg;
   final bool         isMe;
   final FriendModel  friend;
+  final bool         isFiltered;
 
   const _MessageBubble({
     required this.msg,
     required this.isMe,
     required this.friend,
+    this.isFiltered = false,
   });
 
   @override
@@ -609,70 +651,109 @@ class _MessageBubble extends StatelessWidget {
         '${msg.createdAt.minute.toString().padLeft(2, '0')}';
 
     // فقاعة الرسالة
-    final bubble = Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.65,
-      ),
-      decoration: BoxDecoration(
-        gradient: isMe
-            ? const LinearGradient(
-                colors: [Color(0xFF00FBFB), Color(0xFF00C8D8)],
-                begin:  Alignment.bottomLeft,
-                end:    Alignment.topRight,
-              )
-            : null,
-        color: isMe ? null : _cSurface,
-        borderRadius: BorderRadius.only(
-          topLeft:     const Radius.circular(18),
-          topRight:    const Radius.circular(18),
-          bottomLeft:  Radius.circular(isMe ? 4  : 18),
-          bottomRight: Radius.circular(isMe ? 18 : 4),
-        ),
-        boxShadow: isMe
-            ? [
-                BoxShadow(
-                  color: _cCyan.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                )
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                )
+    final bubble = isFiltered
+        // ── رسالة مرفوضة (كلمة سيئة) ─────────────────────────────────────
+        ? Container(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.65,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.red.shade900.withValues(alpha: 0.18),
+              borderRadius: const BorderRadius.only(
+                topLeft:     Radius.circular(18),
+                topRight:    Radius.circular(18),
+                bottomLeft:  Radius.circular(4),
+                bottomRight: Radius.circular(18),
+              ),
+              border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.4), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: Colors.orangeAccent, size: 16),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'chat.filtered_msg'.tr(),
+                    style: const TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic),
+                    textDirection: TextDirection.rtl,
+                  ),
+                ),
               ],
-      ),
-      child: Column(
-        crossAxisAlignment:
-            isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-        children: [
-          Text(
-            msg.message,
-            style: TextStyle(
-              color: isMe ? _cNavBg : Colors.white,
-              fontSize: 14,
-              height: 1.4,
-              fontWeight: isMe ? FontWeight.w600 : FontWeight.normal,
             ),
-            textDirection: TextDirection.rtl,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            time,
-            style: TextStyle(
-              color: isMe
-                  ? _cNavBg.withValues(alpha: 0.5)
-                  : Colors.white.withValues(alpha: 0.35),
-              fontSize: 10,
+          )
+        // ── رسالة عادية ───────────────────────────────────────────────────
+        : Container(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.65,
             ),
-          ),
-        ],
-      ),
-    );
+            decoration: BoxDecoration(
+              gradient: isMe
+                  ? const LinearGradient(
+                      colors: [Color(0xFF00FBFB), Color(0xFF00C8D8)],
+                      begin:  Alignment.bottomLeft,
+                      end:    Alignment.topRight,
+                    )
+                  : null,
+              color: isMe ? null : _cSurface,
+              borderRadius: BorderRadius.only(
+                topLeft:     const Radius.circular(18),
+                topRight:    const Radius.circular(18),
+                bottomLeft:  Radius.circular(isMe ? 4  : 18),
+                bottomRight: Radius.circular(isMe ? 18 : 4),
+              ),
+              boxShadow: isMe
+                  ? [
+                      BoxShadow(
+                        color: _cCyan.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+            ),
+            child: Column(
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+              children: [
+                Text(
+                  msg.message,
+                  style: TextStyle(
+                    color: isMe ? _cNavBg : Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                    fontWeight: isMe ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: TextStyle(
+                    color: isMe
+                        ? _cNavBg.withValues(alpha: 0.5)
+                        : Colors.white.withValues(alpha: 0.35),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          );
 
     // الرسائل المُستقبَلة: أفاتار + فقاعة
     if (!isMe) {

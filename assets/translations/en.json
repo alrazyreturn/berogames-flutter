@@ -250,8 +250,9 @@
     "start_with": "Start a chat with {name}!",
     "today": "Today",
     "yesterday": "Yesterday",
-    "you_blocked":  "You blocked this user",
-    "they_blocked": "Cannot send messages to this user"
+    "you_blocked":    "You blocked this user",
+    "they_blocked":   "Cannot send messages to this user",
+    "filtered_msg":   "⚠️ Message not sent — contains inappropriate language"
   },
   "profile": {
     "title": "Profile",
