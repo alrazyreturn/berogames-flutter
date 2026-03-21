@@ -135,8 +135,13 @@
   },
 
   "categories": {
-    "title":      "Kategori Seç",
-    "load_error": "Kategoriler yüklenemedi"
+    "title":          "Kategori Seç",
+    "load_error":     "Kategoriler yüklenemedi",
+    "premium_badge":  "Premium 🔒",
+    "premium_desc":   "Bu özel bir kategori! Girmek için ücretsiz reklam izle veya 1 enerji kullan.",
+    "watch_ad_btn":   "▶ Reklam İzle (Ücretsiz)",
+    "use_energy_btn": "Enerji Kullan (−1 ❤️)",
+    "no_energy":      "Enerjin bitti! Girmek için reklam izle"
   },
 
   "game": {

@@ -135,8 +135,13 @@
   },
 
   "categories": {
-    "title":      "Choose Category",
-    "load_error": "Failed to load categories"
+    "title":          "Choose Category",
+    "load_error":     "Failed to load categories",
+    "premium_badge":  "Premium 🔒",
+    "premium_desc":   "This is an exclusive category! Watch a free ad or use 1 energy to enter.",
+    "watch_ad_btn":   "▶ Watch Ad (Free)",
+    "use_energy_btn": "Use Energy (−1 ❤️)",
+    "no_energy":      "No energy left! Watch an ad to enter"
   },
 
   "game": {

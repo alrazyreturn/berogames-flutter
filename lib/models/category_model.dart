@@ -7,6 +7,7 @@ class CategoryModel {
   final String nameTr;
   final String icon;
   final String colorHex;
+  final bool   isPremium;
 
   CategoryModel({
     required this.id,
@@ -15,15 +16,17 @@ class CategoryModel {
     required this.nameTr,
     required this.icon,
     required this.colorHex,
+    this.isPremium = false,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> j) => CategoryModel(
-    id:       j['id'],
-    nameAr:   j['name_ar'] ?? j['name'] ?? '',
-    nameEn:   j['name_en'] ?? j['name_ar'] ?? j['name'] ?? '',
-    nameTr:   j['name_tr'] ?? j['name_ar'] ?? j['name'] ?? '',
-    icon:     j['icon']    ?? '📚',
-    colorHex: j['color']   ?? '#2196F3',
+    id:        j['id'],
+    nameAr:    j['name_ar'] ?? j['name'] ?? '',
+    nameEn:    j['name_en'] ?? j['name_ar'] ?? j['name'] ?? '',
+    nameTr:    j['name_tr'] ?? j['name_ar'] ?? j['name'] ?? '',
+    icon:      j['icon']    ?? '📚',
+    colorHex:  j['color']   ?? '#2196F3',
+    isPremium: (j['is_premium'] == 1 || j['is_premium'] == true),
   );
 
   /// إرجاع الاسم بناءً على كود اللغة (ar / en / tr)
