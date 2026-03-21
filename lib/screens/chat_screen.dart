@@ -9,9 +9,14 @@ import '../services/chat_service.dart';
 import '../services/socket_service.dart';
 import '../services/sound_service.dart';
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const _cBg      = Color(0xFF0B1326);
+const _cSurface = Color(0xFF131B2E);
+const _cCyan    = Color(0xFF00FBFB);
+const _cNavBg   = Color(0xFF10102B);
+
 class ChatScreen extends StatefulWidget {
   final FriendModel friend;
-
   const ChatScreen({super.key, required this.friend});
 
   @override
@@ -19,14 +24,14 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
-  final _chatService  = ChatService();
-  final _socket       = SocketService();
-  final _msgCtrl      = TextEditingController();
-  final _scrollCtrl   = ScrollController();
+  final _chatService   = ChatService();
+  final _socket        = SocketService();
+  final _msgCtrl       = TextEditingController();
+  final _scrollCtrl    = ScrollController();
 
-  List<MessageModel> _messages   = [];
-  bool   _loading    = true;
-  bool   _sending    = false;
+  List<MessageModel> _messages     = [];
+  bool   _loading      = true;
+  bool   _sending      = false;
   bool   _friendTyping = false;
   Timer? _typingTimer;
   Timer? _sendTimeoutTimer;
@@ -35,7 +40,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // أعلم الـ socket أن هذه المحادثة مفتوحة → لا foreground notification لهذا الصديق
     _socket.activeChatFriendId = widget.friend.userId;
     _loadHistory();
     _setupSocket();
@@ -47,11 +51,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _sendTimeoutTimer?.cancel();
       if (mounted && _sending) setState(() => _sending = false);
       _messages.removeWhere((m) => m.id < 0);
-
-      final user  = context.read<UserProvider>().user;
+      final user = context.read<UserProvider>().user;
       if (user == null) return;
-
-      // أعد الاتصال وسجّل المستخدم على السيرفر فور الاتصال
       _socket.connect(userId: user.id, userName: user.name);
       _setupSocket();
       _loadHistory();
@@ -69,14 +70,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _socket.onChatMessageSent      = null;
     _socket.onChatTyping           = null;
     _socket.onChatMessageDeleted   = null;
-    // أعد تصفير activeChatFriendId → notifications تعود للعمل
-    _socket.activeChatFriendId = null;
-    // إلغاء "يكتب الآن" عند المغادرة
+    _socket.activeChatFriendId     = null;
     _socket.sendTyping(toUserId: widget.friend.userId, isTyping: false);
     super.dispose();
   }
 
-  // ─── تحميل تاريخ المحادثة ────────────────────────────────────────────────
   Future<void> _loadHistory() async {
     final token = context.read<UserProvider>().token;
     if (token == null) return;
@@ -92,25 +90,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  // ─── إعداد Socket ────────────────────────────────────────────────────────
   void _setupSocket() {
     final myId = context.read<UserProvider>().user?.id;
 
-    // استقبال رسالة جديدة من الطرف الآخر
     _socket.onChatMessageReceived = (data) {
       if (!mounted) return;
       final senderId = data['sender_id'] as int?;
-      if (senderId != widget.friend.userId) return; // تجاهل رسائل شخص آخر
+      if (senderId != widget.friend.userId) return;
       final msg = MessageModel.fromJson(data);
-      // منع التكرار: تجاهل لو الرسالة موجودة بالفعل
       if (_messages.any((m) => m.id == msg.id)) return;
       setState(() => _messages.add(msg));
       _scrollToBottom();
-      // 🔔 صوت إشعار عند استقبال رسالة جديدة
       SoundService().playChatNotify();
     };
 
-    // تأكيد إرسال رسالتي — نستبدل الرسالة المؤقتة بالحقيقية
     _socket.onChatMessageSent = (data) {
       if (!mounted) return;
       final senderId = data['sender_id'] as int?;
@@ -119,7 +112,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _sendTimeoutTimer?.cancel();
       setState(() {
         _sending = false;
-        // احذف الرسائل المؤقتة (id سالب) واستبدلها بالحقيقية
         _messages.removeWhere((m) => m.id < 0);
         if (!_messages.any((m) => m.id == realMsg.id)) {
           _messages.add(realMsg);
@@ -128,7 +120,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _scrollToBottom();
     };
 
-    // رسالة اتمسحت من الطرف الآخر
     _socket.onChatMessageDeleted = (data) {
       if (!mounted) return;
       final deletedId = data['message_id'] as int?;
@@ -136,7 +127,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       setState(() => _messages.removeWhere((m) => m.id == deletedId));
     };
 
-    // يكتب الآن...
     _socket.onChatTyping = (data) {
       if (!mounted) return;
       final fromId   = data['from_user_id'] as int?;
@@ -147,14 +137,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     };
   }
 
-  // ─── إرسال رسالة ─────────────────────────────────────────────────────────
   void _send() {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty || _sending) return;
-
     final myId = context.read<UserProvider>().user?.id ?? 0;
-
-    // Optimistic: أضف الرسالة فوراً بـ ID مؤقت (سالب) بدون انتظار السيرفر
     final tempMsg = MessageModel(
       id:         -DateTime.now().millisecondsSinceEpoch,
       senderId:   myId,
@@ -163,34 +149,23 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       isRead:     false,
       createdAt:  DateTime.now(),
     );
-
-    setState(() {
-      _messages.add(tempMsg);
-      _sending = true;
-    });
+    setState(() { _messages.add(tempMsg); _sending = true; });
     _msgCtrl.clear();
     _scrollToBottom();
-
-    // إيقاف إشعار الكتابة
     _socket.sendTyping(toUserId: widget.friend.userId, isTyping: false);
     _typingTimer?.cancel();
-
     _socket.sendChatMessage(toUserId: widget.friend.userId, message: text);
-
-    // Timeout: لو مفيش رد من السيرفر خلال 6 ثوانٍ — أعد التفعيل
     _sendTimeoutTimer?.cancel();
     _sendTimeoutTimer = Timer(const Duration(seconds: 6), () {
       if (mounted && _sending) {
         setState(() {
           _sending = false;
-          // احذف الرسالة المؤقتة لو لم تُؤكَّد
           _messages.removeWhere((m) => m.id < 0);
         });
       }
     });
   }
 
-  // ─── إشعار "يكتب الآن" أثناء الكتابة ────────────────────────────────────
   void _onTextChanged(String value) {
     _typingTimer?.cancel();
     if (value.isNotEmpty) {
@@ -203,43 +178,46 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  // ─── مسح رسالة ───────────────────────────────────────────────────────────
   Future<void> _deleteMessage(MessageModel msg) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E3F),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('chat.delete_msg'.tr(), style: const TextStyle(color: Colors.white)),
-        content: Text(
-          'chat.delete_confirm'.tr(),
-          style: const TextStyle(color: Colors.white70),
-        ),
+        backgroundColor: _cSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text('chat.delete_msg'.tr(),
+            style: const TextStyle(color: Colors.white)),
+        content: Text('chat.delete_confirm'.tr(),
+            style: const TextStyle(color: Colors.white60)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.white54)),
+            child: Text('common.cancel'.tr(),
+                style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('common.delete'.tr(), style: const TextStyle(color: Colors.redAccent)),
+            child: Text('common.delete'.tr(),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
     );
     if (confirm != true || !mounted) return;
-
     final token = context.read<UserProvider>().token;
     if (token == null) return;
-
     try {
       await ChatService().deleteMessage(messageId: msg.id, token: token);
-      _socket.deleteChatMessage(messageId: msg.id, toUserId: widget.friend.userId);
+      _socket.deleteChatMessage(
+          messageId: msg.id, toUserId: widget.friend.userId);
       setState(() => _messages.removeWhere((m) => m.id == msg.id));
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('chat.delete_failed'.tr())),
+          SnackBar(
+            content: Text('chat.delete_failed'.tr()),
+            backgroundColor: _cSurface,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -262,88 +240,153 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final myId = context.read<UserProvider>().user?.id ?? 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E3F),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white70),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: const Color(0xFF6C63FF).withValues(alpha: 0.3),
-                  child: Text(
-                    widget.friend.name.isNotEmpty
-                        ? widget.friend.name[0].toUpperCase()
-                        : '؟',
-                    style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14,
+      backgroundColor: _cBg,
+
+      // ─── Header مخصص ────────────────────────────────────────────────────
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _cSurface,
+            boxShadow: [
+              BoxShadow(
+                color: _cCyan.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  // معلومات الصديق (يسار الشاشة في RTL = يمين منطقي)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.friend.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _friendTyping
+                              ? 'chat.typing_now'.tr()
+                              : widget.friend.isOnline
+                                  ? 'friends.online'.tr()
+                                  : 'friends.offline'.tr(),
+                          style: TextStyle(
+                            color: (_friendTyping || widget.friend.isOnline)
+                                ? _cCyan
+                                : Colors.white38,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                Positioned(
-                  bottom: 0, left: 0,
-                  child: Container(
-                    width: 10, height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:  widget.friend.isOnline ? Colors.greenAccent : Colors.grey,
-                      border: Border.all(color: const Color(0xFF1E1E3F), width: 1.5),
+
+                  // أفاتار الصديق
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: widget.friend.isOnline
+                                ? _cCyan
+                                : Colors.white24,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: _cCyan.withValues(alpha: 0.12),
+                          backgroundImage: widget.friend.avatar != null
+                              ? NetworkImage(widget.friend.avatar!)
+                              : null,
+                          child: widget.friend.avatar == null
+                              ? Text(
+                                  widget.friend.name.isNotEmpty
+                                      ? widget.friend.name[0].toUpperCase()
+                                      : '؟',
+                                  style: const TextStyle(
+                                    color: _cCyan,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                      // نقطة الحالة
+                      Positioned(
+                        bottom: 2,
+                        left: 2,
+                        child: Container(
+                          width: 11,
+                          height: 11,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: widget.friend.isOnline
+                                ? Colors.greenAccent
+                                : Colors.grey.shade600,
+                            border: Border.all(color: _cSurface, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // زر الرجوع (← سيان)
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: _cCyan,
+                      size: 22,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.friend.name,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                if (_friendTyping)
-                  Text(
-                    'chat.typing_now'.tr(),
-                    style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
-                  )
-                else
-                  Text(
-                    widget.friend.isOnline ? 'friends.online'.tr() : 'friends.offline'.tr(),
-                    style: TextStyle(
-                      color: widget.friend.isOnline ? Colors.greenAccent : Colors.grey,
-                      fontSize: 11,
-                    ),
-                  ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
 
       body: Column(
         children: [
-          // ─── قائمة الرسائل ──────────────────────────────────────────────
+          // ─── قائمة الرسائل ─────────────────────────────────────────────
           Expanded(
             child: _loading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+                    child: CircularProgressIndicator(color: _cCyan))
                 : _messages.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('💬', style: TextStyle(fontSize: 60)),
+                            Icon(Icons.chat_bubble_outline_rounded,
+                                color: Colors.white12, size: 70),
                             const SizedBox(height: 12),
                             Text(
-                              'chat.start_with'.tr(namedArgs: {'name': widget.friend.name}),
-                              style: const TextStyle(color: Colors.white54, fontSize: 15),
+                              'chat.start_with'.tr(
+                                  namedArgs: {'name': widget.friend.name}),
+                              style: const TextStyle(
+                                  color: Colors.white38, fontSize: 15),
                             ),
                           ],
                         ),
@@ -351,7 +394,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     : ListView.builder(
                         controller: _scrollCtrl,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                            horizontal: 14, vertical: 12),
                         itemCount: _messages.length,
                         itemBuilder: (_, i) {
                           final msg      = _messages[i];
@@ -361,12 +404,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                   _messages[i - 1].createdAt.day;
                           return Column(
                             children: [
-                              if (showDate) _DateDivider(date: msg.createdAt),
+                              if (showDate)
+                                _DateDivider(date: msg.createdAt),
                               GestureDetector(
                                 onLongPress: isMe && msg.id > 0
                                     ? () => _deleteMessage(msg)
                                     : null,
-                                child: _MessageBubble(msg: msg, isMe: isMe),
+                                child: _MessageBubble(
+                                  msg:       msg,
+                                  isMe:      isMe,
+                                  friend:    widget.friend,
+                                ),
                               ),
                             ],
                           );
@@ -374,69 +422,115 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       ),
           ),
 
-          // ─── حقل الكتابة ────────────────────────────────────────────────
+          // ─── "يكتب الآن" indicator ─────────────────────────────────────
+          if (_friendTyping)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(14, 0, 14, 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _cSurface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _DotPulse(),
+                    const SizedBox(width: 6),
+                    Text(
+                      'chat.typing_now'.tr(),
+                      style: const TextStyle(
+                          color: Colors.white38, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // ─── منطقة الكتابة ─────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E1E3F),
-              border: Border(top: BorderSide(color: Colors.white10)),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            decoration: BoxDecoration(
+              color: _cSurface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
             child: SafeArea(
+              top: false,
               child: Row(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller:  _msgCtrl,
-                      onChanged:   _onTextChanged,
-                      onSubmitted: (_) => _send(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      textDirection: TextDirection.rtl,
-                      maxLines: 4,
-                      minLines: 1,
-                      decoration: InputDecoration(
-                        hintText:  'chat.type_hint'.tr(),
-                        hintStyle: const TextStyle(color: Colors.white30),
-                        filled:    true,
-                        fillColor: Colors.white.withValues(alpha: 0.06),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  // زر الإرسال (يمين الشاشة في RTL)
                   GestureDetector(
                     onTap: _send,
                     child: Container(
-                      width: 46, height: 46,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
-                          begin: Alignment.topLeft,
-                          end:   Alignment.bottomRight,
-                        ),
+                        color: _cCyan,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:  const Color(0xFF6C63FF).withValues(alpha: 0.4),
-                            blurRadius: 8,
+                            color: _cCyan.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
                       child: _sending
                           ? const Padding(
-                              padding: EdgeInsets.all(12),
+                              padding: EdgeInsets.all(13),
                               child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2,
-                              ),
+                                color: _cNavBg, strokeWidth: 2),
                             )
                           : const Icon(Icons.send_rounded,
-                              color: Colors.white, size: 20),
+                              color: _cNavBg, size: 22),
                     ),
                   ),
+
+                  const SizedBox(width: 10),
+
+                  // حقل الكتابة
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _cBg,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: TextField(
+                        controller:  _msgCtrl,
+                        onChanged:   _onTextChanged,
+                        onSubmitted: (_) => _send(),
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 14),
+                        textDirection: TextDirection.rtl,
+                        maxLines: 4,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText:  'chat.type_hint'.tr(),
+                          hintStyle: const TextStyle(
+                              color: Colors.white30, fontSize: 14),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  // إيموجي (يسار الشاشة في RTL)
+                  Icon(Icons.sentiment_satisfied_alt_rounded,
+                      color: Colors.white38, size: 26),
                 ],
               ),
             ),
@@ -451,63 +545,124 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 class _MessageBubble extends StatelessWidget {
   final MessageModel msg;
   final bool         isMe;
+  final FriendModel  friend;
 
-  const _MessageBubble({required this.msg, required this.isMe});
+  const _MessageBubble({
+    required this.msg,
+    required this.isMe,
+    required this.friend,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: isMe ? Alignment.centerLeft : Alignment.centerRight,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
-        ),
-        decoration: BoxDecoration(
-          gradient: isMe
-              ? const LinearGradient(
-                  colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
-                  begin:  Alignment.topLeft,
-                  end:    Alignment.bottomRight,
-                )
-              : null,
-          color: isMe ? null : const Color(0xFF16213E),
-          borderRadius: BorderRadius.only(
-            topLeft:     const Radius.circular(18),
-            topRight:    const Radius.circular(18),
-            bottomLeft:  Radius.circular(isMe ? 4 : 18),
-            bottomRight: Radius.circular(isMe ? 18 : 4),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:     Colors.black.withValues(alpha: 0.15),
-              blurRadius: 4,
-              offset:    const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-          children: [
-            Text(
-              msg.message,
-              style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
-              textDirection: TextDirection.rtl,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${msg.createdAt.hour.toString().padLeft(2, '0')}:'
-              '${msg.createdAt.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
+    final time =
+        '${msg.createdAt.hour.toString().padLeft(2, '0')}:'
+        '${msg.createdAt.minute.toString().padLeft(2, '0')}';
+
+    // فقاعة الرسالة
+    final bubble = Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.65,
       ),
+      decoration: BoxDecoration(
+        gradient: isMe
+            ? const LinearGradient(
+                colors: [Color(0xFF00FBFB), Color(0xFF00C8D8)],
+                begin:  Alignment.bottomLeft,
+                end:    Alignment.topRight,
+              )
+            : null,
+        color: isMe ? null : _cSurface,
+        borderRadius: BorderRadius.only(
+          topLeft:     const Radius.circular(18),
+          topRight:    const Radius.circular(18),
+          bottomLeft:  Radius.circular(isMe ? 4  : 18),
+          bottomRight: Radius.circular(isMe ? 18 : 4),
+        ),
+        boxShadow: isMe
+            ? [
+                BoxShadow(
+                  color: _cCyan.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        children: [
+          Text(
+            msg.message,
+            style: TextStyle(
+              color: isMe ? _cNavBg : Colors.white,
+              fontSize: 14,
+              height: 1.4,
+              fontWeight: isMe ? FontWeight.w600 : FontWeight.normal,
+            ),
+            textDirection: TextDirection.rtl,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            time,
+            style: TextStyle(
+              color: isMe
+                  ? _cNavBg.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.35),
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // الرسائل المُستقبَلة: أفاتار + فقاعة
+    if (!isMe) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            bubble,
+            const SizedBox(width: 6),
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: _cCyan.withValues(alpha: 0.15),
+              backgroundImage: friend.avatar != null
+                  ? NetworkImage(friend.avatar!)
+                  : null,
+              child: friend.avatar == null
+                  ? Text(
+                      friend.name.isNotEmpty
+                          ? friend.name[0].toUpperCase()
+                          : '؟',
+                      style: const TextStyle(
+                        color: _cCyan,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // الرسائل المُرسَلة: فقاعة فقط
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: bubble,
     );
   }
 }
@@ -532,19 +687,61 @@ class _DateDivider extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          const Expanded(child: Divider(color: Colors.white10)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white30, fontSize: 11),
-            ),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: BoxDecoration(
+            color: _cSurface,
+            borderRadius: BorderRadius.circular(20),
           ),
-          const Expanded(child: Divider(color: Colors.white10)),
-        ],
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── نبضة "يكتب الآن" ─────────────────────────────────────────────────────────
+class _DotPulse extends StatefulWidget {
+  @override
+  State<_DotPulse> createState() => _DotPulseState();
+}
+
+class _DotPulseState extends State<_DotPulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double>   _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync:    this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(3, (i) => Container(
+          width: 5, height: 5,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: const BoxDecoration(
+            color: _cCyan, shape: BoxShape.circle,
+          ),
+        )),
       ),
     );
   }
