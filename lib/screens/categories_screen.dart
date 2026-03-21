@@ -353,7 +353,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       decoration: BoxDecoration(
         color:        _cCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _cCyan.withValues(alpha: 0.12)),
+        border: Border.all(color: _cCyan.withValues(alpha: 0.28)),
       ),
       child: Stack(
         children: [
@@ -547,7 +547,7 @@ class _RegularCard extends StatelessWidget {
         decoration: BoxDecoration(
           color:        _cCard.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.12)),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
         child: Stack(
           children: [
@@ -558,7 +558,7 @@ class _RegularCard extends StatelessWidget {
                 width:  80, height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: color.withValues(alpha: 0.08),
+                  color: color.withValues(alpha: 0.22),
                 ),
               ),
             ),
@@ -579,15 +579,15 @@ class _RegularCard extends StatelessWidget {
                         begin: Alignment.topRight,
                         end:   Alignment.bottomLeft,
                         colors: [
-                          color.withValues(alpha: 0.22),
+                          color.withValues(alpha: 0.38),
                           color.withValues(alpha: 0.0),
                         ],
                       ),
                       border: Border.all(
-                          color: color.withValues(alpha: 0.3)),
+                          color: color.withValues(alpha: 0.5)),
                       boxShadow: [BoxShadow(
-                          color:     color.withValues(alpha: 0.18),
-                          blurRadius: 12)],
+                          color:     color.withValues(alpha: 0.42),
+                          blurRadius: 22)],
                     ),
                     child: Icon(icon, color: color, size: 30),
                   ),
@@ -596,12 +596,13 @@ class _RegularCard extends StatelessWidget {
                   Text(
                     category.localizedName(lang),
                     textAlign: TextAlign.center,
-                    maxLines:  1,
+                    maxLines:  2,
                     overflow:  TextOverflow.ellipsis,
                     style: const TextStyle(
                       color:      Color(0xFFDAE2FD),
-                      fontSize:   16,
+                      fontSize:   13,
                       fontWeight: FontWeight.bold,
+                      height:     1.25,
                     ),
                   ),
                   if (category.questionCount > 0) ...[
@@ -646,9 +647,9 @@ class _ProCard extends StatelessWidget {
         decoration: BoxDecoration(
           color:        _cCard.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
           boxShadow: [BoxShadow(
-              color: color.withValues(alpha: 0.08), blurRadius: 16)],
+              color: color.withValues(alpha: 0.22), blurRadius: 20)],
         ),
         child: Row(
           children: [
@@ -659,12 +660,12 @@ class _ProCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 gradient: LinearGradient(
-                  colors: [color.withValues(alpha: 0.22),
+                  colors: [color.withValues(alpha: 0.38),
                       color.withValues(alpha: 0.0)],
                 ),
-                border: Border.all(color: color.withValues(alpha: 0.3)),
+                border: Border.all(color: color.withValues(alpha: 0.5)),
                 boxShadow: [BoxShadow(
-                    color: color.withValues(alpha: 0.2), blurRadius: 10)],
+                    color: color.withValues(alpha: 0.38), blurRadius: 18)],
               ),
               child: Icon(icon, color: color, size: 26),
             ),
