@@ -390,28 +390,29 @@ class _DualResultScreenState extends State<DualResultScreen>
   // ─── زر الصداقة ──────────────────────────────────────────────────────────
   Widget _buildFriendButton() {
     // للبوت: يُعرض الزر دائماً لكن معطّل تماماً
+    // للبوت: نفس شكل الزر المتوهج لكن بدون تأثير عند الضغط
     if (widget.isBot || widget.opponentId == null) {
-      return Opacity(
-        opacity: 0.35,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            color:        _cSurface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white24, width: 1.5),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person_add_rounded, color: Colors.white38, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'إضافة صديق',
-                style: TextStyle(color: Colors.white38, fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color:        _cCyan.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _cCyan.withValues(alpha: 0.7), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: _cCyan.withValues(alpha: 0.3), blurRadius: 22, spreadRadius: 1),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_add_rounded, color: _cCyan, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'dual_result.add_friend'.tr(),
+              style: TextStyle(color: _cCyan, fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       );
     }
