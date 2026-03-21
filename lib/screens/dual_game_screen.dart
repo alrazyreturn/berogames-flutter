@@ -196,25 +196,32 @@ class _DualGameScreenState extends State<DualGameScreen> {
 
     _socket.onOpponentDisconnected = (data) {
       if (!mounted) return;
+      final myRole  = widget.role;
+      final oppRole = myRole == 'host' ? 'guest' : 'host';
+      final winner  = _myScore > _opponentScore
+          ? myRole
+          : _opponentScore > _myScore ? oppRole : 'draw';
+      final gameOverData = {
+        'host_score':  myRole == 'host' ? _myScore : _opponentScore,
+        'guest_score': myRole == 'guest' ? _myScore : _opponentScore,
+        'winner':      winner,
+      };
+
       if (_iFinished) {
-        // انتهينا بالفعل — الخصم انقطع → اذهب للنتيجة فوراً بدون انتظار game_over
-        final myRole  = widget.role;
-        final oppRole = myRole == 'host' ? 'guest' : 'host';
-        final winner  = _myScore > _opponentScore
-            ? myRole
-            : _opponentScore > _myScore ? oppRole : 'draw';
-        _onGameOver({
-          'host_score':  myRole == 'host' ? _myScore : _opponentScore,
-          'guest_score': myRole == 'guest' ? _myScore : _opponentScore,
-          'winner':      winner,
-        });
+        // انتهينا بالفعل → انتقل للنتيجة فوراً
+        _onGameOver(gameOverData);
       } else {
+        // الخصم انقطع قبل انتهاء الوقت → أظهر رسالة وانتقل بعد 4 ثوانٍ
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${data['name'] ?? "الخصم"} قطع الاتصال 😔'),
             behavior: SnackBarBehavior.floating,
           ),
         );
+        Future.delayed(const Duration(seconds: 4), () {
+          if (!mounted || _gameOverCalled) return;
+          _onGameOver(gameOverData);
+        });
       }
     };
 
@@ -327,8 +334,8 @@ class _DualGameScreenState extends State<DualGameScreen> {
       }).catchError((_) {});
     }
 
-    // ── Timeout: إذا لم يأتِ game_over خلال 20 ثانية → انتقل للنتيجة تلقائياً
-    Future.delayed(const Duration(seconds: 20), () {
+    // ── Timeout: إذا لم يأتِ game_over خلال 8 ثوانٍ → انتقل للنتيجة تلقائياً
+    Future.delayed(const Duration(seconds: 8), () {
       if (!mounted || _gameOverCalled) return;
       final myRole  = widget.role;
       final oppRole = myRole == 'host' ? 'guest' : 'host';
@@ -346,14 +353,17 @@ class _DualGameScreenState extends State<DualGameScreen> {
   void _onGameOver(Map<String, dynamic> data) {
     if (!mounted || _gameOverCalled) return;
     _gameOverCalled = true;
+    final myAvatar = context.read<UserProvider>().user?.avatar;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => DualResultScreen(
-          myName:       widget.myName,
-          opponentName: widget.role == 'host'
+          myName:         widget.myName,
+          myAvatar:       myAvatar,
+          opponentName:   widget.role == 'host'
               ? (data['guest_name'] ?? widget.guestName)
               : (data['host_name']  ?? widget.room.host.name),
+          opponentAvatar: widget.opponentAvatar,
           myScore:      widget.role == 'host'
               ? data['host_score']  ?? _myScore
               : data['guest_score'] ?? _myScore,

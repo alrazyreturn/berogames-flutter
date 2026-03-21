@@ -17,22 +17,27 @@ const _cCard    = Color(0xFF171F33);
 const _cCyan    = Color(0xFF00FBFB);
 const _cNavBg   = Color(0xFF10102B);
 const _cPink    = Color(0xFFFF6B8A);
+const _cIndigo  = Color(0xFF6366F1);
 
 /// شاشة النتيجة النهائية للعب الثنائي
 class DualResultScreen extends StatefulWidget {
-  final String myName;
-  final String opponentName;
-  final int    myScore;
-  final int    opponentScore;
-  final String winner;      // 'host' | 'guest' | 'draw'
-  final String myRole;      // 'host' | 'guest'
-  final int?   opponentId;  // null = بوت أو غير معروف
-  final bool   isBot;
+  final String  myName;
+  final String? myAvatar;
+  final String  opponentName;
+  final String? opponentAvatar;
+  final int     myScore;
+  final int     opponentScore;
+  final String  winner;      // 'host' | 'guest' | 'draw'
+  final String  myRole;      // 'host' | 'guest'
+  final int?    opponentId;  // null = بوت أو غير معروف
+  final bool    isBot;
 
   const DualResultScreen({
     super.key,
     required this.myName,
+    this.myAvatar,
     required this.opponentName,
+    this.opponentAvatar,
     required this.myScore,
     required this.opponentScore,
     required this.winner,
@@ -56,8 +61,9 @@ class _DualResultScreenState extends State<DualResultScreen>
   String _followStatus  = 'loading';
   bool   _followLoading = false;
 
-  bool get _iWon   => widget.myRole == widget.winner;
-  bool get _isDraw => widget.winner == 'draw';
+  bool get _iWon        => widget.myRole == widget.winner;
+  bool get _isDraw      => widget.winner == 'draw';
+  bool get _opponentWon => !_iWon && !_isDraw;
 
   @override
   void initState() {
@@ -157,16 +163,15 @@ class _DualResultScreenState extends State<DualResultScreen>
           ),
 
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // ─── أيقونة النتيجة ──────────────────────────────────────
                   ScaleTransition(
                     scale: _scaleAnim,
                     child: Container(
-                      width: 110, height: 110,
+                      width: 96, height: 96,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: resultColor.withValues(alpha: 0.1),
@@ -184,13 +189,13 @@ class _DualResultScreenState extends State<DualResultScreen>
                       child: Center(
                         child: Text(
                           _isDraw ? '🤝' : (_iWon ? '🏆' : '😔'),
-                          style: const TextStyle(fontSize: 52),
+                          style: const TextStyle(fontSize: 46),
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // ─── عنوان النتيجة ───────────────────────────────────────
                   Text(
@@ -201,7 +206,7 @@ class _DualResultScreenState extends State<DualResultScreen>
                             : 'dual_result.lost'.tr()),
                     style: TextStyle(
                       color:      resultColor,
-                      fontSize:   30,
+                      fontSize:   28,
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
@@ -212,12 +217,11 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 28),
 
-                  // ─── بطاقة المقارنة ──────────────────────────────────────
+                  // ─── بطاقة المقارنة مع الأفاتار ─────────────────────────
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 24),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                     decoration: BoxDecoration(
                       color:        _cCard,
                       borderRadius: BorderRadius.circular(24),
@@ -233,11 +237,13 @@ class _DualResultScreenState extends State<DualResultScreen>
                       ],
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // أنا
                         Expanded(
                           child: _PlayerResult(
                             name:     widget.myName,
+                            avatar:   widget.myAvatar,
                             score:    widget.myScore,
                             isWinner: _iWon,
                             color:    _cCyan,
@@ -246,21 +252,23 @@ class _DualResultScreenState extends State<DualResultScreen>
 
                         // VS
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 12),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'VS',
-                                style: TextStyle(
-                                  color:      Colors.white.withValues(alpha: 0.2),
-                                  fontSize:   16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 2,
-                                ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _cSurface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                            ),
+                            child: Text(
+                              'VS',
+                              style: TextStyle(
+                                color:         Colors.white.withValues(alpha: 0.25),
+                                fontSize:      13,
+                                fontWeight:    FontWeight.bold,
+                                letterSpacing: 1.5,
                               ),
-                            ],
+                            ),
                           ),
                         ),
 
@@ -268,8 +276,9 @@ class _DualResultScreenState extends State<DualResultScreen>
                         Expanded(
                           child: _PlayerResult(
                             name:     widget.opponentName,
+                            avatar:   widget.opponentAvatar,
                             score:    widget.opponentScore,
-                            isWinner: !_iWon && !_isDraw,
+                            isWinner: _opponentWon,
                             color:    _cPink,
                           ),
                         ),
@@ -277,13 +286,13 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── زر الصداقة (يُخفى للبوت وعند عدم وجود opponentId) ──
+                  // ─── زر الصداقة ─────────────────────────────────────────
                   if (!widget.isBot && widget.opponentId != null) ...[
                     const SizedBox(height: 20),
                     _buildFriendButton(),
                   ],
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // ─── الأزرار ────────────────────────────────────────────
                   Row(
@@ -337,7 +346,7 @@ class _DualResultScreenState extends State<DualResultScreen>
                               gradient: LinearGradient(
                                 colors: [
                                   _cCyan.withValues(alpha: 0.85),
-                                  const Color(0xFF6366F1),
+                                  _cIndigo,
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
@@ -411,7 +420,8 @@ class _DualResultScreenState extends State<DualResultScreen>
       onTap: canFollow && !isLoading ? _onFollowTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: isAccepted
               ? Colors.greenAccent.withValues(alpha: 0.1)
@@ -534,18 +544,20 @@ class _DualResultScreenState extends State<DualResultScreen>
   }
 }
 
-// ─── بطاقة نتيجة لاعب ────────────────────────────────────────────────────────
+// ─── بطاقة نتيجة لاعب مع أفاتار نيون ────────────────────────────────────────
 class _PlayerResult extends StatelessWidget {
-  final String name;
-  final int    score;
-  final bool   isWinner;
-  final Color  color;
+  final String  name;
+  final String? avatar;
+  final int     score;
+  final bool    isWinner;
+  final Color   color;
 
   const _PlayerResult({
     required this.name,
     required this.score,
     required this.isWinner,
     required this.color,
+    this.avatar,
   });
 
   @override
@@ -553,42 +565,73 @@ class _PlayerResult extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // تاج الفائز
+        // ─── تاج الفائز ─────────────────────────────────────────────────
         if (isWinner)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              '👑',
-              style: const TextStyle(fontSize: 20),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: Text('👑', style: TextStyle(fontSize: 22)),
           )
         else
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
 
-        // اسم اللاعب
+        // ─── أفاتار مع توهج نيون ────────────────────────────────────────
+        Container(
+          width: 68, height: 68,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: color.withValues(alpha: isWinner ? 0.85 : 0.4),
+              width: isWinner ? 2.5 : 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:        color.withValues(alpha: isWinner ? 0.55 : 0.15),
+                blurRadius:   isWinner ? 24 : 10,
+                spreadRadius: isWinner ? 3  : 0,
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: avatar != null && avatar!.isNotEmpty
+                ? Image.network(
+                    avatar!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, e, st) =>
+                        _AvatarFallback(name: name, color: color),
+                  )
+                : _AvatarFallback(name: name, color: color),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // ─── اسم اللاعب ─────────────────────────────────────────────────
         Text(
           name,
           style: TextStyle(
             color:      color,
             fontWeight: FontWeight.bold,
-            fontSize:   13,
+            fontSize:   12,
+            shadows: isWinner
+                ? [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 8)]
+                : null,
           ),
           overflow:  TextOverflow.ellipsis,
           maxLines:  1,
           textAlign: TextAlign.center,
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
-        // النقاط
+        // ─── النقاط ─────────────────────────────────────────────────────
         Text(
           '$score',
           style: TextStyle(
             color:      Colors.white,
-            fontSize:   34,
+            fontSize:   32,
             fontWeight: FontWeight.bold,
             shadows: isWinner
-                ? [Shadow(color: color.withValues(alpha: 0.4), blurRadius: 10)]
+                ? [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 12)]
                 : null,
           ),
         ),
@@ -601,6 +644,26 @@ class _PlayerResult extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── صورة بديلة — أول حرف من الاسم ──────────────────────────────────────────
+class _AvatarFallback extends StatelessWidget {
+  final String name;
+  final Color  color;
+  const _AvatarFallback({required this.name, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: color.withValues(alpha: 0.15),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0] : '؟',
+          style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 }
