@@ -64,6 +64,7 @@ flutter:
 
   assets:
     - assets/translations/
+    - assets/images/
     - assets/sounds/notification/chat_notify.wav
     - assets/sounds/happy/answer-correct.mp3
     - assets/sounds/happy/default_eKkIk7O.mp3
