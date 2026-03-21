@@ -4,6 +4,13 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../services/friends_service.dart';
 
+// ─── Neon-Glass palette ───────────────────────────────────────────────────────
+const _cBg      = Color(0xFF0B1326);
+const _cSurface = Color(0xFF131B2E);
+const _cCard    = Color(0xFF171F33);
+const _cCyan    = Color(0xFF00FBFB);
+const _cIndigo  = Color(0xFF6366F1);
+
 /// شاشة إضافة صديق بالإيميل
 class AddFriendScreen extends StatefulWidget {
   const AddFriendScreen({super.key});
@@ -12,16 +19,33 @@ class AddFriendScreen extends StatefulWidget {
   State<AddFriendScreen> createState() => _AddFriendScreenState();
 }
 
-class _AddFriendScreenState extends State<AddFriendScreen> {
+class _AddFriendScreenState extends State<AddFriendScreen>
+    with SingleTickerProviderStateMixin {
   final _emailCtrl = TextEditingController();
   final _service   = FriendsService();
   bool   _loading  = false;
   String? _message;
   bool   _success  = false;
 
+  late final AnimationController _glowCtrl;
+  late final Animation<double>   _glowAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _glowAnim = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
+    );
+  }
+
   @override
   void dispose() {
     _emailCtrl.dispose();
+    _glowCtrl.dispose();
     super.dispose();
   }
 
@@ -46,7 +70,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
     } catch (e) {
       if (mounted) {
         String msg = e.toString();
-        if (msg.contains('404')) msg = 'add_friend.not_found'.tr();
+        if (msg.contains('404')) { msg = 'add_friend.not_found'.tr(); }
         if (msg.contains('400')) {
           if (msg.contains('أصدقاء') || msg.contains('friends')) {
             msg = 'add_friend.already'.tr();
@@ -64,117 +88,246 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'add_friend.title'.tr(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(28),
+      backgroundColor: _cBg,
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('👋', style: TextStyle(fontSize: 70)),
-            const SizedBox(height: 20),
-            Text(
-              'add_friend.section_title'.tr(),
-              style: const TextStyle(
-                color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'add_friend.subtitle'.tr(),
-              style: const TextStyle(color: Colors.white54, fontSize: 14),
-            ),
-            const SizedBox(height: 32),
+            // ─── Header ────────────────────────────────────────────────────
+            _buildHeader(context),
 
-            // ─── حقل الإيميل ─────────────────────────────────────────────
-            TextField(
-              controller:  _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText:     'add_friend.email_hint'.tr(),
-                hintStyle:    const TextStyle(color: Colors.white24),
-                prefixIcon:   const Icon(Icons.email_outlined, color: Colors.white38),
-                filled:       true,
-                fillColor:    Colors.white.withValues(alpha: 0.07),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide:   BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide:   const BorderSide(color: Color(0xFF6C63FF), width: 2),
-                ),
-              ),
-            ),
+            // ─── Body ──────────────────────────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 32),
 
-            const SizedBox(height: 20),
+                    // Glow icon
+                    _buildGlowIcon(),
 
-            // ─── رسالة النتيجة ───────────────────────────────────────────
-            if (_message != null)
-              Container(
-                width:   double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color:        (_success ? Colors.greenAccent : Colors.redAccent)
-                      .withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _success ? Colors.greenAccent : Colors.redAccent,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _message!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _success ? Colors.greenAccent : Colors.redAccent,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+                    const SizedBox(height: 28),
 
-            const SizedBox(height: 20),
-
-            // ─── زر الإرسال ──────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _sendRequest,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C63FF),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
-                child: _loading
-                    ? const SizedBox(
-                        width: 22, height: 22,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
-                      )
-                    : Text(
-                        'add_friend.send_btn'.tr(),
-                        style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white,
-                        ),
+                    // Section title + subtitle
+                    Text(
+                      'add_friend.section_title'.tr(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'add_friend.subtitle'.tr(),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // Email field
+                    _buildEmailField(),
+
+                    const SizedBox(height: 16),
+
+                    // Result message
+                    if (_message != null) _buildResultMsg(),
+
+                    const SizedBox(height: 20),
+
+                    // Send button
+                    _buildSendButton(),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ─── Header ──────────────────────────────────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      height: 64,
+      color: _cSurface,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: _cCyan,
+              size: 20,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'add_friend.title'.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 48),
+        ],
+      ),
+    );
+  }
+
+  // ─── Glow Icon ────────────────────────────────────────────────────────────
+  Widget _buildGlowIcon() {
+    return AnimatedBuilder(
+      animation: _glowAnim,
+      builder: (context2, child2) {
+        return Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _cCard,
+            border: Border.all(
+              color: _cCyan.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _cCyan.withValues(alpha: _glowAnim.value * 0.25),
+                blurRadius: 32,
+                spreadRadius: 4,
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Text('👋', style: TextStyle(fontSize: 46)),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Email Field ─────────────────────────────────────────────────────────
+  Widget _buildEmailField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: _cCyan.withValues(alpha: 0.04),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: TextField(
+        controller:   _emailCtrl,
+        keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(
+          hintText:   'add_friend.email_hint'.tr(),
+          hintStyle:  TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+          prefixIcon: Icon(
+            Icons.email_outlined,
+            color: Colors.white.withValues(alpha: 0.4),
+            size: 20,
+          ),
+          filled:    true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide:   BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide:   const BorderSide(color: _cCyan, width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide:   BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  // ─── Result Message ───────────────────────────────────────────────────────
+  Widget _buildResultMsg() {
+    final color  = _success ? const Color(0xFF00E5A0) : Colors.redAccent;
+    final icon   = _success ? Icons.check_circle_outline : Icons.error_outline;
+
+    return Container(
+      width:   double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color:        color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border:       Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _message!,
+              style: TextStyle(color: color, fontSize: 14, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Send Button ─────────────────────────────────────────────────────────
+  Widget _buildSendButton() {
+    return SizedBox(
+      width:  double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _loading ? null : _sendRequest,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:         _cIndigo,
+          disabledBackgroundColor: _cIndigo.withValues(alpha: 0.35),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
+        child: _loading
+            ? const SizedBox(
+                width:  22,
+                height: 22,
+                child:  CircularProgressIndicator(
+                  color:       Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                'add_friend.send_btn'.tr(),
+                style: const TextStyle(
+                  fontSize:   16,
+                  fontWeight: FontWeight.bold,
+                  color:      Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
