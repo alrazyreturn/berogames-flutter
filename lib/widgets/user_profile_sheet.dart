@@ -73,8 +73,12 @@ class _UserProfileSheetState extends State<UserProfileSheet> {
         _service.getBlockStatus(widget.userId, token),
       ]);
       if (!mounted) return;
-      final relStr = results[0] as String;
+      final relMap = results[0] as Map<String, dynamic>; // ignore: unnecessary_cast
       final blk    = results[1] as Map<String, bool>;
+
+      final relStr = relMap['status'] as String? ?? 'none';
+      final fid    = relMap['friendship_id'];
+      if (fid != null) _friendshipId = int.tryParse(fid.toString());
 
       _RelStatus rel;
       switch (relStr) {
@@ -85,9 +89,9 @@ class _UserProfileSheetState extends State<UserProfileSheet> {
       }
 
       _BlockStatus bst;
-      if (blk['i_blocked'] == true)    bst = _BlockStatus.iBlocked;
+      if (blk['i_blocked'] == true)         bst = _BlockStatus.iBlocked;
       else if (blk['they_blocked'] == true) bst = _BlockStatus.theyBlocked;
-      else bst = _BlockStatus.none;
+      else                                  bst = _BlockStatus.none;
 
       setState(() { _rel = rel; _block = bst; });
     } catch (_) {
@@ -133,7 +137,13 @@ class _UserProfileSheetState extends State<UserProfileSheet> {
     try {
       await _service.blockUser(widget.userId, token);
       if (!mounted) return;
-      setState(() { _block = _BlockStatus.iBlocked; _actionLoading = false; });
+      // الـ API يحذف الصداقة تلقائياً — نعكس ذلك محلياً
+      setState(() {
+        _block         = _BlockStatus.iBlocked;
+        _rel           = _RelStatus.none;
+        _friendshipId  = null;
+        _actionLoading = false;
+      });
     } catch (_) {
       if (mounted) setState(() => _actionLoading = false);
     }

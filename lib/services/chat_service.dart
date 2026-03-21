@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../models/message_model.dart';
 
@@ -21,12 +22,12 @@ class ConversationModel {
   });
 
   factory ConversationModel.fromJson(Map<String, dynamic> j) => ConversationModel(
-    userId:      (j['other_id']     as num).toInt(),
-    name:        (j['other_name']   as String?) ?? '؟',
-    avatar:      j['other_avatar']  as String?,
-    lastMessage: (j['last_message'] as String?) ?? '',
-    lastAt:      DateTime.tryParse(j['last_at'] as String? ?? '') ?? DateTime.now(),
-    unreadCount: (j['unread_count'] as num?)?.toInt() ?? 0,
+    userId:      int.tryParse(j['other_id'].toString())     ?? 0,
+    name:        j['other_name']?.toString()                ?? '؟',
+    avatar:      j['other_avatar'] as String?,
+    lastMessage: j['last_message']?.toString()              ?? '',
+    lastAt:      DateTime.tryParse(j['last_at']?.toString() ?? '') ?? DateTime.now(),
+    unreadCount: int.tryParse(j['unread_count'].toString()) ?? 0,
   );
 }
 
@@ -84,12 +85,20 @@ class ChatService {
 
   // ─── كل المحادثات (بغض النظر عن الصداقة) ─────────────────────────────────
   Future<List<ConversationModel>> getConversations({required String token}) async {
-    final res = await _dio.get(
-      ApiConfig.chatConversations,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-    return (res.data as List)
-        .map((j) => ConversationModel.fromJson(j as Map<String, dynamic>))
-        .toList();
+    try {
+      final res = await _dio.get(
+        ApiConfig.chatConversations,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return (res.data as List)
+          .map((j) => ConversationModel.fromJson(j as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      debugPrint('🔴 [getConversations] ${e.response?.statusCode} | ${e.response?.data}');
+      return [];
+    } catch (e) {
+      debugPrint('🔴 [getConversations] $e');
+      return [];
+    }
   }
 }

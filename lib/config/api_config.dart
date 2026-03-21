@@ -1,6 +1,6 @@
 class ApiConfig {
-  static const String baseUrl   ='https://api.berogames.store/api';// 'http://38.180.146.158:3000/api';
-  static const String socketUrl = 'https://api.berogames.store';  //'http://38.180.146.158:3000'; // WebSocket
+  static const String baseUrl   = 'https://api.berogames.store/api';// 'http://38.180.146.158:3000/api';
+  static const String socketUrl =   'https://api.berogames.store';  //'http://38.180.146.158:3000'; // WebSocket
 
   // Auth
   static const String register    = '/auth/register';

@@ -112,8 +112,8 @@ class _DualGameScreenState extends State<DualGameScreen> {
     final token = context.read<UserProvider>().token;
     if (token == null) { if (mounted) setState(() => _followStatus = 'none'); return; }
     try {
-      final status = await _friendsService.getFollowStatus(widget.opponentId!, token);
-      if (mounted) setState(() => _followStatus = status);
+      final res = await _friendsService.getFollowStatus(widget.opponentId!, token);
+      if (mounted) setState(() => _followStatus = res['status'] as String? ?? 'none');
     } catch (_) {
       if (mounted) setState(() => _followStatus = 'none');
     }

@@ -130,7 +130,9 @@ class _FriendsScreenState extends State<FriendsScreen>
       if (_friends.isNotEmpty) {
         _socket.getOnlineStatus(_friends.map((f) => f.userId).toList());
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('❌ [FriendsScreen] _loadAll error: $e');
+      debugPrint('❌ [FriendsScreen] stacktrace: $st');
       if (mounted) setState(() => _loading = false);
     }
   }

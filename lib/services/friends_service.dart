@@ -41,12 +41,15 @@ class FriendsService {
   }
 
   // ─── حالة العلاقة مع مستخدم محدد ────────────────────────────────────────
-  Future<String> getFollowStatus(int targetId, String token) async {
+  Future<Map<String, dynamic>> getFollowStatus(int targetId, String token) async {
     final res = await _dio.get(
       '${ApiConfig.friendsStatus}/$targetId',
       options: _auth(token),
     );
-    return (res.data['status'] as String?) ?? 'none';
+    return {
+      'status':        (res.data['status']        as String?) ?? 'none',
+      'friendship_id': res.data['friendship_id'],
+    };
   }
 
   // ─── قبول طلب صداقة ──────────────────────────────────────────────────────
