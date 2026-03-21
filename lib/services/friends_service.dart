@@ -64,4 +64,32 @@ class FriendsService {
       options: _auth(token),
     );
   }
+
+  // ─── حظر مستخدم ──────────────────────────────────────────────────────────
+  Future<void> blockUser(int userId, String token) async {
+    await _dio.post(
+      '${ApiConfig.friendsBlock}/$userId',
+      options: _auth(token),
+    );
+  }
+
+  // ─── إلغاء حظر ───────────────────────────────────────────────────────────
+  Future<void> unblockUser(int userId, String token) async {
+    await _dio.delete(
+      '${ApiConfig.friendsBlock}/$userId',
+      options: _auth(token),
+    );
+  }
+
+  // ─── حالة الحظر ──────────────────────────────────────────────────────────
+  Future<Map<String, bool>> getBlockStatus(int userId, String token) async {
+    final res = await _dio.get(
+      '${ApiConfig.friendsBlockStatus}/$userId',
+      options: _auth(token),
+    );
+    return {
+      'i_blocked':    (res.data['i_blocked']    as bool?) ?? false,
+      'they_blocked': (res.data['they_blocked'] as bool?) ?? false,
+    };
+  }
 }

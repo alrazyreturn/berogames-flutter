@@ -119,9 +119,15 @@
     "no_requests":  "لا توجد طلبات معلقة",
     "accepted":     "{name} قبل التحدي! 🎉",
     "rejected":     "{name} رفض التحدي 😔",
-    "search_hint":  "ابحث عن صديق...",
-    "no_results":   "لا توجد نتائج",
-    "unfollow":     "إلغاء المتابعة"
+    "search_hint":     "ابحث عن صديق...",
+    "no_results":      "لا توجد نتائج",
+    "unfollow":        "إلغاء المتابعة",
+    "follow":          "متابعة",
+    "block":           "حظر",
+    "unblock":         "إلغاء الحظر",
+    "blocked_by_them": "هذا المستخدم حظرك",
+    "chats":           "الرسائل",
+    "no_chats":        "لا توجد محادثات بعد"
   },
 
   "add_friend": {
@@ -261,7 +267,9 @@
     "empty":          "لا توجد رسائل بعد 💬\nابدأ المحادثة!",
     "start_with":     "ابدأ محادثة مع {name}!",
     "today":          "اليوم",
-    "yesterday":      "أمس"
+    "yesterday":      "أمس",
+    "you_blocked":    "لقد حظرت هذا المستخدم",
+    "they_blocked":   "لا يمكنك إرسال رسائل لهذا المستخدم"
   },
 
   "profile": {

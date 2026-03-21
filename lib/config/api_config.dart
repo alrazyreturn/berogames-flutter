@@ -25,9 +25,10 @@ class ApiConfig {
 
   // Chat
   static const String chat         = '/chat';
-  static const String chatUnread          = '/chat/unread/count';
-  static const String chatUnreadPerFriend = '/chat/unread/per-friend';
-  static const String chatMessages        = '/chat/messages';
+  static const String chatUnread            = '/chat/unread/count';
+  static const String chatUnreadPerFriend   = '/chat/unread/per-friend';
+  static const String chatMessages          = '/chat/messages';
+  static const String chatConversations     = '/chat/conversations';
 
   // Friends
   static const String friendsList          = '/friends';
@@ -36,6 +37,8 @@ class ApiConfig {
   static const String friendsRequestById   = '/friends/request-by-id';
   static const String friendsStatus        = '/friends/status';
   static const String friendsAccept        = '/friends/accept';
+  static const String friendsBlock         = '/friends/block';
+  static const String friendsBlockStatus   = '/friends/block-status';
 
   // Energy
   static const String energy         = '/energy';

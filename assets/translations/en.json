@@ -111,9 +111,15 @@
     "no_requests": "No pending requests",
     "accepted":    "{name} accepted the challenge! 🎉",
     "rejected":    "{name} declined the challenge 😔",
-    "search_hint": "Search for a friend...",
-    "no_results":  "No results found",
-    "unfollow":    "Unfollow"
+    "search_hint":     "Search for a friend...",
+    "no_results":      "No results found",
+    "unfollow":        "Unfollow",
+    "follow":          "Follow",
+    "block":           "Block",
+    "unblock":         "Unblock",
+    "blocked_by_them": "This user blocked you",
+    "chats":           "Chats",
+    "no_chats":        "No chats yet"
   },
   "add_friend": {
     "title": "Add Friend 👋",
@@ -243,7 +249,9 @@
     "empty": "No messages yet 💬\nStart the conversation!",
     "start_with": "Start a chat with {name}!",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "you_blocked":  "You blocked this user",
+    "they_blocked": "Cannot send messages to this user"
   },
   "profile": {
     "title": "Profile",

@@ -6,6 +6,7 @@ import '../models/message_model.dart';
 import '../models/friend_model.dart';
 import '../providers/user_provider.dart';
 import '../services/chat_service.dart';
+import '../services/friends_service.dart';
 import '../services/socket_service.dart';
 import '../services/sound_service.dart';
 
@@ -24,15 +25,18 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
-  final _chatService   = ChatService();
-  final _socket        = SocketService();
-  final _msgCtrl       = TextEditingController();
-  final _scrollCtrl    = ScrollController();
+  final _chatService    = ChatService();
+  final _friendsService = FriendsService();
+  final _socket         = SocketService();
+  final _msgCtrl        = TextEditingController();
+  final _scrollCtrl     = ScrollController();
 
   List<MessageModel> _messages     = [];
   bool   _loading      = true;
   bool   _sending      = false;
   bool   _friendTyping = false;
+  bool   _iBlocked     = false;
+  bool   _theyBlocked  = false;
   Timer? _typingTimer;
   Timer? _sendTimeoutTimer;
 
@@ -42,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _socket.activeChatFriendId = widget.friend.userId;
     _loadHistory();
+    _loadBlockStatus();
     _setupSocket();
   }
 
@@ -90,6 +95,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _loadBlockStatus() async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+    try {
+      final status = await _friendsService.getBlockStatus(
+          widget.friend.userId, token);
+      if (!mounted) return;
+      setState(() {
+        _iBlocked    = status['i_blocked']    ?? false;
+        _theyBlocked = status['they_blocked'] ?? false;
+      });
+    } catch (_) {}
+  }
+
   void _setupSocket() {
     final myId = context.read<UserProvider>().user?.id;
 
@@ -134,6 +153,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (fromId != widget.friend.userId) return;
       setState(() => _friendTyping = isTyping);
       if (isTyping) _scrollToBottom();
+    };
+
+    _socket.onChatBlocked = (_) {
+      if (!mounted) return;
+      setState(() => _iBlocked = true);
     };
   }
 
@@ -449,92 +473,117 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               ),
             ),
 
-          // ─── منطقة الكتابة ─────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-            decoration: BoxDecoration(
-              color: _cSurface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
+          // ─── banner الحظر ──────────────────────────────────────────────
+          if (_iBlocked || _theyBlocked)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.red.shade900.withValues(alpha: 0.25),
+                border: Border(
+                    top: BorderSide(
+                        color: Colors.redAccent.withValues(alpha: 0.4))),
+              ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // زر الإرسال (يمين الشاشة في RTL)
-                  GestureDetector(
-                    onTap: _send,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: _cCyan,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: _cCyan.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: _sending
-                          ? const Padding(
-                              padding: EdgeInsets.all(13),
-                              child: CircularProgressIndicator(
-                                color: _cNavBg, strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send_rounded,
-                              color: _cNavBg, size: 22),
-                    ),
-                  ),
-
+                  const Icon(Icons.block_rounded,
+                      color: Colors.redAccent, size: 18),
                   const SizedBox(width: 10),
-
-                  // حقل الكتابة
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _cBg,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08)),
+                  Text(
+                    _iBlocked
+                        ? 'chat.you_blocked'.tr()
+                        : 'chat.they_blocked'.tr(),
+                    style: const TextStyle(
+                        color: Colors.redAccent, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            // ─── منطقة الكتابة ─────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              decoration: BoxDecoration(
+                color: _cSurface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    // زر الإرسال
+                    GestureDetector(
+                      onTap: _send,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: _cCyan,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _cCyan.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: _sending
+                            ? const Padding(
+                                padding: EdgeInsets.all(13),
+                                child: CircularProgressIndicator(
+                                  color: _cNavBg, strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send_rounded,
+                                color: _cNavBg, size: 22),
                       ),
-                      child: TextField(
-                        controller:  _msgCtrl,
-                        onChanged:   _onTextChanged,
-                        onSubmitted: (_) => _send(),
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 14),
-                        textDirection: TextDirection.rtl,
-                        maxLines: 4,
-                        minLines: 1,
-                        decoration: InputDecoration(
-                          hintText:  'chat.type_hint'.tr(),
-                          hintStyle: const TextStyle(
-                              color: Colors.white30, fontSize: 14),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                    ),
+                    const SizedBox(width: 10),
+                    // حقل الكتابة
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _cBg,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.08)),
+                        ),
+                        child: TextField(
+                          controller:  _msgCtrl,
+                          onChanged:   _onTextChanged,
+                          onSubmitted: (_) => _send(),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 14),
+                          textDirection: TextDirection.rtl,
+                          maxLines: 4,
+                          minLines: 1,
+                          decoration: InputDecoration(
+                            hintText:  'chat.type_hint'.tr(),
+                            hintStyle: const TextStyle(
+                                color: Colors.white30, fontSize: 14),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  // إيموجي (يسار الشاشة في RTL)
-                  Icon(Icons.sentiment_satisfied_alt_rounded,
-                      color: Colors.white38, size: 26),
-                ],
+                    const SizedBox(width: 10),
+                    const Icon(Icons.sentiment_satisfied_alt_rounded,
+                        color: Colors.white38, size: 26),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

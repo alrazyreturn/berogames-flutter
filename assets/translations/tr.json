@@ -111,9 +111,15 @@
     "no_requests": "Bekleyen istek yok",
     "accepted":    "{name} meydan okumayı kabul etti! 🎉",
     "rejected":    "{name} meydan okumayı reddetti 😔",
-    "search_hint": "Arkadaş ara...",
-    "no_results":  "Sonuç bulunamadı",
-    "unfollow":    "Takibi Bırak"
+    "search_hint":     "Arkadaş ara...",
+    "no_results":      "Sonuç bulunamadı",
+    "unfollow":        "Takibi Bırak",
+    "follow":          "Takip Et",
+    "block":           "Engelle",
+    "unblock":         "Engeli Kaldır",
+    "blocked_by_them": "Bu kullanıcı sizi engelledi",
+    "chats":           "Mesajlar",
+    "no_chats":        "Henüz sohbet yok"
   },
   "add_friend": {
     "title": "Arkadaş Ekle 👋",
@@ -243,7 +249,9 @@
     "empty": "Henüz mesaj yok 💬\nKonuşmayı başlat!",
     "start_with": "{name} ile sohbet başlat!",
     "today": "Bugün",
-    "yesterday": "Dün"
+    "yesterday": "Dün",
+    "you_blocked":  "Bu kullanıcıyı engellediniz",
+    "they_blocked": "Bu kullanıcıya mesaj gönderilemiyor"
   },
   "profile": {
     "title": "Profil",

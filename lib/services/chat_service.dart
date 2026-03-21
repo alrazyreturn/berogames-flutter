@@ -2,6 +2,34 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/message_model.dart';
 
+// ─── نموذج المحادثة ───────────────────────────────────────────────────────────
+class ConversationModel {
+  final int     userId;
+  final String  name;
+  final String? avatar;
+  final String  lastMessage;
+  final DateTime lastAt;
+  final int     unreadCount;
+
+  ConversationModel({
+    required this.userId,
+    required this.name,
+    this.avatar,
+    required this.lastMessage,
+    required this.lastAt,
+    required this.unreadCount,
+  });
+
+  factory ConversationModel.fromJson(Map<String, dynamic> j) => ConversationModel(
+    userId:      (j['other_id']     as num).toInt(),
+    name:        (j['other_name']   as String?) ?? '؟',
+    avatar:      j['other_avatar']  as String?,
+    lastMessage: (j['last_message'] as String?) ?? '',
+    lastAt:      DateTime.tryParse(j['last_at'] as String? ?? '') ?? DateTime.now(),
+    unreadCount: (j['unread_count'] as num?)?.toInt() ?? 0,
+  );
+}
+
 class ChatService {
   final _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
 
@@ -52,5 +80,16 @@ class ChatService {
       result[id]  = count;
     }
     return result;
+  }
+
+  // ─── كل المحادثات (بغض النظر عن الصداقة) ─────────────────────────────────
+  Future<List<ConversationModel>> getConversations({required String token}) async {
+    final res = await _dio.get(
+      ApiConfig.chatConversations,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return (res.data as List)
+        .map((j) => ConversationModel.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 }

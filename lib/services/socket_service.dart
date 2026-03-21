@@ -53,6 +53,7 @@ class SocketService {
   Function(Map<String, dynamic>)? onChatMessageSent;
   Function(Map<String, dynamic>)? onChatTyping;
   Function(Map<String, dynamic>)? onChatMessageDeleted;
+  Function(Map<String, dynamic>)? onChatBlocked;
 
   // ─── الاتصال بالسيرفر ────────────────────────────────────────────────────
   void connect({int? userId, String? userName}) {
@@ -205,6 +206,10 @@ class SocketService {
 
     _socket!.on('chat_message_deleted', (data) {
       onChatMessageDeleted?.call(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('chat_blocked', (data) {
+      onChatBlocked?.call(Map<String, dynamic>.from(data));
     });
   }
 
@@ -408,6 +413,7 @@ class SocketService {
     onChatMessageSent      = null;
     onChatTyping           = null;
     onChatMessageDeleted   = null;
+    onChatBlocked          = null;
     onFriendshipAccepted   = null;
     onWebRtcOffer          = null;
     onWebRtcAnswer         = null;

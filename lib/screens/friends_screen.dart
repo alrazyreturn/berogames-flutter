@@ -8,6 +8,7 @@ import '../services/socket_service.dart';
 import '../services/energy_service.dart';
 import '../services/ad_service.dart';
 import '../services/chat_service.dart';
+import '../widgets/user_profile_sheet.dart';
 import 'add_friend_screen.dart';
 import 'create_room_screen.dart';
 import 'chat_screen.dart';
@@ -39,16 +40,17 @@ class _FriendsScreenState extends State<FriendsScreen>
   final _chatService   = ChatService();
   late TabController _tabs;
 
-  List<FriendModel>        _friends      = [];
-  List<FriendRequestModel> _requests     = [];
-  Map<int, int>            _unreadCounts = {};
+  List<FriendModel>        _friends       = [];
+  List<FriendRequestModel> _requests      = [];
+  List<ConversationModel>  _conversations = [];
+  Map<int, int>            _unreadCounts  = {};
   bool _loading = true;
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     _loadAll();
     _setupSocket();
   }
@@ -115,13 +117,15 @@ class _FriendsScreenState extends State<FriendsScreen>
         _service.getFriends(token),
         _service.getRequests(token),
         _chatService.getUnreadPerFriend(token: token),
+        _chatService.getConversations(token: token),
       ]);
       if (!mounted) return;
       setState(() {
-        _friends      = results[0] as List<FriendModel>;
-        _requests     = results[1] as List<FriendRequestModel>;
-        _unreadCounts = results[2] as Map<int, int>;
-        _loading      = false;
+        _friends       = results[0] as List<FriendModel>;
+        _requests      = results[1] as List<FriendRequestModel>;
+        _unreadCounts  = results[2] as Map<int, int>;
+        _conversations = results[3] as List<ConversationModel>;
+        _loading       = false;
       });
       if (_friends.isNotEmpty) {
         _socket.getOnlineStatus(_friends.map((f) => f.userId).toList());
@@ -415,6 +419,16 @@ class _FriendsScreenState extends State<FriendsScreen>
                         onTap:  () => _tabs.animateTo(1),
                         badge: _requests.isNotEmpty ? _requests.length : null,
                       ),
+                      _TabPill(
+                        label: 'friends.chats'.tr(),
+                        active: _tabs.index == 2,
+                        onTap:  () => _tabs.animateTo(2),
+                        badge: _conversations.fold<int>(
+                            0, (s, c) => s + c.unreadCount) > 0
+                            ? _conversations.fold<int>(
+                                0, (s, c) => s + c.unreadCount)
+                            : null,
+                      ),
                     ],
                   ),
                 ),
@@ -469,6 +483,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       children: [
                         _buildFriendsList(),
                         _buildRequestsList(),
+                        _buildConversationsList(),
                       ],
                     ),
             ),
@@ -578,16 +593,159 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   // ─── بروفايل الصديق (bottom sheet) ───────────────────────────────────────
-  void _showFriendProfile(FriendModel friend) {
-    showModalBottomSheet(
-      context:          context,
-      backgroundColor:  Colors.transparent,
+  void _showFriendProfile(FriendModel friend) async {
+    final result = await showModalBottomSheet<String>(
+      context:            context,
+      backgroundColor:    Colors.transparent,
       isScrollControlled: false,
-      builder: (_) => _FriendProfileSheet(
-        friend:   friend,
-        onUnfollow: () {
-          Navigator.pop(context);
-          _confirmDelete(friend);
+      builder: (_) => UserProfileSheet(
+        userId:       friend.userId,
+        name:         friend.name,
+        avatar:       friend.avatar,
+        score:        friend.totalScore,
+        isOnline:     friend.isOnline,
+        friendshipId: friend.friendshipId,
+      ),
+    );
+    if (result == 'unfollowed' && mounted) _loadAll();
+  }
+
+  // ─── عرض بروفايل من محادثة ────────────────────────────────────────────────
+  void _showConvProfile(ConversationModel conv) async {
+    await showModalBottomSheet<String>(
+      context:            context,
+      backgroundColor:    Colors.transparent,
+      isScrollControlled: false,
+      builder: (_) => UserProfileSheet(
+        userId: conv.userId,
+        name:   conv.name,
+        avatar: conv.avatar,
+      ),
+    );
+    _loadAll();
+  }
+
+  // ─── قائمة المحادثات ──────────────────────────────────────────────────────
+  Widget _buildConversationsList() {
+    if (_conversations.isEmpty) {
+      return Center(child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.chat_bubble_outline_rounded,
+              color: Colors.white24, size: 70),
+          const SizedBox(height: 16),
+          Text('friends.no_chats'.tr(),
+              style: const TextStyle(color: Colors.white54, fontSize: 16)),
+        ],
+      ));
+    }
+    return RefreshIndicator(
+      onRefresh: _loadAll,
+      color: _cCyan,
+      backgroundColor: _cSurface,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+        itemCount: _conversations.length,
+        itemBuilder: (_, i) {
+          final c = _conversations[i];
+          final ringColor = [_cCyan, const Color(0xFFFF6584),
+            const Color(0xFFFFD700), _cIndigo,
+            Colors.greenAccent, Colors.orangeAccent][c.userId % 6];
+          return GestureDetector(
+            onTap: () {
+              setState(() => _unreadCounts.remove(c.userId));
+              // نبني FriendModel مؤقت للانتقال لشاشة الشات
+              final tempFriend = FriendModel(
+                friendshipId: 0,
+                userId:       c.userId,
+                name:         c.name,
+                avatar:       c.avatar,
+              );
+              Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ChatScreen(friend: tempFriend)))
+                  .then((_) => _loadAll());
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color:        _cCard,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                children: [
+                  // أفاتار (قابل للضغط لعرض البروفايل)
+                  GestureDetector(
+                    onTap: () => _showConvProfile(c),
+                    child: Container(
+                      padding: const EdgeInsets.all(2.5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: ringColor, width: 2),
+                        boxShadow: [BoxShadow(
+                            color: ringColor.withValues(alpha: 0.35),
+                            blurRadius: 8)],
+                      ),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: ringColor.withValues(alpha: 0.15),
+                        backgroundImage: c.avatar != null
+                            ? NetworkImage(c.avatar!) : null,
+                        child: c.avatar == null
+                            ? Text(c.name.isNotEmpty
+                                ? c.name[0].toUpperCase() : '؟',
+                              style: TextStyle(color: ringColor,
+                                  fontWeight: FontWeight.bold, fontSize: 16))
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // اسم + آخر رسالة
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c.name,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 3),
+                        Text(c.lastMessage,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.white38, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  // unread badge
+                  if (c.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color:        _cCyan,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(
+                            color: _cCyan.withValues(alpha: 0.4),
+                            blurRadius: 8)],
+                      ),
+                      child: Text(
+                        c.unreadCount > 99
+                            ? '99+' : '${c.unreadCount}',
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );
@@ -967,154 +1125,6 @@ class _CircleBtn extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Icon(icon, color: color, size: 18),
-      ),
-    );
-  }
-}
-
-// ─── شاشة بروفايل الصديق (bottom sheet) ──────────────────────────────────────
-class _FriendProfileSheet extends StatelessWidget {
-  final FriendModel  friend;
-  final VoidCallback onUnfollow;
-
-  const _FriendProfileSheet({
-    required this.friend,
-    required this.onUnfollow,
-  });
-
-  static const _ringColors = [
-    _cCyan,
-    Color(0xFFFF6584),
-    Color(0xFFFFD700),
-    Color(0xFF6366F1),
-    Colors.greenAccent,
-    Colors.orangeAccent,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final ringColor = _ringColors[friend.userId % _ringColors.length];
-
-    return Container(
-      decoration: const BoxDecoration(
-        color:        _cSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 36),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            width: 40, height: 4,
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(
-              color:        Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // الصورة الكبيرة
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: ringColor, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color:     ringColor.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: CircleAvatar(
-              radius: 56,
-              backgroundColor: ringColor.withValues(alpha: 0.15),
-              backgroundImage: friend.avatar != null
-                  ? NetworkImage(friend.avatar!)
-                  : null,
-              child: friend.avatar == null
-                  ? Text(
-                      friend.name.isNotEmpty
-                          ? friend.name[0].toUpperCase()
-                          : '؟',
-                      style: TextStyle(
-                        color:      ringColor,
-                        fontSize:   40,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // الاسم
-          Text(
-            friend.name,
-            style: const TextStyle(
-              color:      Colors.white,
-              fontSize:   20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          // حالة الاتصال
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: friend.isOnline
-                      ? Colors.greenAccent
-                      : Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                friend.isOnline
-                    ? 'friends.online'.tr()
-                    : 'friends.offline'.tr(),
-                style: TextStyle(
-                  color:    friend.isOnline ? Colors.greenAccent : Colors.white38,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 28),
-
-          // زر إلغاء المتابعة
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onUnfollow,
-              icon:  const Icon(Icons.person_remove_rounded,
-                  color: Colors.redAccent, size: 20),
-              label: Text(
-                'friends.unfollow'.tr(),
-                style: const TextStyle(
-                  color:      Colors.redAccent,
-                  fontSize:   15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side:  const BorderSide(color: Colors.redAccent, width: 1.5),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
