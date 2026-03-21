@@ -31,6 +31,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   int    _queuePos  = 0;
   bool   _searching = true;
   bool   _found     = false;
+  bool   _isBot     = false;
   Timer? _timer;
 
   late AnimationController _pulseCtrl;
@@ -80,16 +81,18 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     _socket.onMatchFound = (data) {
       if (!mounted || _found) return;
       _timer?.cancel();
-      setState(() { _found = true; _searching = false; });
 
       final role           = data['role'] as String;
       final opponentName   = data['opponent_name'] as String? ?? 'opponent';
-      final opponentId     = data['opponent_id'] as int?;
+      final opponentId     = data['opponent_id'] as int?;         // null = بوت
       final opponentAvatar = data['opponent_avatar'] as String?;
       final opponentLevel  = (data['opponent_level'] as int?) ?? 1;
-      final roomId         = data['room_id'] as int;
+      final isBot          = data['is_bot'] == true;
+
+      setState(() { _found = true; _searching = false; _isBot = isBot; });
+      final roomId         = int.tryParse(data['room_id'].toString()) ?? 0;
       final roomCode       = data['room_code'] as String;
-      final categoryId     = data['category_id'] as int;
+      final categoryId     = int.tryParse(data['category_id'].toString()) ?? 0;
 
       final room = RoomModel(
         roomId:     roomId,
@@ -124,6 +127,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               initialQuestions: initialQuestions,
               opponentAvatar:   opponentAvatar,
               opponentLevel:    opponentLevel,
+              isBot:            isBot,
             ),
           ),
         );
@@ -598,7 +602,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         const SizedBox(height: 28),
 
         Text(
-          'matchmaking.found'.tr(),
+          _isBot ? 'matchmaking.bot_found'.tr() : 'matchmaking.found'.tr(),
           style: const TextStyle(
             color: Colors.greenAccent,
             fontSize: 28,
@@ -613,6 +617,30 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .animate()
             .fadeIn(duration: 400.ms)
             .slideY(begin: 0.3, end: 0),
+
+        if (_isBot) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: _cIndigo.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _cIndigo.withValues(alpha: 0.5)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('🤖', style: TextStyle(fontSize: 14)),
+                SizedBox(width: 6),
+                Text(
+                  'منافس افتراضي',
+                  style: TextStyle(color: _cIndigo, fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 200.ms),
+        ],
 
         const SizedBox(height: 12),
 

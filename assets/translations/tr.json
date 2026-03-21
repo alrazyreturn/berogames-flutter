@@ -221,8 +221,9 @@
     "timer": "Arama süresi: {time}",
     "in_queue": "Sıradasınız 🕐",
     "cancel": "Aramayı İptal Et",
-    "found": "Rakip bulundu!",
-    "entering": "Oyuna giriliyor..."
+    "found":     "Rakip bulundu!",
+    "bot_found": "Oynamaya hazır! 🎮",
+    "entering":  "Oyuna giriliyor..."
   },
   "join_room": {
     "title": "Odaya Katıl 🔗",

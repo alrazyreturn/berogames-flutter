@@ -221,8 +221,9 @@
     "timer": "Search time: {time}",
     "in_queue": "You are in the queue 🕐",
     "cancel": "Cancel Search",
-    "found": "Opponent found!",
-    "entering": "Entering game..."
+    "found":     "Opponent found!",
+    "bot_found": "Ready to play! 🎮",
+    "entering":  "Entering game..."
   },
   "join_room": {
     "title": "Join Room 🔗",

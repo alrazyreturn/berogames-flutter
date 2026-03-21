@@ -34,6 +34,7 @@ class DualGameScreen extends StatefulWidget {
   // بيانات الخصم الإضافية للهيدر
   final String?   opponentAvatar;
   final int       opponentLevel;
+  final bool      isBot;
 
   const DualGameScreen({
     super.key,
@@ -45,6 +46,7 @@ class DualGameScreen extends StatefulWidget {
     this.initialQuestions,
     this.opponentAvatar,
     this.opponentLevel = 1,
+    this.isBot = false,
   });
 
   @override
@@ -105,7 +107,8 @@ class _DualGameScreenState extends State<DualGameScreen> {
 
   // ─── جلب حالة المتابعة ────────────────────────────────────────────────────
   Future<void> _loadFollowStatus() async {
-    if (widget.opponentId == null) {
+    // لا نجلب حالة المتابعة للبوت
+    if (widget.isBot || widget.opponentId == null) {
       if (mounted) setState(() => _followStatus = 'none');
       return;
     }
