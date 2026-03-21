@@ -109,8 +109,11 @@
     "delete_title": "Remove Friend",
     "delete_msg": "Remove {name} from your friends list?",
     "no_requests": "No pending requests",
-    "accepted": "{name} accepted the challenge! 🎉",
-    "rejected": "{name} declined the challenge 😔"
+    "accepted":    "{name} accepted the challenge! 🎉",
+    "rejected":    "{name} declined the challenge 😔",
+    "search_hint": "Search for a friend...",
+    "no_results":  "No results found",
+    "unfollow":    "Unfollow"
   },
   "add_friend": {
     "title": "Add Friend 👋",

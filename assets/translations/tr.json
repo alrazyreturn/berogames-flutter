@@ -109,8 +109,11 @@
     "delete_title": "Arkadaşı Sil",
     "delete_msg": "{name} arkadaş listenden silinsin mi?",
     "no_requests": "Bekleyen istek yok",
-    "accepted": "{name} meydan okumayı kabul etti! 🎉",
-    "rejected": "{name} meydan okumayı reddetti 😔"
+    "accepted":    "{name} meydan okumayı kabul etti! 🎉",
+    "rejected":    "{name} meydan okumayı reddetti 😔",
+    "search_hint": "Arkadaş ara...",
+    "no_results":  "Sonuç bulunamadı",
+    "unfollow":    "Takibi Bırak"
   },
   "add_friend": {
     "title": "Arkadaş Ekle 👋",

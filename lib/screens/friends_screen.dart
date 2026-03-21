@@ -531,11 +531,12 @@ class _FriendsScreenState extends State<FriendsScreen>
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
         itemCount: filtered.length,
         itemBuilder: (_, i) => _FriendTile(
-          friend:      filtered[i],
-          unreadCount: _unreadCounts[filtered[i].userId] ?? 0,
-          onChallenge: () => _challengeFriend(filtered[i]),
-          onDelete:    () => _confirmDelete(filtered[i]),
-          onChat:      () {
+          friend:       filtered[i],
+          unreadCount:  _unreadCounts[filtered[i].userId] ?? 0,
+          onChallenge:  () => _challengeFriend(filtered[i]),
+          onDelete:     () => _confirmDelete(filtered[i]),
+          onAvatarTap:  () => _showFriendProfile(filtered[i]),
+          onChat:       () {
             setState(() => _unreadCounts.remove(filtered[i].userId));
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => ChatScreen(friend: filtered[i])));
@@ -572,6 +573,22 @@ class _FriendsScreenState extends State<FriendsScreen>
                 style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
+      ),
+    );
+  }
+
+  // ─── بروفايل الصديق (bottom sheet) ───────────────────────────────────────
+  void _showFriendProfile(FriendModel friend) {
+    showModalBottomSheet(
+      context:          context,
+      backgroundColor:  Colors.transparent,
+      isScrollControlled: false,
+      builder: (_) => _FriendProfileSheet(
+        friend:   friend,
+        onUnfollow: () {
+          Navigator.pop(context);
+          _confirmDelete(friend);
+        },
       ),
     );
   }
@@ -739,6 +756,7 @@ class _FriendTile extends StatelessWidget {
   final VoidCallback onChallenge;
   final VoidCallback onDelete;
   final VoidCallback onChat;
+  final VoidCallback onAvatarTap;
 
   const _FriendTile({
     required this.friend,
@@ -746,6 +764,7 @@ class _FriendTile extends StatelessWidget {
     required this.onChallenge,
     required this.onDelete,
     required this.onChat,
+    required this.onAvatarTap,
   });
 
   // ألوان الحلقة (عشوائية لكل مستخدم)
@@ -858,60 +877,63 @@ class _FriendTile extends StatelessWidget {
 
             const SizedBox(width: 12),
 
-            // ─── الأفاتار ─────────────────────────────────────────────
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ringColor, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ringColor.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 26,
-                    backgroundColor: ringColor.withValues(alpha: 0.15),
-                    backgroundImage: friend.avatar != null
-                        ? NetworkImage(friend.avatar!)
-                        : null,
-                    child: friend.avatar == null
-                        ? Text(
-                            friend.name.isNotEmpty
-                                ? friend.name[0].toUpperCase()
-                                : '؟',
-                            style: TextStyle(
-                              color: ringColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                // نقطة الحالة
-                Positioned(
-                  bottom: 2,
-                  left: 2,
-                  child: Container(
-                    width: 12,
-                    height: 12,
+            // ─── الأفاتار (قابل للضغط) ────────────────────────────────
+            GestureDetector(
+              onTap: onAvatarTap,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2.5),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: friend.isOnline
-                          ? Colors.greenAccent
-                          : Colors.grey.shade600,
-                      border: Border.all(color: _cBg, width: 2),
+                      border: Border.all(color: ringColor, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ringColor.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 26,
+                      backgroundColor: ringColor.withValues(alpha: 0.15),
+                      backgroundImage: friend.avatar != null
+                          ? NetworkImage(friend.avatar!)
+                          : null,
+                      child: friend.avatar == null
+                          ? Text(
+                              friend.name.isNotEmpty
+                                  ? friend.name[0].toUpperCase()
+                                  : '؟',
+                              style: TextStyle(
+                                color: ringColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
-                ),
-              ],
+                  // نقطة الحالة
+                  Positioned(
+                    bottom: 2,
+                    left: 2,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: friend.isOnline
+                            ? Colors.greenAccent
+                            : Colors.grey.shade600,
+                        border: Border.all(color: _cBg, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -945,6 +967,154 @@ class _CircleBtn extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Icon(icon, color: color, size: 18),
+      ),
+    );
+  }
+}
+
+// ─── شاشة بروفايل الصديق (bottom sheet) ──────────────────────────────────────
+class _FriendProfileSheet extends StatelessWidget {
+  final FriendModel  friend;
+  final VoidCallback onUnfollow;
+
+  const _FriendProfileSheet({
+    required this.friend,
+    required this.onUnfollow,
+  });
+
+  static const _ringColors = [
+    _cCyan,
+    Color(0xFFFF6584),
+    Color(0xFFFFD700),
+    Color(0xFF6366F1),
+    Colors.greenAccent,
+    Colors.orangeAccent,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final ringColor = _ringColors[friend.userId % _ringColors.length];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color:        _cSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40, height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color:        Colors.white24,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // الصورة الكبيرة
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: ringColor, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color:     ringColor.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 56,
+              backgroundColor: ringColor.withValues(alpha: 0.15),
+              backgroundImage: friend.avatar != null
+                  ? NetworkImage(friend.avatar!)
+                  : null,
+              child: friend.avatar == null
+                  ? Text(
+                      friend.name.isNotEmpty
+                          ? friend.name[0].toUpperCase()
+                          : '؟',
+                      style: TextStyle(
+                        color:      ringColor,
+                        fontSize:   40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // الاسم
+          Text(
+            friend.name,
+            style: const TextStyle(
+              color:      Colors.white,
+              fontSize:   20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          // حالة الاتصال
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: friend.isOnline
+                      ? Colors.greenAccent
+                      : Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                friend.isOnline
+                    ? 'friends.online'.tr()
+                    : 'friends.offline'.tr(),
+                style: TextStyle(
+                  color:    friend.isOnline ? Colors.greenAccent : Colors.white38,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 28),
+
+          // زر إلغاء المتابعة
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onUnfollow,
+              icon:  const Icon(Icons.person_remove_rounded,
+                  color: Colors.redAccent, size: 20),
+              label: Text(
+                'friends.unfollow'.tr(),
+                style: const TextStyle(
+                  color:      Colors.redAccent,
+                  fontSize:   15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side:  const BorderSide(color: Colors.redAccent, width: 1.5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

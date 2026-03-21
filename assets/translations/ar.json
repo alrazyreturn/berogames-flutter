@@ -118,7 +118,10 @@
     "delete_msg":   "هل تريد حذف {name} من قائمة أصدقائك؟",
     "no_requests":  "لا توجد طلبات معلقة",
     "accepted":     "{name} قبل التحدي! 🎉",
-    "rejected":     "{name} رفض التحدي 😔"
+    "rejected":     "{name} رفض التحدي 😔",
+    "search_hint":  "ابحث عن صديق...",
+    "no_results":   "لا توجد نتائج",
+    "unfollow":     "إلغاء المتابعة"
   },
 
   "add_friend": {
