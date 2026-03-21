@@ -499,6 +499,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
                 isMe:            false,
                 showOpponentMic: _webRtcReady,
                 opponentMicOn:   _opponentMicOn,
+                avatar:          widget.opponentAvatar,
               ),
             ),
 
@@ -575,6 +576,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
                 isMe:            true,
                 showOpponentMic: false,
                 opponentMicOn:   false,
+                avatar:          context.read<UserProvider>().user?.avatar,
               ),
             ),
           ],
@@ -584,11 +586,12 @@ class _DualGameScreenState extends State<DualGameScreen> {
   }
 
   Widget _buildPlayerSide({
-    required String name,
-    required int    score,
-    required bool   isMe,
-    required bool   showOpponentMic,
-    required bool   opponentMicOn,
+    required String  name,
+    required int     score,
+    required bool    isMe,
+    required bool    showOpponentMic,
+    required bool    opponentMicOn,
+    String?          avatar,
   }) {
     final color    = isMe ? _cCyan : const Color(0xFFFF6B8A);
     final subtitle = isMe ? 'نقاطك' : 'الخصم';
@@ -610,7 +613,16 @@ class _DualGameScreenState extends State<DualGameScreen> {
                   BoxShadow(color: color.withValues(alpha: 0.18), blurRadius: 10),
                 ],
               ),
-              child: Icon(Icons.person_rounded, color: color, size: 22),
+              child: ClipOval(
+                child: avatar != null && avatar.isNotEmpty
+                    ? Image.network(
+                        avatar,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, e, st) =>
+                            Icon(Icons.person_rounded, color: color, size: 22),
+                      )
+                    : Icon(Icons.person_rounded, color: color, size: 22),
+              ),
             ),
             if (showOpponentMic)
               Positioned(

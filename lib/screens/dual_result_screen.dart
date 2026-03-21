@@ -286,8 +286,8 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── زر الصداقة ─────────────────────────────────────────
-                  if (!widget.isBot && widget.opponentId != null) ...[
+                  // ─── زر الصداقة (يظهر دائماً — معطّل للبوت) ─────────────
+                  ...[
                     const SizedBox(height: 20),
                     _buildFriendButton(),
                   ],
@@ -389,6 +389,34 @@ class _DualResultScreenState extends State<DualResultScreen>
 
   // ─── زر الصداقة ──────────────────────────────────────────────────────────
   Widget _buildFriendButton() {
+    // للبوت: يُعرض الزر دائماً لكن معطّل تماماً
+    if (widget.isBot || widget.opponentId == null) {
+      return Opacity(
+        opacity: 0.35,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color:        _cSurface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white24, width: 1.5),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_add_rounded, color: Colors.white38, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'إضافة صديق',
+                style: TextStyle(color: Colors.white38, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // للاعب حقيقي: الزر الكامل
     final bool isAccepted = _followStatus == 'accepted';
     final bool isPending  = _followStatus == 'pending_sent' || _followStatus == 'pending_received';
     final bool canFollow  = _followStatus == 'none';
@@ -424,10 +452,10 @@ class _DualResultScreenState extends State<DualResultScreen>
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: isAccepted
-              ? Colors.greenAccent.withValues(alpha: 0.1)
+              ? Colors.greenAccent.withValues(alpha: 0.08)
               : isPending
                   ? _cSurface
-                  : _cCyan.withValues(alpha: 0.1),
+                  : _cCyan.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: btnColor.withValues(
@@ -435,31 +463,18 @@ class _DualResultScreenState extends State<DualResultScreen>
             width: 1.5,
           ),
           boxShadow: canFollow
-              ? [
-                  BoxShadow(
-                    color:      _cCyan.withValues(alpha: 0.3),
-                    blurRadius: 22,
-                    spreadRadius: 1,
-                  ),
-                ]
+              ? [BoxShadow(color: _cCyan.withValues(alpha: 0.3), blurRadius: 22, spreadRadius: 1)]
               : isAccepted
-                  ? [
-                      BoxShadow(
-                        color:      Colors.greenAccent.withValues(alpha: 0.25),
-                        blurRadius: 18,
-                      ),
-                    ]
+                  ? [BoxShadow(color: Colors.greenAccent.withValues(alpha: 0.2), blurRadius: 18)]
                   : null,
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (isLoading)
               SizedBox(
                 width: 18, height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5, color: _cCyan,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 1.5, color: _cCyan),
               )
             else
               Icon(icon, color: btnColor, size: 20),
