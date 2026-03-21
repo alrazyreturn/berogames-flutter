@@ -184,12 +184,16 @@
     "watch_ad": "Reklam İzle"
   },
   "dual_result": {
-    "draw": "Berabere!",
-    "won": "Kazandın! 🎉",
-    "lost": "Kaybettin!",
-    "vs": "VS",
-    "home_btn": "Ana Sayfa",
-    "play_again": "Tekrar Oyna ⚔️"
+    "draw":           "Berabere!",
+    "won":            "Kazandın! 🎉",
+    "lost":           "Kaybettin!",
+    "vs":             "VS",
+    "home_btn":       "Ana Sayfa",
+    "play_again":     "Tekrar Oyna ⚔️",
+    "add_friend":     "Arkadaş Ekle 👋",
+    "friends":        "Arkadaşlar 💚",
+    "pending_sent":   "İstek Gönderildi ⏳",
+    "accept_request": "Arkadaşlığı Kabul Et 👋"
   },
   "dual_menu": {
     "title": "Çift Oyuncu ⚔️",

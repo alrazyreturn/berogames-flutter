@@ -197,12 +197,16 @@
   },
 
   "dual_result": {
-    "draw":      "تعادل!",
-    "won":       "فزت! 🎉",
-    "lost":      "خسرت!",
-    "vs":        "VS",
-    "home_btn":  "الرئيسية",
-    "play_again":"العب مجدداً ⚔️"
+    "draw":           "تعادل!",
+    "won":            "فزت! 🎉",
+    "lost":           "خسرت!",
+    "vs":             "VS",
+    "home_btn":       "الرئيسية",
+    "play_again":     "العب مجدداً ⚔️",
+    "add_friend":     "إضافة صديق 👋",
+    "friends":        "أصدقاء 💚",
+    "pending_sent":   "طلب مُرسَل ⏳",
+    "accept_request": "قبول طلب الصداقة 👋"
   },
 
   "dual_menu": {

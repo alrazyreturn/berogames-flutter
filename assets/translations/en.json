@@ -184,12 +184,16 @@
     "watch_ad": "Watch Ad"
   },
   "dual_result": {
-    "draw": "Draw!",
-    "won": "You Won! 🎉",
-    "lost": "You Lost!",
-    "vs": "VS",
-    "home_btn": "Home",
-    "play_again": "Play Again ⚔️"
+    "draw":           "Draw!",
+    "won":            "You Won! 🎉",
+    "lost":           "You Lost!",
+    "vs":             "VS",
+    "home_btn":       "Home",
+    "play_again":     "Play Again ⚔️",
+    "add_friend":     "Add Friend 👋",
+    "friends":        "Friends 💚",
+    "pending_sent":   "Request Sent ⏳",
+    "accept_request": "Accept Friendship 👋"
   },
   "dual_menu": {
     "title": "Dual Play ⚔️",

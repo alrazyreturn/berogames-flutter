@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
-import '../services/ad_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../services/friends_service.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
 import 'leaderboard_screen.dart';
@@ -22,8 +24,10 @@ class DualResultScreen extends StatefulWidget {
   final String opponentName;
   final int    myScore;
   final int    opponentScore;
-  final String winner;   // 'host' | 'guest' | 'draw'
-  final String myRole;   // 'host' | 'guest'
+  final String winner;      // 'host' | 'guest' | 'draw'
+  final String myRole;      // 'host' | 'guest'
+  final int?   opponentId;  // null = بوت أو غير معروف
+  final bool   isBot;
 
   const DualResultScreen({
     super.key,
@@ -33,6 +37,8 @@ class DualResultScreen extends StatefulWidget {
     required this.opponentScore,
     required this.winner,
     required this.myRole,
+    this.opponentId,
+    this.isBot = false,
   });
 
   @override
@@ -45,7 +51,12 @@ class _DualResultScreenState extends State<DualResultScreen>
   late AnimationController _scaleCtrl;
   late Animation<double>   _scaleAnim;
 
-  bool get _iWon  => widget.myRole == widget.winner;
+  // ─── حالة الصداقة ────────────────────────────────────────────────────────
+  final _friendsService = FriendsService();
+  String _followStatus  = 'loading';
+  bool   _followLoading = false;
+
+  bool get _iWon   => widget.myRole == widget.winner;
   bool get _isDraw => widget.winner == 'draw';
 
   @override
@@ -62,7 +73,7 @@ class _DualResultScreenState extends State<DualResultScreen>
     _scaleCtrl.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AdService().onGameComplete();
+      _loadFollowStatus();
     });
   }
 
@@ -71,6 +82,58 @@ class _DualResultScreenState extends State<DualResultScreen>
     _confetti.dispose();
     _scaleCtrl.dispose();
     super.dispose();
+  }
+
+  // ─── جلب حالة الصداقة ────────────────────────────────────────────────────
+  Future<void> _loadFollowStatus() async {
+    if (widget.isBot || widget.opponentId == null) {
+      if (mounted) setState(() => _followStatus = 'none');
+      return;
+    }
+    final token = context.read<UserProvider>().token;
+    if (token == null) { if (mounted) setState(() => _followStatus = 'none'); return; }
+    try {
+      final res = await _friendsService.getFollowStatus(widget.opponentId!, token);
+      if (mounted) setState(() => _followStatus = res['status'] as String? ?? 'none');
+    } catch (_) {
+      if (mounted) setState(() => _followStatus = 'none');
+    }
+  }
+
+  // ─── الضغط على زر الصداقة ────────────────────────────────────────────────
+  Future<void> _onFollowTap() async {
+    if (widget.opponentId == null || _followLoading) return;
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    setState(() => _followLoading = true);
+    try {
+      final result    = await _friendsService.followByUserId(widget.opponentId!, token);
+      final newStatus = result['status'] as String? ?? 'pending_sent';
+      if (!mounted) return;
+      setState(() => _followStatus = newStatus);
+      final msg = newStatus == 'accepted'
+          ? '🎉 أصبحتما أصدقاء!'
+          : '✅ تم إرسال طلب المتابعة';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: newStatus == 'accepted'
+            ? Colors.greenAccent.withValues(alpha: 0.9)
+            : _cCyan.withValues(alpha: 0.9),
+        duration: const Duration(seconds: 2),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('accepted') || msg.contains('أصدقاء')) {
+        setState(() => _followStatus = 'accepted');
+      } else if (msg.contains('pending') || msg.contains('مُرسَل')) {
+        setState(() => _followStatus = 'pending_sent');
+      }
+    } finally {
+      if (mounted) setState(() => _followLoading = false);
+    }
   }
 
   @override
@@ -214,7 +277,13 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  // ─── زر الصداقة (يُخفى للبوت وعند عدم وجود opponentId) ──
+                  if (!widget.isBot && widget.opponentId != null) ...[
+                    const SizedBox(height: 20),
+                    _buildFriendButton(),
+                  ],
+
+                  const SizedBox(height: 24),
 
                   // ─── الأزرار ────────────────────────────────────────────
                   Row(
@@ -305,6 +374,96 @@ class _DualResultScreenState extends State<DualResultScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ─── زر الصداقة ──────────────────────────────────────────────────────────
+  Widget _buildFriendButton() {
+    final bool isAccepted = _followStatus == 'accepted';
+    final bool isPending  = _followStatus == 'pending_sent' || _followStatus == 'pending_received';
+    final bool canFollow  = _followStatus == 'none';
+    final bool isLoading  = _followStatus == 'loading' || _followLoading;
+
+    final Color btnColor = isAccepted
+        ? Colors.greenAccent
+        : isPending
+            ? Colors.white38
+            : _cCyan;
+
+    final String label = isLoading
+        ? 'common.loading'.tr()
+        : isAccepted
+            ? 'dual_result.friends'.tr()
+            : _followStatus == 'pending_received'
+                ? 'dual_result.accept_request'.tr()
+                : isPending
+                    ? 'dual_result.pending_sent'.tr()
+                    : 'dual_result.add_friend'.tr();
+
+    final IconData icon = isAccepted
+        ? Icons.people_rounded
+        : isPending
+            ? Icons.hourglass_top_rounded
+            : Icons.person_add_rounded;
+
+    return GestureDetector(
+      onTap: canFollow && !isLoading ? _onFollowTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        decoration: BoxDecoration(
+          color: isAccepted
+              ? Colors.greenAccent.withValues(alpha: 0.1)
+              : isPending
+                  ? _cSurface
+                  : _cCyan.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: btnColor.withValues(
+                alpha: isAccepted ? 0.6 : canFollow ? 0.7 : 0.25),
+            width: 1.5,
+          ),
+          boxShadow: canFollow
+              ? [
+                  BoxShadow(
+                    color:      _cCyan.withValues(alpha: 0.3),
+                    blurRadius: 22,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : isAccepted
+                  ? [
+                      BoxShadow(
+                        color:      Colors.greenAccent.withValues(alpha: 0.25),
+                        blurRadius: 18,
+                      ),
+                    ]
+                  : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              SizedBox(
+                width: 18, height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5, color: _cCyan,
+                ),
+              )
+            else
+              Icon(icon, color: btnColor, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: TextStyle(
+                color:      btnColor,
+                fontSize:   15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
