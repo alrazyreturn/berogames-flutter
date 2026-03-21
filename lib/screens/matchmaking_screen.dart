@@ -618,30 +618,6 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .fadeIn(duration: 400.ms)
             .slideY(begin: 0.3, end: 0),
 
-        if (_isBot) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            decoration: BoxDecoration(
-              color: _cIndigo.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _cIndigo.withValues(alpha: 0.5)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('🤖', style: TextStyle(fontSize: 14)),
-                SizedBox(width: 6),
-                Text(
-                  'منافس افتراضي',
-                  style: TextStyle(color: _cIndigo, fontSize: 12,
-                      fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: 200.ms),
-        ],
-
         const SizedBox(height: 12),
 
         Text(

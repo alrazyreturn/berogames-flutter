@@ -70,7 +70,6 @@ class _DualGameScreenState extends State<DualGameScreen> {
   int? _selected;
   bool _isLoading       = true;
   bool _iFinished       = false;
-  bool _opponentFinished = false;
   int  _questionCount   = 0; // عداد الأسئلة للعرض
 
   // ─── حالة المتابعة ────────────────────────────────────────────────────────
@@ -189,8 +188,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
     };
 
     _socket.onOpponentFinished = (data) {
-      if (!mounted) return;
-      setState(() => _opponentFinished = true);
+      // الخصم أنهى — لا نحتاج تحديث الواجهة هنا
     };
 
     _socket.onGameOver = _onGameOver;
@@ -456,7 +454,6 @@ class _DualGameScreenState extends State<DualGameScreen> {
                 name:            opponentName,
                 score:           _opponentScore,
                 isMe:            false,
-                isFinished:      _opponentFinished,
                 showOpponentMic: _webRtcReady,
                 opponentMicOn:   _opponentMicOn,
               ),
@@ -533,7 +530,6 @@ class _DualGameScreenState extends State<DualGameScreen> {
                 name:            widget.myName,
                 score:           _myScore,
                 isMe:            true,
-                isFinished:      _iFinished,
                 showOpponentMic: false,
                 opponentMicOn:   false,
               ),
@@ -548,7 +544,6 @@ class _DualGameScreenState extends State<DualGameScreen> {
     required String name,
     required int    score,
     required bool   isMe,
-    required bool   isFinished,
     required bool   showOpponentMic,
     required bool   opponentMicOn,
   }) {
@@ -609,23 +604,13 @@ class _DualGameScreenState extends State<DualGameScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 2),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$score',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (isFinished) ...[
-              const SizedBox(width: 4),
-              const Text('✅', style: TextStyle(fontSize: 12)),
-            ],
-          ],
+        Text(
+          '$score',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
