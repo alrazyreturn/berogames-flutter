@@ -4,7 +4,19 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../config/api_config.dart';
 import 'package:dio/dio.dart';
+import 'home_screen.dart';
+import 'friends_screen.dart';
+import 'profile_screen.dart';
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const _cBg      = Color(0xFF0B1326);
+const _cSurface = Color(0xFF131B2E);
+const _cCard    = Color(0xFF171F33);
+const _cCyan    = Color(0xFF00FBFB);
+const _cIndigo  = Color(0xFF6366F1);
+const _cNavBg   = Color(0xFF10102B);
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -16,8 +28,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   final _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
 
   List<Map<String, dynamic>> _players = [];
-  Map<String, dynamic>?      _myRank;
-  bool _loading = true;
+  bool    _loading = true;
   String? _error;
 
   @override
@@ -29,39 +40,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final token = context.read<UserProvider>().token;
-
-      // جلب المتصدرين
-      final res = await _dio.get(ApiConfig.leaderboard);
+      final res   = await _dio.get(ApiConfig.leaderboard);
       final List<Map<String, dynamic>> players =
           List<Map<String, dynamic>>.from(res.data);
 
-      // جلب ترتيب اليوزر الحالي
-      Map<String, dynamic>? myRank;
-      if (token != null) {
-        final myRes = await _dio.get(
-          ApiConfig.myRank,
-          options: Options(headers: {'Authorization': 'Bearer $token'}),
-        );
-        myRank = myRes.data as Map<String, dynamic>;
-      }
-
       setState(() {
         _players = players;
-        _myRank  = myRank;
         _loading = false;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() { _error = 'leaderboard.load_error'.tr(); _loading = false; });
     }
   }
 
-  // ─── عرض بروفايل اللاعب عند الضغط على صورته ─────────────────────────────
   void _showPlayerProfile(Map<String, dynamic> player) {
     final currentUser = context.read<UserProvider>().user;
     final isMe = currentUser != null && '${player['id']}' == '${currentUser.id}';
-    if (isMe) return; // لا نفتح البروفايل للنفس
-
+    if (isMe) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -74,253 +69,271 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
+  // ─── Bottom Nav ───────────────────────────────────────────────────────────
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cNavBg,
+        boxShadow: [
+          BoxShadow(
+            color: _cCyan.withValues(alpha: 0.07),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon:   Icons.home_rounded,
+                label:  'home.nav_home'.tr(),
+                active: false,
+                onTap:  () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen())),
+              ),
+              _NavItem(
+                icon:   Icons.leaderboard_rounded,
+                label:  'home.nav_ranking'.tr(),
+                active: true,
+                onTap:  () {},
+              ),
+              _NavItem(
+                icon:   Icons.people_rounded,
+                label:  'home.nav_friends'.tr(),
+                active: false,
+                onTap:  () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const FriendsScreen())),
+              ),
+              _NavItem(
+                icon:   Icons.person_rounded,
+                label:  'home.nav_profile'.tr(),
+                active: false,
+                onTap:  () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen())),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = context.read<UserProvider>().user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: _cBg,
+      bottomNavigationBar: _buildBottomNav(),
       body: SafeArea(
         child: Column(
           children: [
-            // ─── Header ──────────────────────────────────────────────────
+            // ─── Header ─────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white70),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'leaderboard.title'.tr(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                  // زر تحديث / رجوع
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _cSurface,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      textAlign: TextAlign.center,
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: _cCyan,
+                        size: 18,
+                      ),
                     ),
                   ),
-                  // زر تحديث
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white54),
-                    onPressed: _load,
+                  // العنوان
+                  Text(
+                    'leaderboard.title'.tr(),
+                    style: const TextStyle(
+                      color: _cCyan,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // ─── ترتيبي الحالي ────────────────────────────────────────
-            if (_myRank != null && !_loading)
-              _MyRankBanner(
-                rank:       (_myRank!['rank'] as num?)?.toInt() ?? 0,
-                score:      (_myRank!['total_score'] as num?)?.toInt() ?? 0,
-                name:       currentUser?.name ?? '',
-                avatarUrl:  currentUser?.avatar,
-              ),
-
-            // ─── القائمة ──────────────────────────────────────────────
+            // ─── المحتوى ────────────────────────────────────────────────────
             Expanded(
               child: _loading
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: Color(0xFFFFD700)))
+                      child: CircularProgressIndicator(color: _cCyan))
                   : _error != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.wifi_off,
-                                  color: Colors.white38, size: 60),
-                              const SizedBox(height: 12),
-                              Text(_error!,
-                                  style: const TextStyle(
-                                      color: Colors.white54)),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _load,
-                                child: Text('common.retry'.tr()),
+                      ? _buildError()
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: _cCyan,
+                          backgroundColor: _cSurface,
+                          child: CustomScrollView(
+                            slivers: [
+                              // ─── البوديوم ─────────────────────────────
+                              if (_players.length >= 3)
+                                SliverToBoxAdapter(
+                                  child: _TopThreePodium(
+                                    players:       _players.take(3).toList(),
+                                    onAvatarTap:   _showPlayerProfile,
+                                    currentUserId: '${currentUser?.id ?? ''}',
+                                  ),
+                                ),
+
+                              // ─── عناوين الأعمدة ───────────────────────
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'leaderboard.col_points'.tr(),
+                                        style: const TextStyle(
+                                            color: Colors.white38,
+                                            fontSize: 12),
+                                      ),
+                                      Text(
+                                        'leaderboard.col_player'.tr(),
+                                        style: const TextStyle(
+                                            color: Colors.white38,
+                                            fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
+
+                              // ─── قائمة اللاعبين ────────────────────────
+                              SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (ctx, i) {
+                                    final startIndex =
+                                        _players.length >= 3 ? 3 : 0;
+                                    final p = _players[startIndex + i];
+                                    final isMe = currentUser != null &&
+                                        p['id'] == currentUser.id;
+                                    return _PlayerRow(
+                                      player:      p,
+                                      isMe:        isMe,
+                                      onAvatarTap: _showPlayerProfile,
+                                    );
+                                  },
+                                  childCount: _players.length >= 3
+                                      ? _players.length - 3
+                                      : _players.length,
+                                ),
+                              ),
+
+                              const SliverToBoxAdapter(
+                                  child: SizedBox(height: 24)),
                             ],
                           ),
-                        )
-                      : _players.isEmpty
-                          ? Center(
-                              child: Text('leaderboard.no_players'.tr(),
-                                  style: const TextStyle(color: Colors.white38)))
-                          : RefreshIndicator(
-                              onRefresh: _load,
-                              color: const Color(0xFFFFD700),
-                              child: CustomScrollView(
-                                slivers: [
-                                  // ─── بودم أعلى 3 ─────────────────
-                                  if (_players.length >= 3)
-                                    SliverToBoxAdapter(
-                                      child: _TopThreePodium(
-                                        players:      _players.take(3).toList(),
-                                        onAvatarTap:  _showPlayerProfile,
-                                        currentUserId: '${currentUser?.id ?? ''}',
-                                      ),
-                                    ),
-
-                                  const SliverToBoxAdapter(
-                                      child: SizedBox(height: 16)),
-
-                                  // ─── باقي اللاعبين ────────────────
-                                  SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                      (ctx, i) {
-                                        final startIndex =
-                                            _players.length >= 3 ? 3 : 0;
-                                        final p = _players[startIndex + i];
-                                        final isMe = currentUser != null &&
-                                            p['id'] == currentUser.id;
-                                        return _PlayerRow(
-                                          player:      p,
-                                          isMe:        isMe,
-                                          onAvatarTap: _showPlayerProfile,
-                                        );
-                                      },
-                                      childCount: _players.length >= 3
-                                          ? _players.length - 3
-                                          : _players.length,
-                                    ),
-                                  ),
-
-                                  const SliverToBoxAdapter(
-                                      child: SizedBox(height: 24)),
-                                ],
-                              ),
-                            ),
+                        ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white38, size: 60),
+          const SizedBox(height: 12),
+          Text(_error!,
+              style: const TextStyle(color: Colors.white54)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _load,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _cIndigo,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text('common.retry'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// ─── أفاتار مشترك (صورة أو حرف) ──────────────────────────────────────────────
-class _UserAvatar extends StatelessWidget {
-  final String  name;
-  final String? avatarUrl;
-  final double  radius;
-  final Color   color;
+// ─── Nav Item ─────────────────────────────────────────────────────────────────
+class _NavItem extends StatelessWidget {
+  final IconData     icon;
+  final String       label;
+  final bool         active;
+  final VoidCallback onTap;
 
-  const _UserAvatar({
-    required this.name,
-    required this.radius,
-    required this.color,
-    this.avatarUrl,
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: color.withValues(alpha: 0.25),
-      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-      child: avatarUrl == null
-          ? Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
-                color: color,
-                fontSize: radius * 0.75,
-                fontWeight: FontWeight.bold,
-              ),
-            )
-          : null,
-    );
-  }
-}
-
-// ─── بانر ترتيبي ──────────────────────────────────────────────────────────────
-class _MyRankBanner extends StatelessWidget {
-  final int rank, score;
-  final String  name;
-  final String? avatarUrl;
-  const _MyRankBanner(
-      {required this.rank, required this.score, required this.name,
-       this.avatarUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _UserAvatar(
-            name:      name,
-            avatarUrl: avatarUrl,
-            radius:    22,
-            color:     Colors.white,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'leaderboard.my_rank'.tr(),
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-              ],
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: active
+                ? BoxDecoration(
+                    color: _cCyan,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _cCyan.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  )
+                : null,
+            child: Icon(
+              icon,
+              color: active ? _cNavBg : Colors.white38,
+              size: 24,
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                rank > 0 ? '#$rank' : '-',
+          if (!active) ...[
+            const SizedBox(height: 2),
+            Text(label,
                 style: const TextStyle(
-                    color: Colors.amber,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '$score ${'common.points_unit'.tr()}',
-                style:
-                    const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
+                    color: Colors.white38, fontSize: 10)),
+          ],
         ],
       ),
     );
   }
 }
 
-// ─── منصة أعلى 3 ──────────────────────────────────────────────────────────────
+// ─── بوديوم أعلى 3 ────────────────────────────────────────────────────────────
 class _TopThreePodium extends StatelessWidget {
-  final List<Map<String, dynamic>>         players;
+  final List<Map<String, dynamic>>          players;
   final void Function(Map<String, dynamic>) onAvatarTap;
-  final String                             currentUserId;
+  final String                              currentUserId;
 
   const _TopThreePodium({
     required this.players,
@@ -330,102 +343,171 @@ class _TopThreePodium extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // الترتيب: 2 , 1 (منتصف مرتفع) , 3
-    final order = [1, 0, 2]; // indices
-    final medals  = ['🥈', '🥇', '🥉'];
-    final heights = [90.0, 120.0, 70.0];
-    final colors  = [
-      const Color(0xFFC0C0C0), // فضة
-      const Color(0xFFFFD700), // ذهب
-      const Color(0xFFCD7F32), // برونز
+    // ترتيب العرض: 3rd (يسار) | 1st (وسط مرتفع) | 2nd (يمين)
+    const displayOrder = [2, 0, 1];
+    const ringColors   = [
+      Color(0xFFCD7F32), // برونز - 3rd
+      _cCyan,            // سيان  - 1st
+      Color(0xFFC0C0C0), // فضة   - 2nd
     ];
+    const badgeColors = [
+      Color(0xFFCD7F32),
+      _cCyan,
+      Color(0xFF9CA3AF),
+    ];
+    const radii = [26.0, 40.0, 30.0];
+    const ranks = [3, 1, 2];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(3, (i) {
-          final idx = order[i];
-          if (idx >= players.length) return const SizedBox.shrink();
+          final idx       = displayOrder[i];
+          if (idx >= players.length) return const Expanded(child: SizedBox());
           final p         = players[idx];
-          final name      = (p['name']   as String?) ?? '';
-          final avatarUrl = (p['avatar'] as String?);
+          final name      = (p['name']        as String?) ?? '';
+          final avatarUrl = (p['avatar']       as String?);
+          final score     = (p['total_score']  as num?)?.toInt() ?? 0;
           final isMe      = '${p['id']}' == currentUserId;
+          final isFirst   = i == 1;
 
           return Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // إيموجي الميدالية
-                Text(medals[i], style: const TextStyle(fontSize: 28)),
-                const SizedBox(height: 4),
-                // أفاتار قابل للضغط
+                // نجمة أعلى المركز الأول
+                if (isFirst)
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: _cCyan,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _cCyan.withValues(alpha: 0.55),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.star_rounded,
+                        color: _cNavBg, size: 20),
+                  ),
+                if (isFirst) const SizedBox(height: 6),
+
+                // أفاتار مع حلقة ملونة
                 GestureDetector(
                   onTap: isMe ? null : () => onAvatarTap(p),
                   child: Stack(
-                    alignment: Alignment.bottomRight,
+                    alignment: Alignment.bottomCenter,
+                    clipBehavior: Clip.none,
                     children: [
-                      _UserAvatar(
-                        name:      name,
-                        avatarUrl: avatarUrl,
-                        radius:    i == 1 ? 30 : 24,
-                        color:     colors[i],
+                      // الحلقة + الأفاتار
+                      Container(
+                        padding: EdgeInsets.all(isFirst ? 3.5 : 2.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: ringColors[i],
+                            width: isFirst ? 3 : 2,
+                          ),
+                          boxShadow: isFirst
+                              ? [
+                                  BoxShadow(
+                                    color: ringColors[i].withValues(alpha: 0.5),
+                                    blurRadius: 18,
+                                    spreadRadius: 2,
+                                  )
+                                ]
+                              : [],
+                        ),
+                        child: CircleAvatar(
+                          radius: radii[i],
+                          backgroundColor:
+                              ringColors[i].withValues(alpha: 0.18),
+                          backgroundImage: avatarUrl != null
+                              ? NetworkImage(avatarUrl)
+                              : null,
+                          child: avatarUrl == null
+                              ? Text(
+                                  name.isNotEmpty
+                                      ? name[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: ringColors[i],
+                                    fontSize: radii[i] * 0.6,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
-                      if (!isMe)
-                        Container(
-                          width: 16,
-                          height: 16,
+                      // شارة الترتيب
+                      Positioned(
+                        bottom: -10,
+                        child: Container(
+                          width: 22,
+                          height: 22,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF),
+                            color: badgeColors[i],
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: const Color(0xFF1A1A2E), width: 1.5),
+                                color: _cBg, width: 2),
                           ),
-                          child: const Icon(Icons.person_add,
-                              size: 9, color: Colors.white),
+                          child: Center(
+                            child: Text(
+                              '${ranks[i]}',
+                              style: const TextStyle(
+                                color: _cBg,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 6),
+
+                const SizedBox(height: 18),
+
                 // الاسم
                 Text(
                   name.length > 8 ? '${name.substring(0, 8)}..' : name,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isFirst ? _cCyan : Colors.white,
+                    fontSize: isFirst ? 14 : 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 4),
+
                 // النقاط
-                Text(
-                  '${(p['total_score'] as num?)?.toInt() ?? 0}',
-                  style: TextStyle(color: colors[i], fontSize: 13),
-                ),
-                const SizedBox(height: 6),
-                // القاعدة
-                Container(
-                  height: heights[i],
-                  decoration: BoxDecoration(
-                    color: colors[i].withValues(alpha: 0.15),
-                    borderRadius: const BorderRadius.only(
-                      topLeft:  Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                    border: Border.all(
-                        color: colors[i].withValues(alpha: 0.4)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '#${(p['rank'] as num?)?.toInt() ?? idx + 1}',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _fmt(score),
                       style: TextStyle(
-                          color: colors[i],
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
+                        color: isFirst ? _cCyan : Colors.white60,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.star_rounded,
+                      color: isFirst ? _cCyan : Colors.white38,
+                      size: 13,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 10),
               ],
             ),
           );
@@ -433,12 +515,21 @@ class _TopThreePodium extends StatelessWidget {
       ),
     );
   }
+
+  static String _fmt(int s) {
+    if (s >= 1000) {
+      final k = s ~/ 1000;
+      final r = s % 1000;
+      return r == 0 ? '$k,000' : '$k,${r.toString().padLeft(3, '0')}';
+    }
+    return '$s';
+  }
 }
 
 // ─── صف لاعب ──────────────────────────────────────────────────────────────────
 class _PlayerRow extends StatelessWidget {
-  final Map<String, dynamic>               player;
-  final bool                               isMe;
+  final Map<String, dynamic>                player;
+  final bool                                isMe;
   final void Function(Map<String, dynamic>) onAvatarTap;
 
   const _PlayerRow({
@@ -455,84 +546,148 @@ class _PlayerRow extends StatelessWidget {
     final avatarUrl = (player['avatar']      as String?);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
         color: isMe
-            ? const Color(0xFF6C63FF).withValues(alpha: 0.2)
-            : const Color(0xFF16213E),
-        borderRadius: BorderRadius.circular(14),
+            ? _cCyan.withValues(alpha: 0.07)
+            : _cCard,
+        borderRadius: BorderRadius.circular(16),
         border: isMe
-            ? Border.all(color: const Color(0xFF6C63FF), width: 1.5)
-            : Border.all(color: Colors.white12),
+            ? Border.all(color: _cCyan, width: 1.5)
+            : null,
+        boxShadow: isMe
+            ? [
+                BoxShadow(
+                  color: _cCyan.withValues(alpha: 0.12),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                )
+              ]
+            : [],
       ),
       child: Row(
         children: [
-          // رقم الترتيب
-          SizedBox(
-            width: 36,
-            child: Text(
-              '#$rank',
-              style: TextStyle(
-                color: isMe ? const Color(0xFF6C63FF) : Colors.white38,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+          // ⭐ النقاط (يسار الشاشة في RTL)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.star_rounded,
+                color: isMe ? _cCyan : Colors.white38,
+                size: 16,
               ),
+              const SizedBox(width: 4),
+              Text(
+                '$score',
+                style: TextStyle(
+                  color: isMe ? _cCyan : Colors.white60,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          const Spacer(),
+
+          // الاسم
+          Text(
+            isMe ? '${'leaderboard.me'.tr()} ($name)' : name,
+            style: TextStyle(
+              color: isMe ? _cCyan : Colors.white70,
+              fontSize: 14,
+              fontWeight: isMe ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          // أفاتار قابل للضغط
+
+          const SizedBox(width: 12),
+
+          // الأفاتار
           GestureDetector(
             onTap: isMe ? null : () => onAvatarTap(player),
             child: Stack(
-              alignment: Alignment.bottomRight,
+              clipBehavior: Clip.none,
               children: [
-                _UserAvatar(
-                  name:      name,
-                  avatarUrl: avatarUrl,
-                  radius:    18,
-                  color:     isMe ? const Color(0xFF6C63FF) : Colors.white60,
-                ),
-                if (!isMe)
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6C63FF),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: const Color(0xFF16213E), width: 1.5),
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isMe ? _cCyan : Colors.white12,
+                      width: 1.5,
                     ),
-                    child: const Icon(Icons.person_add,
-                        size: 8, color: Colors.white),
+                  ),
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: isMe
+                        ? _cCyan.withValues(alpha: 0.15)
+                        : Colors.white10,
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    child: avatarUrl == null
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              color: isMe ? _cCyan : Colors.white60,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+                // نقطة خضراء (أنا فقط)
+                if (isMe)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _cBg, width: 1.5),
+                      ),
+                    ),
+                  ),
+                // أيقونة إضافة صديق (للآخرين)
+                if (!isMe)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: _cIndigo,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _cBg, width: 1.5),
+                      ),
+                      child: const Icon(Icons.person_add,
+                          size: 8, color: Colors.white),
+                    ),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          // الاسم
-          Expanded(
+
+          const SizedBox(width: 10),
+
+          // رقم الترتيب (يمين الشاشة في RTL)
+          SizedBox(
+            width: 24,
             child: Text(
-              isMe ? '$name ${'leaderboard.me'.tr()}' : name,
+              '$rank',
               style: TextStyle(
-                color: isMe ? Colors.white : Colors.white70,
+                color: isMe ? _cCyan : Colors.white38,
                 fontSize: 14,
-                fontWeight: isMe ? FontWeight.bold : FontWeight.normal,
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          // النقاط
-          Row(
-            children: [
-              const Icon(Icons.star, color: Colors.amber, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                '$score',
-                style: const TextStyle(
-                    color: Colors.amber,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
           ),
         ],
       ),
@@ -540,7 +695,7 @@ class _PlayerRow extends StatelessWidget {
   }
 }
 
-// ─── شاشة البروفايل الصغيرة (Bottom Sheet) ───────────────────────────────────
+// ─── بروفايل اللاعب (Bottom Sheet) ───────────────────────────────────────────
 class _PlayerProfileSheet extends StatefulWidget {
   final Map<String, dynamic> player;
   final String               token;
@@ -556,18 +711,17 @@ class _PlayerProfileSheet extends StatefulWidget {
   State<_PlayerProfileSheet> createState() => _PlayerProfileSheetState();
 }
 
-/// حالات العلاقة مع اللاعب
 enum _FriendStatus {
-  loading,       // جاري التحميل
-  none,          // لا توجد صداقة
-  accepted,      // أصدقاء بالفعل
-  pendingSent,   // أرسلت طلبًا من قبل
-  pendingReceived, // هو من أرسل الطلب
+  loading,
+  none,
+  accepted,
+  pendingSent,
+  pendingReceived,
 }
 
 class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
-  _FriendStatus _status   = _FriendStatus.loading;
-  bool          _sending  = false;
+  _FriendStatus _status  = _FriendStatus.loading;
+  bool          _sending = false;
   String?       _errorMsg;
 
   @override
@@ -576,7 +730,6 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
     _loadFriendStatus();
   }
 
-  // ─── جلب حالة الصداقة من الـ API ─────────────────────────────────────────
   Future<void> _loadFriendStatus() async {
     try {
       final res = await widget.dio.get(
@@ -603,11 +756,9 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
     }
   }
 
-  // ─── إرسال طلب صداقة ─────────────────────────────────────────────────────
   Future<void> _sendFriendRequest() async {
     if (_sending || _status != _FriendStatus.none) return;
     setState(() { _sending = true; _errorMsg = null; });
-
     try {
       await widget.dio.post(
         ApiConfig.friendsRequestById,
@@ -616,10 +767,7 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
             headers: {'Authorization': 'Bearer ${widget.token}'}),
       );
       if (mounted) {
-        setState(() {
-          _sending = false;
-          _status  = _FriendStatus.pendingSent;
-        });
+        setState(() { _sending = false; _status = _FriendStatus.pendingSent; });
       }
     } on DioException catch (e) {
       final msg = e.response?.data?['message'] as String?;
@@ -639,21 +787,16 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
     }
   }
 
-  // ─── بناء الزر حسب الحالة ────────────────────────────────────────────────
   Widget _buildActionButton() {
     switch (_status) {
-
-      // جاري التحميل
       case _FriendStatus.loading:
         return const SizedBox(
           height: 52,
           child: Center(
-            child: CircularProgressIndicator(
-                strokeWidth: 2, color: Color(0xFF6C63FF)),
+            child: CircularProgressIndicator(strokeWidth: 2, color: _cCyan),
           ),
         );
 
-      // لا توجد صداقة → زر الإضافة مفعّل
       case _FriendStatus.none:
         return SizedBox(
           width: double.infinity,
@@ -661,14 +804,14 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           child: ElevatedButton.icon(
             onPressed: _sending ? null : _sendFriendRequest,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: _cIndigo,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
             ),
             icon: _sending
                 ? const SizedBox(
-                    width: 20, height: 20,
+                    width: 20,
+                    height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.person_add, color: Colors.white),
@@ -682,15 +825,15 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
         );
 
-      // أصدقاء بالفعل → فقط chip أخضر، بدون زر قابل للضغط
       case _FriendStatus.accepted:
         return Container(
           width: double.infinity,
           height: 52,
           decoration: BoxDecoration(
-            color: Colors.green.shade800.withValues(alpha: 0.25),
+            color: Colors.green.shade800.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.green.shade600, width: 1.5),
+            border: Border.all(
+                color: Colors.green.shade600.withValues(alpha: 0.5)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -708,7 +851,6 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
         );
 
-      // طلب مُرسَل من قبل → زر معطَّل رمادي
       case _FriendStatus.pendingSent:
         return SizedBox(
           width: double.infinity,
@@ -716,11 +858,10 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           child: ElevatedButton.icon(
             onPressed: null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white12,
-              disabledBackgroundColor: Colors.white12,
+              backgroundColor: Colors.white10,
+              disabledBackgroundColor: Colors.white10,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
             ),
             icon: const Icon(Icons.check_circle_outline,
                 color: Colors.white38),
@@ -734,16 +875,15 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
         );
 
-      // طلب واصل من اللاعب → نبلغ المستخدم
       case _FriendStatus.pendingReceived:
         return Container(
           width: double.infinity,
           height: 52,
           decoration: BoxDecoration(
-            color: Colors.orange.shade900.withValues(alpha: 0.25),
+            color: Colors.orange.shade900.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-                color: Colors.orange.shade600, width: 1.5),
+                color: Colors.orange.shade600.withValues(alpha: 0.5)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -766,51 +906,66 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final name      = (widget.player['name']        as String?) ?? '';
-    final avatarUrl = (widget.player['avatar']       as String?);
-    final score     = (widget.player['total_score']  as num?)?.toInt() ?? 0;
-    final rank      = (widget.player['rank']         as num?)?.toInt() ?? 0;
+    final name      = (widget.player['name']       as String?) ?? '';
+    final avatarUrl = (widget.player['avatar']      as String?);
+    final score     = (widget.player['total_score'] as num?)?.toInt() ?? 0;
+    final rank      = (widget.player['rank']        as num?)?.toInt() ?? 0;
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF1E2140),
+        color: _cSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ─ Handle ────────────────────────────────────────────────────
+          // Handle
           Container(
             width: 40,
             height: 4,
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: Colors.white12,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
-          // ─ أفاتار كبير ────────────────────────────────────────────
-          CircleAvatar(
-            radius: 44,
-            backgroundColor: const Color(0xFF6C63FF).withValues(alpha: 0.25),
-            backgroundImage:
-                avatarUrl != null ? NetworkImage(avatarUrl) : null,
-            child: avatarUrl == null
-                ? Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Color(0xFF6C63FF),
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : null,
+          // أفاتار كبير
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _cCyan, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: _cCyan.withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 44,
+              backgroundColor: _cCyan.withValues(alpha: 0.12),
+              backgroundImage: avatarUrl != null
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              child: avatarUrl == null
+                  ? Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: _cCyan,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
           ),
           const SizedBox(height: 14),
 
-          // ─ الاسم ──────────────────────────────────────────────────
+          // الاسم
           Text(
             name,
             style: const TextStyle(
@@ -821,18 +976,18 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
           const SizedBox(height: 6),
 
-          // ─ الترتيب والنقاط ────────────────────────────────────────
+          // الترتيب والنقاط
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _InfoChip(
-                icon:  Icons.leaderboard,
+                icon:  Icons.leaderboard_rounded,
                 label: rank > 0 ? '#$rank' : '-',
-                color: const Color(0xFFFFD700),
+                color: _cCyan,
               ),
               const SizedBox(width: 12),
               _InfoChip(
-                icon:  Icons.star,
+                icon:  Icons.star_rounded,
                 label: '$score',
                 color: Colors.amber,
               ),
@@ -840,19 +995,17 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
           ),
           const SizedBox(height: 24),
 
-          // ─ رسالة الخطأ (عند إرسال الطلب) ──────────────────────────
+          // رسالة الخطأ
           if (_errorMsg != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 _errorMsg!,
-                style: const TextStyle(
-                    color: Colors.redAccent, fontSize: 13),
+                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
             ),
 
-          // ─ الزر حسب الحالة ────────────────────────────────────────
           _buildActionButton(),
         ],
       ),
@@ -860,32 +1013,40 @@ class _PlayerProfileSheetState extends State<_PlayerProfileSheet> {
   }
 }
 
-// ─── Chip صغير للمعلومات ──────────────────────────────────────────────────────
+// ─── Chip معلومات ─────────────────────────────────────────────────────────────
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String   label;
   final Color    color;
-  const _InfoChip({required this.icon, required this.label, required this.color});
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 16),
           const SizedBox(width: 5),
-          Text(label,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
