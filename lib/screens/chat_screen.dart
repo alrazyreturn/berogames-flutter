@@ -558,70 +558,81 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               ),
               child: SafeArea(
                 top: false,
-                child: Row(
-                  children: [
-                    // أيقونة الإيموجي (يسار)
-                    const Icon(Icons.sentiment_satisfied_alt_rounded,
-                        color: Colors.white38, size: 26),
-                    const SizedBox(width: 10),
-                    // حقل الكتابة
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _cBg,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08)),
+                // Directionality(ltr) يثبّت الترتيب: [ ◀ ] [ input ] [ 😊 ]
+                // بغض النظر عن لغة التطبيق
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    children: [
+                      // زر الإرسال — يسار دائماً، السهم يشير لليسار دائماً
+                      GestureDetector(
+                        onTap: _send,
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: _cCyan,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _cCyan.withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: _sending
+                              ? const Padding(
+                                  padding: EdgeInsets.all(13),
+                                  child: CircularProgressIndicator(
+                                    color: _cNavBg, strokeWidth: 2),
+                                )
+                              : Transform.flip(
+                                  // نعكس السهم أفقياً ليشير لليسار دائماً ◀
+                                  flipX: true,
+                                  child: const Icon(Icons.send_rounded,
+                                      color: _cNavBg, size: 22),
+                                ),
                         ),
-                        child: TextField(
-                          controller:  _msgCtrl,
-                          onChanged:   _onTextChanged,
-                          onSubmitted: (_) => _send(),
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
+                      ),
+                      const SizedBox(width: 10),
+                      // حقل الكتابة — النص RTL دائماً
+                      Expanded(
+                        child: Directionality(
                           textDirection: TextDirection.rtl,
-                          maxLines: 4,
-                          minLines: 1,
-                          decoration: InputDecoration(
-                            hintText:  'chat.type_hint'.tr(),
-                            hintStyle: const TextStyle(
-                                color: Colors.white30, fontSize: 14),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _cBg,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.08)),
+                            ),
+                            child: TextField(
+                              controller:  _msgCtrl,
+                              onChanged:   _onTextChanged,
+                              onSubmitted: (_) => _send(),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                              maxLines: 4,
+                              minLines: 1,
+                              decoration: InputDecoration(
+                                hintText:  'chat.type_hint'.tr(),
+                                hintStyle: const TextStyle(
+                                    color: Colors.white30, fontSize: 14),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    // زر الإرسال (يمين)
-                    GestureDetector(
-                      onTap: _send,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: _cCyan,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _cCyan.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: _sending
-                            ? const Padding(
-                                padding: EdgeInsets.all(13),
-                                child: CircularProgressIndicator(
-                                  color: _cNavBg, strokeWidth: 2),
-                              )
-                            : const Icon(Icons.send_rounded,
-                                color: _cNavBg, size: 22),
-                      ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      // أيقونة الإيموجي — يمين دائماً
+                      const Icon(Icons.sentiment_satisfied_alt_rounded,
+                          color: Colors.white38, size: 26),
+                    ],
+                  ),
                 ),
               ),
             ),
