@@ -291,11 +291,9 @@ class _DualResultScreenState extends State<DualResultScreen>
                   // ─── أزرار الصداقة والرسالة ──────────────────────────────
                   const SizedBox(height: 20),
                   _buildFriendButton(),
-                  // يظهر زر الرسالة للجميع: لاعب حقيقي أو بوت
-                  if (widget.opponentId != null || widget.isBot) ...[
-                    const SizedBox(height: 12),
-                    _buildMessageButton(),
-                  ],
+                  // يظهر زر الرسالة دائماً (بوت أو لاعب حقيقي)
+                  const SizedBox(height: 12),
+                  _buildMessageButton(),
 
                   const SizedBox(height: 20),
 

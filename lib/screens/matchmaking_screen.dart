@@ -84,7 +84,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
       final role           = data['role'] as String;
       final opponentName   = data['opponent_name'] as String? ?? 'opponent';
-      final opponentId     = data['opponent_id'] as int?;         // null = بوت
+      final opponentId     = data['opponent_id'] != null            // ID حقيقي حتى للبوت
+          ? int.tryParse(data['opponent_id'].toString()) : null;
       final opponentAvatar = data['opponent_avatar'] as String?;
       final opponentLevel  = (data['opponent_level'] as int?) ?? 1;
       final isBot          = data['is_bot'] == true;
