@@ -7,9 +7,38 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:564493548124:android:c361f00806ded414d4c499",
+        "mobilesdk_app_id": "1:564493548124:android:86d89b2d479a4cfad4c499",
         "android_client_info": {
           "package_name": "com.berogames.mindcrush"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "564493548124-p7q6n790akns34ujvjeklj9n37a3a8t7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKK6Pps2TBKW2sDFoaax0sJ0oFe4oHU-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "564493548124-p7q6n790akns34ujvjeklj9n37a3a8t7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564493548124:android:c361f00806ded414d4c499",
+        "android_client_info": {
+          "package_name": "com.example.berogames"
         }
       },
       "oauth_client": [
@@ -17,7 +46,7 @@
           "client_id": "564493548124-e92f9u7hdbukkpm4o043jl8na50khlf5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.berogames.mindcrush",
+            "package_name": "com.example.berogames",
             "certificate_hash": "07a9f08e3f3b628ddd5480c39cbf41600b91f419"
           }
         },

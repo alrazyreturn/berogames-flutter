@@ -8,15 +8,10 @@ class AdService {
   AdService._internal();
 
   // ─── Ad Unit IDs ──────────────────────────────────────────────────────────
-  // 🔴 Test IDs — استبدلها بالـ Live IDs قبل النشر
   static const String _interstitialAdId =
-      'ca-app-pub-3940256099942544/1033173712'; // Test Interstitial
+      'ca-app-pub-7265585369790499/3400639903'; // Live Interstitial
   static const String _rewardedAdId =
-      'ca-app-pub-3940256099942544/5224354917'; // Test Rewarded
-
-  // ─── Live IDs (غيّرها هنا وقت النشر) ────────────────────────────────────
-  // static const String _interstitialAdId = 'ca-app-pub-XXXXX/XXXXX';
-  // static const String _rewardedAdId     = 'ca-app-pub-XXXXX/XXXXX';
+      'ca-app-pub-7265585369790499/8576910544'; // Live Rewarded
 
   InterstitialAd? _interstitialAd;
   RewardedAd?     _rewardedAd;
