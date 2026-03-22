@@ -535,15 +535,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // App title
           Expanded(
-            child: Text(
-              'home.title'.tr(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _cTeal,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/images/logo_neon.png',
+                    width:  32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Mind Crush',
+                  style: TextStyle(
+                    color:         _cTeal,
+                    fontSize:      22,
+                    fontWeight:    FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
 
