@@ -110,11 +110,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       };
 
       _socket.joinRoom(
-        roomCode: room.roomCode,
-        userId:   user.id,
-        userName: user.name,
-        role:     'host',
-        lang:     context.locale.languageCode,
+        roomCode:   room.roomCode,
+        userId:     user.id,
+        userName:   user.name,
+        userAvatar: user.avatar,
+        role:       'host',
+        lang:       context.locale.languageCode,
       );
 
       // لو في صديق مدعو → ابعت له دعوة تلقائياً

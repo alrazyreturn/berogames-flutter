@@ -9,7 +9,9 @@ import 'dual_game_screen.dart';
 
 /// شاشة الانضمام لغرفة بالكود
 class JoinRoomScreen extends StatefulWidget {
-  const JoinRoomScreen({super.key});
+  /// لو مُمرَّر → انضم تلقائياً بدون إدخال يدوي (مثلاً عند فتح إشعار التحدي)
+  final String? autoJoinCode;
+  const JoinRoomScreen({super.key, this.autoJoinCode});
 
   @override
   State<JoinRoomScreen> createState() => _JoinRoomScreenState();
@@ -24,6 +26,16 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   bool      _waiting  = false; // انتظار بدء اللعبة من الـ Host
   RoomModel? _room;
   String?   _hostName;
+
+  @override
+  void initState() {
+    super.initState();
+    // انضمام تلقائي لو جاء كود من الإشعار
+    if (widget.autoJoinCode != null && widget.autoJoinCode!.isNotEmpty) {
+      _codeCtrl.text = widget.autoJoinCode!.toUpperCase();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _joinRoom());
+    }
+  }
 
   @override
   void dispose() {
@@ -91,11 +103,12 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       };
 
       _socket.joinRoom(
-        roomCode: room.roomCode,
-        userId:   user.id,
-        userName: user.name,
-        role:     'guest',
-        lang:     context.locale.languageCode,
+        roomCode:   room.roomCode,
+        userId:     user.id,
+        userName:   user.name,
+        userAvatar: user.avatar,
+        role:       'guest',
+        lang:       context.locale.languageCode,
       );
 
       if (mounted) {

@@ -11,6 +11,7 @@ import 'services/notification_service.dart';
 import 'services/ad_service.dart';
 import 'services/socket_service.dart';
 import 'models/friend_model.dart';
+import 'screens/join_room_screen.dart';
 
 // ─── Global Navigator Key للـ Navigation من الإشعارات ────────────────────────
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -73,7 +74,14 @@ void main() async {
         );
         break;
       case 'game_invite':
-        Navigator.of(navigatorKey.currentContext!).popUntil((r) => r.isFirst);
+        final roomCode = data['room_code'] as String? ?? '';
+        if (roomCode.isNotEmpty) {
+          Navigator.of(navigatorKey.currentContext!).push(
+            MaterialPageRoute(
+              builder: (_) => JoinRoomScreen(autoJoinCode: roomCode),
+            ),
+          );
+        }
         break;
     }
   };

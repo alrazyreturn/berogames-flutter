@@ -954,11 +954,11 @@ class _FriendTile extends StatelessWidget {
         child: Row(
           children: [
             // ─── أزرار اليسار ─────────────────────────────────────────
-            // زر حذف
+            // زر تحدى
             _CircleBtn(
-              icon:  Icons.person_remove_rounded,
-              color: Colors.white24,
-              onTap: onDelete,
+              icon:  Icons.flash_on_rounded,
+              color: const Color(0xFFFFD700),
+              onTap: onChallenge,
             ),
             const SizedBox(width: 8),
             // زر شات مع badge
