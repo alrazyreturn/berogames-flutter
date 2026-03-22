@@ -8,6 +8,8 @@ import 'home_screen.dart';
 import 'friends_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/user_profile_sheet.dart';
+import '../models/friend_model.dart';
+import 'chat_screen.dart';
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const _cBg      = Color(0xFF0B1326);
@@ -68,6 +70,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         avatar: player['avatar'] as String?,
         score:  (player['total_score'] as num?)?.toInt(),
       ),
+    );
+  }
+
+  // فتح الشات مع اللاعب عند الضغط على أي مكان في الصف
+  void _openChat(Map<String, dynamic> player) {
+    final currentUser = context.read<UserProvider>().user;
+    final isMe = currentUser != null && '${player['id']}' == '${currentUser.id}';
+    if (isMe) return;
+    final friend = FriendModel(
+      friendshipId: 0,
+      userId:       (player['id']          as num).toInt(),
+      name:         (player['name']         as String?) ?? '',
+      avatar:       player['avatar']        as String?,
+      totalScore:   (player['total_score']  as num?)?.toInt() ?? 0,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)),
     );
   }
 
@@ -232,6 +252,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                       player:      p,
                                       isMe:        isMe,
                                       onAvatarTap: _showPlayerProfile,
+                                      onRowTap:    _openChat,
                                     );
                                   },
                                   childCount: _players.length >= 3
@@ -533,11 +554,13 @@ class _PlayerRow extends StatelessWidget {
   final Map<String, dynamic>                player;
   final bool                                isMe;
   final void Function(Map<String, dynamic>) onAvatarTap;
+  final void Function(Map<String, dynamic>) onRowTap;
 
   const _PlayerRow({
     required this.player,
     required this.isMe,
     required this.onAvatarTap,
+    required this.onRowTap,
   });
 
   @override
@@ -547,7 +570,9 @@ class _PlayerRow extends StatelessWidget {
     final score     = (player['total_score'] as num?)?.toInt() ?? 0;
     final avatarUrl = (player['avatar']      as String?);
 
-    return Container(
+    return GestureDetector(
+      onTap: isMe ? null : () => onRowTap(player),
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
@@ -693,7 +718,8 @@ class _PlayerRow extends StatelessWidget {
           ),
         ],
       ),
-    );
+      ), // end Container
+    ); // end GestureDetector
   }
 }
 
