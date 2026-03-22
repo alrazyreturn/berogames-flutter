@@ -5,7 +5,6 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../services/auth_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,44 +14,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey   = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  final _auth      = AuthService();
+  final _auth = AuthService();
 
-  bool _loading       = false;
   bool _loadingGoogle = false;
-  bool _obscure       = true;
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    final provider = context.read<UserProvider>();
-    try {
-      final result = await _auth.login(
-        _emailCtrl.text.trim(),
-        _passCtrl.text,
-      );
-      await provider.setUser(result['user'], result['token']);
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _showError('login.wrong_credentials'.tr());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
 
   Future<void> _loginWithGoogle() async {
     setState(() => _loadingGoogle = true);
@@ -86,260 +50,106 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFF0B1326),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 48),
-
-                // Logo
+                // ─── Logo ──────────────────────────────────────────────
                 Container(
-                  width: 90, height: 90,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF6C63FF), Color(0xFF3D5AF1)],
+                      colors: [Color(0xFF6366F1), Color(0xFF3D5AF1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(26),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
-                        blurRadius: 20,
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.45),
+                        blurRadius: 28,
                         spreadRadius: 2,
                       ),
                     ],
                   ),
                   child: const Center(
-                    child: Text('🎮', style: TextStyle(fontSize: 44)),
+                    child: Text('🎮', style: TextStyle(fontSize: 48)),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
+
                 Text(
                   'login.welcome'.tr(),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   'login.subtitle'.tr(),
+                  textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white54, fontSize: 14),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 56),
 
-                // ─── زر Google ──────────────────────────────────────────
+                // ─── زر Google ─────────────────────────────────────────
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton(
+                  height: 56,
+                  child: ElevatedButton(
                     onPressed: _loadingGoogle ? null : _loginWithGoogle,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white24),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1F1F1F),
+                      elevation: 3,
+                      shadowColor: Colors.black38,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(32),
                       ),
-                      backgroundColor: Colors.white.withValues(alpha: 0.07),
                     ),
                     child: _loadingGoogle
                         ? const SizedBox(
-                            width: 22, height: 22,
+                            width: 24, height: 24,
                             child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
+                              color: Color(0xFF6366F1), strokeWidth: 2.5),
                           )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Google Logo الحقيقي
-                              Container(
-                                width: 26, height: 26,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.15),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
+                              SizedBox(
+                                width: 28, height: 28,
                                 child: CustomPaint(
                                   painter: _GoogleLogoPainter(),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
                               Text(
                                 'login.google_btn'.tr(),
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F1F1F),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
                             ],
                           ),
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // ─── فاصل ───────────────────────────────────────────────
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: Colors.white24)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('login.or'.tr(), style: const TextStyle(color: Colors.white38, fontSize: 13)),
-                    ),
-                    const Expanded(child: Divider(color: Colors.white24)),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Email
-                _buildField(
-                  controller: _emailCtrl,
-                  label: 'login.email'.tr(),
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) =>
-                      v!.contains('@') ? null : 'login.invalid_email'.tr(),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Password
-                _buildField(
-                  controller: _passCtrl,
-                  label: 'login.password'.tr(),
-                  icon: Icons.lock_outline,
-                  obscure: _obscure,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.white54,
-                    ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  ),
-                  validator: (v) =>
-                      v!.length >= 6 ? null : 'login.short_password'.tr(),
-                ),
-
-                const SizedBox(height: 28),
-
-                // زرار الدخول
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            'login.login_btn'.tr(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // رابط التسجيل
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'login.no_account'.tr(),
-                      style: const TextStyle(color: Colors.white54),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
-                      ),
-                      child: Text(
-                        'login.register_link'.tr(),
-                        style: const TextStyle(
-                          color: Color(0xFF6C63FF),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildField({
-
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    bool obscure = false,
-    Widget? suffix,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      textDirection: TextDirection.ltr,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.07),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: Color(0xFF6C63FF), width: 2),
-        ),
-        errorStyle: const TextStyle(color: Colors.redAccent),
-      ),
-      validator: validator,
     );
   }
 }
