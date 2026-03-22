@@ -188,41 +188,47 @@ class _SplashScreenState extends State<SplashScreen>
 
           // ── Bottom branding ─────────────────────────────────────────────────
           Positioned(
-            bottom: 48,
+            bottom: 0,
             left:   0,
             right:  0,
-            child: FadeTransition(
-              opacity: _fade,
-              child: Column(
-                children: [
-                  Text(
-                    'B E R O G A M E S',
-                    style: TextStyle(
-                      color:         Colors.white.withValues(alpha: 0.85),
-                      fontSize:      18,
-                      fontWeight:    FontWeight.bold,
-                      letterSpacing: 5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: Column(
                     children: [
-                      Icon(Icons.psychology_rounded,
-                          color: _cCyan.withValues(alpha: 0.45), size: 13),
-                      const SizedBox(width: 5),
                       Text(
-                        'OMNI-BRAIN INTERACTIVE',
+                        'B E R O G A M E S',
                         style: TextStyle(
-                          color:         _cCyan.withValues(alpha: 0.45),
-                          fontSize:      10,
-                          letterSpacing: 2.5,
-                          fontWeight:    FontWeight.w500,
+                          color:         Colors.white.withValues(alpha: 0.85),
+                          fontSize:      18,
+                          fontWeight:    FontWeight.bold,
+                          letterSpacing: 5,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.psychology_rounded,
+                              color: _cCyan.withValues(alpha: 0.45), size: 13),
+                          const SizedBox(width: 5),
+                          Text(
+                            'OMNI-BRAIN INTERACTIVE',
+                            style: TextStyle(
+                              color:         _cCyan.withValues(alpha: 0.45),
+                              fontSize:      10,
+                              letterSpacing: 2.5,
+                              fontWeight:    FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
