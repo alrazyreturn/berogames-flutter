@@ -288,10 +288,11 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── أزرار الصداقة والرسالة (تظهر لكل لاعب عنده opponentId) ─
+                  // ─── أزرار الصداقة والرسالة ──────────────────────────────
                   const SizedBox(height: 20),
                   _buildFriendButton(),
-                  if (widget.opponentId != null) ...[
+                  // يظهر زر الرسالة للجميع: لاعب حقيقي أو بوت
+                  if (widget.opponentId != null || widget.isBot) ...[
                     const SizedBox(height: 12),
                     _buildMessageButton(),
                   ],
@@ -500,9 +501,12 @@ class _DualResultScreenState extends State<DualResultScreen>
 
   // ─── زر الرسالة — يفتح شاشة الشات مباشرةً ───────────────────────────────
   Widget _buildMessageButton() {
+    // إذا كان بوتاً بدون ID حقيقي (سيرفر قديم) → نُظهر الزر بدون تأثير
+    final bool canChat = widget.opponentId != null;
+
     return GestureDetector(
       onTap: () {
-        if (widget.opponentId == null) return;
+        if (!canChat) return;   // بوت بدون ID → لا نفعل شيئاً
         final friend = FriendModel(
           friendshipId: 0,
           userId:       widget.opponentId!,
