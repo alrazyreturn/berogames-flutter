@@ -755,41 +755,46 @@ class _MessageBubble extends StatelessWidget {
             ),
           );
 
-    // الرسائل المُستقبَلة: أفاتار + فقاعة
+    // الرسائل المُستقبَلة: فقاعة + أفاتار (الأفاتار دائماً على اليمين)
     if (!isMe) {
       return Align(
         alignment: Alignment.centerRight,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            bubble,
-            const SizedBox(width: 6),
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: _cCyan.withValues(alpha: 0.15),
-              backgroundImage: friend.avatar != null
-                  ? NetworkImage(friend.avatar!)
-                  : null,
-              child: friend.avatar == null
-                  ? Text(
-                      friend.name.isNotEmpty
-                          ? friend.name[0].toUpperCase()
-                          : '؟',
-                      style: const TextStyle(
-                        color: _cCyan,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-          ],
+        child: Directionality(
+          // نُجبر LTR دائماً حتى في وضع العربية
+          // بذلك يكون الترتيب: فقاعة ← SizedBox ← أفاتار (أفاتار على اليمين)
+          textDirection: TextDirection.ltr,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              bubble,
+              const SizedBox(width: 6),
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: _cCyan.withValues(alpha: 0.15),
+                backgroundImage: friend.avatar != null
+                    ? NetworkImage(friend.avatar!)
+                    : null,
+                child: friend.avatar == null
+                    ? Text(
+                        friend.name.isNotEmpty
+                            ? friend.name[0].toUpperCase()
+                            : '؟',
+                        style: const TextStyle(
+                          color: _cCyan,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    // الرسائل المُرسَلة: فقاعة فقط
+    // الرسائل المُرسَلة: فقاعة فقط على اليسار
     return Align(
       alignment: Alignment.centerLeft,
       child: bubble,
