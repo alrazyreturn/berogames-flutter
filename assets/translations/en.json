@@ -199,6 +199,12 @@
     "accept_request": "Accept Friendship 👋",
     "message_btn":    "Message 💬"
   },
+
+  "dual_game": {
+    "no_energy_title": "Out of Energy! ⚡",
+    "no_energy":       "You don't have enough energy to play\nWatch a free ad and earn an extra ❤️",
+    "watch_ad_btn":    "Watch a Free Ad  ❤️+"
+  },
   "dual_menu": {
     "title": "Dual Play ⚔️",
     "subtitle": "Challenge your friend!",

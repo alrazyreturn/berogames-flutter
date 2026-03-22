@@ -199,6 +199,12 @@
     "accept_request": "Arkadaşlığı Kabul Et 👋",
     "message_btn":    "Mesaj 💬"
   },
+
+  "dual_game": {
+    "no_energy_title": "Enerji Bitti! ⚡",
+    "no_energy":       "Oynamak için yeterli enerjin yok\nÜcretsiz reklam izle ve ekstra ❤️ kazan",
+    "watch_ad_btn":    "Ücretsiz Reklam İzle  ❤️+"
+  },
   "dual_menu": {
     "title": "Çift Oyuncu ⚔️",
     "subtitle": "Arkadaşını meydan oku!",

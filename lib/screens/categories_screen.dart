@@ -96,15 +96,45 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: _cCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          '⚡',
-          style:     TextStyle(fontSize: 36),
-          textAlign: TextAlign.center,
+        shape:          RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        titlePadding:   const EdgeInsets.fromLTRB(20, 28, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+        title: Column(
+          children: [
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.amber.withValues(alpha: 0.12),
+                border: Border.all(
+                  color: Colors.amber.withValues(alpha: 0.35), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.amber.withValues(alpha: 0.28),
+                    blurRadius: 24, spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text('⚡', style: TextStyle(fontSize: 34)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'dual_game.no_energy_title'.tr(),
+              style: const TextStyle(
+                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
         content: Text(
           'dual_game.no_energy'.tr(),
-          style:     const TextStyle(color: Colors.white70, fontSize: 15),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.60),
+            fontSize: 14, height: 1.65,
+          ),
           textAlign: TextAlign.center,
         ),
         actionsAlignment: MainAxisAlignment.center,
@@ -113,20 +143,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'common.cancel'.tr(),
-              style: const TextStyle(color: Colors.white38),
+              style: const TextStyle(color: Colors.white38, fontSize: 14),
             ),
           ),
+          const SizedBox(width: 8),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _cIndigo,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(14)),
               padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10),
+                  horizontal: 20, vertical: 12),
+              elevation: 0,
             ),
             icon:  const Icon(Icons.play_circle_rounded, size: 18),
-            label: Text('energy.watch_ad'.tr()),
+            label: Text(
+              'dual_game.watch_ad_btn'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             onPressed: () {
               Navigator.pop(context);
               _watchAdAndPlay(category);
