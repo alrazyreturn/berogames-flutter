@@ -1,4 +1,4 @@
-package com.example.berogames
+package com.berogames.mindcrush
 
 import io.flutter.embedding.android.FlutterActivity
 
