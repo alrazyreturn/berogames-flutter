@@ -498,13 +498,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       // ─── FAB ─────────────────────────────────────────────────────────────
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _checkEnergyAndNavigate(
-          () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const CategoriesScreen()))
-              .then((_) => _loadEnergy()),
-        ),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+        ).then((_) => _loadEnergy()),
         backgroundColor: _cTeal,
         elevation: 6,
         child: const Icon(Icons.rocket_launch_rounded, color: Colors.white),
@@ -750,13 +747,10 @@ class _HomeScreenState extends State<HomeScreen> {
             btnLabel: 'home.play_now'.tr(),
             btnColor: _cPink,
             energy: _energy,
-            onTap: () => _checkEnergyAndNavigate(
-              () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const DualMenuScreen()))
-                  .then((_) => _loadEnergy()),
-            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DualMenuScreen()),
+            ).then((_) => _loadEnergy()),
           ),
         ),
         const SizedBox(width: 16),
@@ -775,13 +769,10 @@ class _HomeScreenState extends State<HomeScreen> {
             btnLabel: 'home.start_now'.tr(),
             btnColor: _cTeal,
             energy: _energy,
-            onTap: () => _checkEnergyAndNavigate(
-              () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const CategoriesScreen()))
-                  .then((_) => _loadEnergy()),
-            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+            ).then((_) => _loadEnergy()),
           ),
         ),
       ],
