@@ -110,7 +110,7 @@ class _DualResultScreenState extends State<DualResultScreen>
 
   // ─── الضغط على زر الصداقة ────────────────────────────────────────────────
   Future<void> _onFollowTap() async {
-    if (widget.opponentId == null || _followLoading) return;
+    if (widget.isBot || widget.opponentId == null || _followLoading) return;
     final token = context.read<UserProvider>().token;
     if (token == null) return;
 
@@ -288,10 +288,10 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── أزرار الصداقة والرسالة ──────────────────────────────
+                  // ─── أزرار الصداقة والرسالة (تظهر لكل لاعب عنده opponentId) ─
                   const SizedBox(height: 20),
                   _buildFriendButton(),
-                  if (!widget.isBot && widget.opponentId != null) ...[
+                  if (widget.opponentId != null) ...[
                     const SizedBox(height: 12),
                     _buildMessageButton(),
                   ],
