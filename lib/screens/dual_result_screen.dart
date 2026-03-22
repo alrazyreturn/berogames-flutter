@@ -10,9 +10,11 @@ import '../config/api_config.dart';
 import 'chat_screen.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
+import 'create_room_screen.dart';
 import 'leaderboard_screen.dart';
 import 'friends_screen.dart';
 import 'profile_screen.dart';
+import '../services/energy_service.dart';
 
 // ─── Design tokens (Neon-Glass Editorial — matches dual_game_screen) ──────────
 const _cBg      = Color(0xFF0B1326);
@@ -64,6 +66,10 @@ class _DualResultScreenState extends State<DualResultScreen>
   final _friendsService = FriendsService();
   String _followStatus  = 'loading';
   bool   _followLoading = false;
+
+  // ─── العب مجدداً ─────────────────────────────────────────────────────────
+  final _energyService   = EnergyService();
+  bool  _playAgainLoading = false;
 
   bool get _iWon        => widget.myRole == widget.winner;
   bool get _isDraw      => widget.winner == 'draw';
@@ -143,6 +149,73 @@ class _DualResultScreenState extends State<DualResultScreen>
       }
     } finally {
       if (mounted) setState(() => _followLoading = false);
+    }
+  }
+
+  // ─── منطق زر العب مجدداً ─────────────────────────────────────────────────
+  Future<void> _playAgain() async {
+    // للبوت أو إذا لم يكن هناك opponent_id → الانتقال لقائمة التحدي
+    if (widget.isBot || widget.opponentId == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DualMenuScreen()),
+      );
+      return;
+    }
+
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    setState(() => _playAgainLoading = true);
+    try {
+      final energyData = await _energyService.getEnergy(token);
+      final int current = energyData['current'] as int? ?? 0;
+
+      if (!mounted) return;
+
+      if (current <= 0) {
+        setState(() => _playAgainLoading = false);
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: const Color(0xFF131B2E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('⚡', style: TextStyle(fontSize: 36), textAlign: TextAlign.center),
+            content: Text(
+              'dual_game.no_energy'.tr(),
+              style: const TextStyle(color: Colors.white70, fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('common.ok'.tr(), style: const TextStyle(color: Color(0xFF00FBFB))),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      await _energyService.consumeEnergy(token);
+      if (!mounted) return;
+
+      final opponent = FriendModel(
+        friendshipId: 0,
+        userId:       widget.opponentId!,
+        name:         widget.opponentName,
+        avatar:       widget.opponentAvatar,
+        totalScore:   0,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CreateRoomScreen(inviteFriend: opponent),
+        ),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _playAgainLoading = false);
     }
   }
 
@@ -339,11 +412,7 @@ class _DualResultScreenState extends State<DualResultScreen>
                       // زر العب مجدداً (gradient)
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const DualMenuScreen()),
-                          ),
+                          onTap: _playAgainLoading ? null : _playAgain,
                           child: Container(
                             padding:
                                 const EdgeInsets.symmetric(vertical: 15),
@@ -363,21 +432,31 @@ class _DualResultScreenState extends State<DualResultScreen>
                                 ),
                               ],
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('⚔️', style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'dual_result.play_again'.tr(),
-                                  style: const TextStyle(
-                                    color:      Colors.white,
-                                    fontSize:   15,
-                                    fontWeight: FontWeight.bold,
+                            child: _playAgainLoading
+                                ? const Center(
+                                    child: SizedBox(
+                                      width: 22, height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text('⚔️', style: TextStyle(fontSize: 14)),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'dual_result.play_again'.tr(),
+                                        style: const TextStyle(
+                                          color:      Colors.white,
+                                          fontSize:   15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
                           ),
                         ),
                       ),
