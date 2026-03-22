@@ -7,6 +7,7 @@ class ApiConfig {
   static const String login       = '/auth/login';
   static const String googleLogin = '/auth/google';
   static const String profile     = '/auth/profile';
+  static const String botInfo     = '/auth/bot-info';
 
   // Game
   static const String categories  = '/game/categories';

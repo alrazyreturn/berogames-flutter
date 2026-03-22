@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../providers/user_provider.dart';
 import '../services/friends_service.dart';
 import '../models/friend_model.dart';
+import '../config/api_config.dart';
 import 'chat_screen.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
@@ -498,25 +500,36 @@ class _DualResultScreenState extends State<DualResultScreen>
   }
 
   // ─── زر الرسالة — يفتح شاشة الشات مباشرةً ───────────────────────────────
-  Widget _buildMessageButton() {
-    // إذا كان بوتاً بدون ID حقيقي (سيرفر قديم) → نُظهر الزر بدون تأثير
-    final bool canChat = widget.opponentId != null;
+  // ─── فتح الشات (مع جلب ID البوت تلقائياً إذا كان null) ──────────────────────
+  Future<void> _openChat() async {
+    int?    chatId     = widget.opponentId;
+    String? chatAvatar = widget.opponentAvatar;
 
+    // إذا لم يصل opponent_id من السيرفر (سيرفر قديم) → اجلبه من /auth/bot-info
+    if (chatId == null && widget.isBot) {
+      try {
+        final dio = Dio();
+        final r   = await dio.get('${ApiConfig.baseUrl}${ApiConfig.botInfo}');
+        chatId     = r.data['id']     as int?;
+        chatAvatar = r.data['avatar'] as String?;
+      } catch (_) {}
+    }
+
+    if (chatId == null || !mounted) return;
+
+    final friend = FriendModel(
+      friendshipId: 0,
+      userId:       chatId,
+      name:         widget.opponentName,
+      avatar:       chatAvatar ?? widget.opponentAvatar,
+      totalScore:   0,
+    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)));
+  }
+
+  Widget _buildMessageButton() {
     return GestureDetector(
-      onTap: () {
-        if (!canChat) return;   // بوت بدون ID → لا نفعل شيئاً
-        final friend = FriendModel(
-          friendshipId: 0,
-          userId:       widget.opponentId!,
-          name:         widget.opponentName,
-          avatar:       widget.opponentAvatar,
-          totalScore:   0,
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)),
-        );
-      },
+      onTap: _openChat,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
