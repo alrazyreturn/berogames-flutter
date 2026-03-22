@@ -560,33 +560,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 top: false,
                 child: Row(
                   children: [
-                    // زر الإرسال
-                    GestureDetector(
-                      onTap: _send,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: _cCyan,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _cCyan.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: _sending
-                            ? const Padding(
-                                padding: EdgeInsets.all(13),
-                                child: CircularProgressIndicator(
-                                  color: _cNavBg, strokeWidth: 2),
-                              )
-                            : const Icon(Icons.send_rounded,
-                                color: _cNavBg, size: 22),
-                      ),
-                    ),
+                    // أيقونة الإيموجي (يسار)
+                    const Icon(Icons.sentiment_satisfied_alt_rounded,
+                        color: Colors.white38, size: 26),
                     const SizedBox(width: 10),
                     // حقل الكتابة
                     Expanded(
@@ -618,8 +594,33 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Icon(Icons.sentiment_satisfied_alt_rounded,
-                        color: Colors.white38, size: 26),
+                    // زر الإرسال (يمين)
+                    GestureDetector(
+                      onTap: _send,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: _cCyan,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _cCyan.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: _sending
+                            ? const Padding(
+                                padding: EdgeInsets.all(13),
+                                child: CircularProgressIndicator(
+                                  color: _cNavBg, strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send_rounded,
+                                color: _cNavBg, size: 22),
+                      ),
+                    ),
                   ],
                 ),
               ),
