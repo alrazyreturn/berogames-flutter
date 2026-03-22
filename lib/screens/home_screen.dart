@@ -925,7 +925,7 @@ class _GameCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 210,
+        height: 240,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: gradient,
@@ -943,13 +943,20 @@ class _GameCard extends StatelessWidget {
           children: [
             // Icon box — centered & larger
             Container(
-              width: 72,
-              height: 72,
+              width: 90,
+              height: 90,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.28),
-                borderRadius: BorderRadius.circular(22),
+                color: iconBgColor.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color:      iconBgColor.withValues(alpha: 0.30),
+                    blurRadius: 18,
+                    offset:     const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: Colors.white, size: 36),
+              child: Icon(icon, color: Colors.white, size: 46),
             ),
             const Spacer(),
             Text(

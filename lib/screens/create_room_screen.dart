@@ -12,9 +12,8 @@ import '../services/socket_service.dart';
 import 'dual_game_screen.dart';
 
 // ─── Design Tokens (Neon-Glass — consistent with the rest of the app) ─────────
-const _cBg      = Color(0xFF0B1326);
-const _cSurface = Color(0xFF131B2E);
-const _cCard    = Color(0xFF171F33);
+const _cBg   = Color(0xFF0B1326);
+const _cCard = Color(0xFF171F33);
 const _cCyan    = Color(0xFF00FBFB);
 const _cIndigo  = Color(0xFF6366F1);
 
