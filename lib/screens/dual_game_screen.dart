@@ -564,11 +564,8 @@ class _DualGameScreenState extends State<DualGameScreen> {
               ),
             ),
 
-            // ── Bottom actions: follow + mic ────────────────────────────────
+            // ── Bottom actions: follow + mic (مع SafeArea لضمان الظهور) ──────
             _buildBottomActions(),
-
-            // حاجز أمان لناحية أسفل الشاشة بدل الـ nav bar
-            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -995,7 +992,9 @@ class _DualGameScreenState extends State<DualGameScreen> {
             ? Icons.hourglass_top_rounded
             : Icons.person_add_rounded;
 
-    return Padding(
+    return SafeArea(
+      top: false,
+      child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1029,6 +1028,7 @@ class _DualGameScreenState extends State<DualGameScreen> {
             onTap: null,
           ),
         ],
+      ),
       ),
     );
   }
