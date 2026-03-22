@@ -393,6 +393,134 @@ class _DualGameScreenState extends State<DualGameScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // ─── تأكيد الخروج من التحدى ───────────────────────────────────────────────
+  Future<bool> _onWillExit() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        backgroundColor: const Color(0xFF131B2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('⚠️', style: TextStyle(fontSize: 40)),
+              const SizedBox(height: 12),
+              Text(
+                'game.exit_confirm_title'.tr(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'game.exit_confirm_body'.tr(),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  // زر الإلغاء
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context, false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Text(
+                          'common.cancel'.tr(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // زر الخروج
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context, true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF6B8A), Color(0xFFFF3D5A)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF6B8A).withValues(alpha: 0.4),
+                              blurRadius: 14,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'game.exit_btn'.tr(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      // أوقف التايمر
+      _matchTimer?.cancel();
+
+      // انتقل لشاشة النتيجة فوراً بنقاط اللحظة الحالية
+      final myRole = widget.role;
+      final oppRole = myRole == 'host' ? 'guest' : 'host';
+      final winner  = _myScore > _opponentScore
+          ? myRole
+          : _opponentScore > _myScore ? oppRole : 'draw';
+
+      final myAvatar = context.read<UserProvider>().user?.avatar;
+
+      if (!mounted) return false;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DualResultScreen(
+            myName:        widget.myName,
+            myAvatar:      myAvatar,
+            opponentName:  widget.guestName,
+            opponentAvatar: widget.opponentAvatar,
+            myScore:       _myScore,
+            opponentScore: _opponentScore,
+            winner:        winner,
+            myRole:        myRole,
+            opponentId:    widget.opponentId,
+            isBot:         widget.isBot,
+          ),
+        ),
+      );
+    }
+    return false; // لا تسمح بـ pop تلقائي
+  }
+
   // ─── البناء الرئيسي ────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -408,34 +536,41 @@ class _DualGameScreenState extends State<DualGameScreen> {
     final q        = _questions[_currentIndex];
     final isUrgent = _matchTimeLeft <= 10;
 
-    return Scaffold(
-      backgroundColor: _cBg,
-      body: Column(
-        children: [
-          // ── Header: scores + timer ────────────────────────────────────────
-          _buildHeader(isUrgent),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _onWillExit();
+      },
+      child: Scaffold(
+        backgroundColor: _cBg,
+        // ── Navigation bar مخفي داخل شاشة التحدى ─────────────────────────
+        body: Column(
+          children: [
+            // ── Header: scores + timer ──────────────────────────────────────
+            _buildHeader(isUrgent),
 
-          // ── Content: question + options ───────────────────────────────────
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                children: [
-                  _buildQuestionCard(q),
-                  const SizedBox(height: 14),
-                  ...List.generate(4, (i) => _buildOption(i, q)),
-                  const SizedBox(height: 4),
-                ],
+            // ── Content: question + options ─────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  children: [
+                    _buildQuestionCard(q),
+                    const SizedBox(height: 14),
+                    ...List.generate(4, (i) => _buildOption(i, q)),
+                    const SizedBox(height: 4),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // ── Bottom actions: follow + mic ──────────────────────────────────
-          _buildBottomActions(),
+            // ── Bottom actions: follow + mic ────────────────────────────────
+            _buildBottomActions(),
 
-          // ── Bottom Navigation ─────────────────────────────────────────────
-          _buildBottomNav(),
-        ],
+            // حاجز أمان لناحية أسفل الشاشة بدل الـ nav bar
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
