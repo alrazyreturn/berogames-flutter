@@ -4,6 +4,8 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/friends_service.dart';
+import '../models/friend_model.dart';
+import 'chat_screen.dart';
 import 'home_screen.dart';
 import 'dual_menu_screen.dart';
 import 'leaderboard_screen.dart';
@@ -286,10 +288,12 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── زر الصداقة (يظهر دائماً — معطّل للبوت) ─────────────
-                  ...[
-                    const SizedBox(height: 20),
-                    _buildFriendButton(),
+                  // ─── أزرار الصداقة والرسالة ──────────────────────────────
+                  const SizedBox(height: 20),
+                  _buildFriendButton(),
+                  if (!widget.isBot && widget.opponentId != null) ...[
+                    const SizedBox(height: 12),
+                    _buildMessageButton(),
                   ],
 
                   const SizedBox(height: 20),
@@ -390,27 +394,27 @@ class _DualResultScreenState extends State<DualResultScreen>
   // ─── زر الصداقة ──────────────────────────────────────────────────────────
   Widget _buildFriendButton() {
     // للبوت: يُعرض الزر دائماً لكن معطّل تماماً
-    // للبوت: نفس شكل الزر المتوهج لكن بدون تأثير عند الضغط
+    // للبوت: يبدو كـ "تم إرسال الطلب" بدون تأثير حقيقي
     if (widget.isBot || widget.opponentId == null) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color:        _cCyan.withValues(alpha: 0.08),
+          color:        Colors.amber.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _cCyan.withValues(alpha: 0.7), width: 1.5),
+          border: Border.all(color: Colors.amber.withValues(alpha: 0.55), width: 1.5),
           boxShadow: [
-            BoxShadow(color: _cCyan.withValues(alpha: 0.3), blurRadius: 22, spreadRadius: 1),
+            BoxShadow(color: Colors.amber.withValues(alpha: 0.2), blurRadius: 18),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_add_rounded, color: _cCyan, size: 20),
+            const Icon(Icons.hourglass_top_rounded, color: Colors.amber, size: 20),
             const SizedBox(width: 10),
             Text(
-              'dual_result.add_friend'.tr(),
-              style: TextStyle(color: _cCyan, fontSize: 15, fontWeight: FontWeight.w600),
+              'dual_result.pending_sent'.tr(),
+              style: const TextStyle(color: Colors.amber, fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -484,6 +488,60 @@ class _DualResultScreenState extends State<DualResultScreen>
               label,
               style: TextStyle(
                 color:      btnColor,
+                fontSize:   15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── زر الرسالة — يفتح شاشة الشات مباشرةً ───────────────────────────────
+  Widget _buildMessageButton() {
+    return GestureDetector(
+      onTap: () {
+        if (widget.opponentId == null) return;
+        final friend = FriendModel(
+          friendshipId: 0,
+          userId:       widget.opponentId!,
+          name:         widget.opponentName,
+          avatar:       widget.opponentAvatar,
+          totalScore:   0,
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ChatScreen(friend: friend)),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color:        const Color(0xFF6366F1).withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.65),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color:      const Color(0xFF6366F1).withValues(alpha: 0.25),
+              blurRadius: 20,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.chat_bubble_rounded, color: Color(0xFF6366F1), size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'dual_result.message_btn'.tr(),
+              style: const TextStyle(
+                color:      Color(0xFF6366F1),
                 fontSize:   15,
                 fontWeight: FontWeight.w600,
               ),

@@ -368,8 +368,13 @@ class SocketService {
   }
 
   // ─── Auto Matchmaking ─────────────────────────────────────────────────────
-  void findMatch({ required int userId, required String userName, String lang = 'ar' }) {
-    _socket?.emit('find_match', { 'user_id': userId, 'user_name': userName, 'lang': lang });
+  void findMatch({ required int userId, required String userName, String lang = 'ar', String? userAvatar }) {
+    _socket?.emit('find_match', {
+      'user_id':    userId,
+      'user_name':  userName,
+      'lang':       lang,
+      'user_avatar': userAvatar ?? '',
+    });
   }
 
   void cancelMatch() {

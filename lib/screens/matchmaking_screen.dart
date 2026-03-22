@@ -146,9 +146,10 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     };
 
     _socket.findMatch(
-      userId:   user.id,
-      userName: user.name,
-      lang:     context.locale.languageCode,
+      userId:     user.id,
+      userName:   user.name,
+      lang:       context.locale.languageCode,
+      userAvatar: user.avatar,
     );
   }
 

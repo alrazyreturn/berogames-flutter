@@ -193,7 +193,8 @@
     "add_friend":     "Add Friend 👋",
     "friends":        "Friends 💚",
     "pending_sent":   "Request Sent ⏳",
-    "accept_request": "Accept Friendship 👋"
+    "accept_request": "Accept Friendship 👋",
+    "message_btn":    "Message 💬"
   },
   "dual_menu": {
     "title": "Dual Play ⚔️",

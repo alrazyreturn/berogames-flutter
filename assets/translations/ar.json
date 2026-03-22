@@ -206,7 +206,8 @@
     "add_friend":     "إضافة صديق 👋",
     "friends":        "أصدقاء 💚",
     "pending_sent":   "طلب مُرسَل ⏳",
-    "accept_request": "قبول طلب الصداقة 👋"
+    "accept_request": "قبول طلب الصداقة 👋",
+    "message_btn":    "رسالة 💬"
   },
 
   "dual_menu": {

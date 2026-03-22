@@ -193,7 +193,8 @@
     "add_friend":     "Arkadaş Ekle 👋",
     "friends":        "Arkadaşlar 💚",
     "pending_sent":   "İstek Gönderildi ⏳",
-    "accept_request": "Arkadaşlığı Kabul Et 👋"
+    "accept_request": "Arkadaşlığı Kabul Et 👋",
+    "message_btn":    "Mesaj 💬"
   },
   "dual_menu": {
     "title": "Çift Oyuncu ⚔️",
