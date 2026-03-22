@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "564493548124-gafospl32ei1c15h9kri1d5b6uugjvjd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.berogames.mindcrush",
+            "certificate_hash": "07a9f08e3f3b628ddd5480c39cbf41600b91f419"
+          }
+        },
+        {
           "client_id": "564493548124-jm57oh85hqf4euahc0h83e1tto10jri0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
