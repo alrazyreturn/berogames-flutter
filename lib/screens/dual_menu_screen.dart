@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../services/energy_service.dart';
 import 'create_room_screen.dart';
 import 'join_room_screen.dart';
 import 'matchmaking_screen.dart';
@@ -12,8 +15,69 @@ const _cCyan    = Color(0xFF00FBFB);
 const _cIndigo  = Color(0xFF6366F1);
 const _cPink    = Color(0xFFFF6B9D);
 
-class DualMenuScreen extends StatelessWidget {
+class DualMenuScreen extends StatefulWidget {
   const DualMenuScreen({super.key});
+
+  @override
+  State<DualMenuScreen> createState() => _DualMenuScreenState();
+}
+
+class _DualMenuScreenState extends State<DualMenuScreen> {
+  final _energyService = EnergyService();
+  bool _loading = false;
+
+  // ─── فحص الطاقة والتنقل ──────────────────────────────────────────────────
+  Future<void> _checkEnergyAndNavigate(VoidCallback navigate) async {
+    if (_loading) return;
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    setState(() => _loading = true);
+    try {
+      final result  = await _energyService.consumeEnergy(token);
+      if (!mounted) return;
+      final canPlay = result['can_play'] as bool? ?? false;
+      if (canPlay) {
+        navigate();
+      } else {
+        _showNoEnergyDialog();
+      }
+    } catch (_) {
+      if (mounted) _showNoEnergyDialog();
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // ─── Dialog لا طاقة ──────────────────────────────────────────────────────
+  void _showNoEnergyDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _cCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡',
+          style:     TextStyle(fontSize: 36),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          'dual_game.no_energy'.tr(),
+          style:     const TextStyle(color: Colors.white70, fontSize: 15),
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'common.ok'.tr(),
+              style: const TextStyle(color: _cCyan),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +112,7 @@ class DualMenuScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
 
-              // ─── Hero Circle ───────────────────────────────────────────────
+              // ─── Hero Circle ─────────────────────────────────────────────
               _buildHero(),
 
               const SizedBox(height: 32),
@@ -60,9 +124,11 @@ class DualMenuScreen extends StatelessWidget {
                 glowColor: _cCyan,
                 label:     'dual_menu.auto'.tr(),
                 subtitle:  'dual_menu.auto_sub'.tr(),
-                onTap:     () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MatchmakingScreen()),
+                loading:   _loading,
+                onTap:     () => _checkEnergyAndNavigate(
+                  () => Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const MatchmakingScreen())),
                 ),
               ),
               const SizedBox(height: 16),
@@ -73,9 +139,11 @@ class DualMenuScreen extends StatelessWidget {
                 glowColor: _cIndigo,
                 label:     'dual_menu.create'.tr(),
                 subtitle:  'dual_menu.create_sub'.tr(),
-                onTap:     () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreateRoomScreen()),
+                loading:   _loading,
+                onTap:     () => _checkEnergyAndNavigate(
+                  () => Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const CreateRoomScreen())),
                 ),
               ),
               const SizedBox(height: 16),
@@ -86,9 +154,11 @@ class DualMenuScreen extends StatelessWidget {
                 glowColor: _cPink,
                 label:     'dual_menu.join'.tr(),
                 subtitle:  'dual_menu.join_sub'.tr(),
-                onTap:     () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const JoinRoomScreen()),
+                loading:   _loading,
+                onTap:     () => _checkEnergyAndNavigate(
+                  () => Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const JoinRoomScreen())),
                 ),
               ),
               const SizedBox(height: 32),
@@ -177,6 +247,7 @@ class _OptionCard extends StatelessWidget {
   final Color        glowColor;
   final String       label;
   final String       subtitle;
+  final bool         loading;
   final VoidCallback onTap;
 
   const _OptionCard({
@@ -185,88 +256,103 @@ class _OptionCard extends StatelessWidget {
     required this.glowColor,
     required this.label,
     required this.subtitle,
+    required this.loading,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width:   double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-        decoration: BoxDecoration(
-          color:        _cCard,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color:      glowColor.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset:     const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Icon container with glow
-            Container(
-              width:  56,
-              height: 56,
-              decoration: BoxDecoration(
-                color:        glowColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color:      glowColor.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset:     const Offset(0, 4),
-                  ),
-                ],
+      onTap: loading ? null : onTap,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity:  loading ? 0.55 : 1.0,
+        child: Container(
+          width:   double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          decoration: BoxDecoration(
+            color:        _cCard,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color:      glowColor.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset:     const Offset(0, 6),
               ),
-              child: Icon(icon, color: iconColor, size: 28),
-            ),
-            const SizedBox(width: 16),
-
-            // Texts
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color:      Colors.white,
-                      fontSize:   16,
-                      fontWeight: FontWeight.bold,
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon container with glow
+              Container(
+                width:  56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color:        glowColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color:      glowColor.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset:     const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color:    Colors.white.withValues(alpha: 0.45),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
+                child: loading
+                    ? Center(
+                        child: SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                            color:       iconColor,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      )
+                    : Icon(icon, color: iconColor, size: 28),
               ),
-            ),
+              const SizedBox(width: 16),
 
-            // Arrow chevron
-            Container(
-              width:  36,
-              height: 36,
-              decoration: BoxDecoration(
-                color:        glowColor.withValues(alpha: 0.10),
-                shape:        BoxShape.circle,
+              // Texts
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color:      Colors.white,
+                        fontSize:   16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color:    Colors.white.withValues(alpha: 0.45),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Icon(
-                Icons.chevron_left_rounded,
-                color: iconColor,
-                size:  22,
+
+              // Arrow chevron
+              Container(
+                width:  36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: glowColor.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_left_rounded,
+                  color: iconColor,
+                  size:  22,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

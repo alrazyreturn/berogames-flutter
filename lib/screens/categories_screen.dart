@@ -68,8 +68,56 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (category.isPremium) {
       _showPremiumGate(category);
     } else {
-      _navigateToGame(category);
+      _checkEnergyAndPlay(category);
     }
+  }
+
+  // ─── فحص الطاقة للأصناف العادية ──────────────────────────────────────────
+  Future<void> _checkEnergyAndPlay(CategoryModel category) async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+    try {
+      final result  = await _energyService.consumeEnergy(token);
+      if (!mounted) return;
+      final canPlay = result['can_play'] as bool? ?? false;
+      if (canPlay) {
+        _navigateToGame(category);
+      } else {
+        _showNoEnergyDialog();
+      }
+    } catch (_) {
+      if (mounted) _showNoEnergyDialog();
+    }
+  }
+
+  // ─── Dialog لا طاقة ──────────────────────────────────────────────────────
+  void _showNoEnergyDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _cCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡',
+          style:     TextStyle(fontSize: 36),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          'dual_game.no_energy'.tr(),
+          style:     const TextStyle(color: Colors.white70, fontSize: 15),
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'common.ok'.tr(),
+              style: const TextStyle(color: _cCyan),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPremiumGate(CategoryModel category) {
