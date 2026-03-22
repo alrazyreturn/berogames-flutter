@@ -939,30 +939,32 @@ class _GameCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Icon box
+            // Icon box — centered & larger
             Container(
-              width: 50,
-              height: 50,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.black.withValues(alpha: 0.28),
+                borderRadius: BorderRadius.circular(22),
               ),
-              child: Icon(icon, color: Colors.white, size: 26),
+              child: Icon(icon, color: Colors.white, size: 36),
             ),
             const Spacer(),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               subtitle,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 12,
@@ -975,11 +977,11 @@ class _GameCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onTap,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: btnColor.withValues(alpha: 0.85),
+                  backgroundColor: btnColor.withValues(alpha: 0.90),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
                 child: Text(
