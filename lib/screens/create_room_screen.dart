@@ -11,6 +11,13 @@ import '../services/room_service.dart';
 import '../services/socket_service.dart';
 import 'dual_game_screen.dart';
 
+// ─── Design Tokens (Neon-Glass — consistent with the rest of the app) ─────────
+const _cBg      = Color(0xFF0B1326);
+const _cSurface = Color(0xFF131B2E);
+const _cCard    = Color(0xFF171F33);
+const _cCyan    = Color(0xFF00FBFB);
+const _cIndigo  = Color(0xFF6366F1);
+
 /// شاشة إنشاء غرفة: اختيار القسم → عرض الكود → انتظار اللاعب الثاني
 class CreateRoomScreen extends StatefulWidget {
   final FriendModel? inviteFriend; // لو جاي من شاشة الأصدقاء
@@ -25,7 +32,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final _roomService = RoomService();
   final _socket      = SocketService();
 
-  List<CategoryModel> _categories  = [];
+  List<CategoryModel> _categories      = [];
   CategoryModel?      _selected;
   RoomModel?          _room;
   bool _loadingCategories = true;
@@ -36,7 +43,6 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   String? _guestAvatar;
   int     _guestLevel  = 1;
 
-  @override
   bool _catsLoaded = false;
 
   @override
@@ -185,199 +191,441 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: _cBg,
+      // ─── AppBar نيون ──────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
+          icon: Icon(Icons.arrow_back_ios_rounded,
+              color: _cCyan.withValues(alpha: 0.8)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'create_room.title'.tr(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: _cCyan,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 0.5,
+          ),
         ),
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end:   Alignment.bottomCenter,
+              colors: [
+                _cCyan.withValues(alpha: 0.06),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
       ),
       body: _room == null ? _buildSetup() : _buildWaiting(),
     );
   }
 
-  // ─── قبل إنشاء الغرفة: اختيار القسم ─────────────────────────────────────
+  // ─── قبل إنشاء الغرفة: اختيار القسم ──────────────────────────────────────
   Widget _buildSetup() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return SafeArea(
+      top: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'create_room.choose_section'.tr(),
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          _loadingCategories
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
-              : Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 1.3,
-                    children: _categories.map((cat) {
-                      final isSelected = _selected?.id == cat.id;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selected = cat),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF6C63FF).withValues(alpha: 0.3)
-                                : Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF6C63FF)
-                                  : Colors.white12,
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(cat.icon, style: const TextStyle(fontSize: 32)),
-                              const SizedBox(height: 8),
-                              Text(
-                                cat.localizedName(context.locale.languageCode),
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+          // ─── عنوان القسم ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 4, height: 20,
+                  decoration: BoxDecoration(
+                    color: _cCyan,
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(color: _cCyan.withValues(alpha: 0.6), blurRadius: 8),
+                    ],
                   ),
                 ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _creatingRoom ? null : _createRoom,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: _creatingRoom
-                  ? const SizedBox(
-                      width: 24, height: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text('create_room.create_btn'.tr(), style: const TextStyle(fontSize: 16, color: Colors.white)),
+                const SizedBox(width: 10),
+                Text(
+                  'create_room.choose_section'.tr(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
+          ),
+
+          // ─── الشبكة ──────────────────────────────────────────────────────
+          Expanded(
+            child: _loadingCategories
+                ? Center(
+                    child: CircularProgressIndicator(
+                        color: _cCyan, strokeWidth: 2))
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GridView.builder(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:   2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing:  12,
+                        childAspectRatio: 1.25,
+                      ),
+                      itemCount: _categories.length,
+                      itemBuilder: (_, i) => _buildCategoryCard(_categories[i]),
+                    ),
+                  ),
+          ),
+
+          // ─── زر الإنشاء (ثابت في الأسفل) ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: _buildCreateButton(),
           ),
         ],
       ),
     );
   }
 
-  // ─── بعد إنشاء الغرفة: عرض الكود + انتظار ────────────────────────────────
-  Widget _buildWaiting() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🏠', style: TextStyle(fontSize: 70)),
-          const SizedBox(height: 20),
-          Text(
-            'create_room.share_code'.tr(),
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 24),
+  Widget _buildCategoryCard(CategoryModel cat) {
+    final isSelected = _selected?.id == cat.id;
 
-          // ─── كود الغرفة ──────────────────────────────────────────────────
-          GestureDetector(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: _room!.roomCode));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('create_room.copied'.tr()),
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
-              decoration: BoxDecoration(
-                color:        const Color(0xFF6C63FF).withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-                border:       Border.all(color: const Color(0xFF6C63FF), width: 2),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _room!.roomCode,
-                    style: const TextStyle(
-                      color: Colors.white, fontSize: 38,
-                      fontWeight: FontWeight.bold, letterSpacing: 6,
-                    ),
+    return GestureDetector(
+      onTap: () => setState(() => _selected = cat),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _cCyan.withValues(alpha: 0.12)
+              : _cCard,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? _cCyan : Colors.white.withValues(alpha: 0.07),
+            width: isSelected ? 1.8 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color:      _cCyan.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    spreadRadius: 1,
                   ),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.copy, color: Colors.white54, size: 22),
-                ],
+                ]
+              : [],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // أيقونة مع توهج
+            Container(
+              width: 52, height: 52,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? _cCyan.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.04),
+              ),
+              child: Center(
+                child: Text(
+                  cat.icon,
+                  style: TextStyle(fontSize: isSelected ? 28 : 26),
+                ),
               ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              cat.localizedName(context.locale.languageCode),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isSelected ? _cCyan : Colors.white70,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 32),
+  Widget _buildCreateButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: _selected != null
+              ? [_cCyan.withValues(alpha: 0.85), _cIndigo]
+              : [Colors.white12, Colors.white.withValues(alpha: 0.06)],
+        ),
+        boxShadow: _selected != null
+            ? [
+                BoxShadow(
+                  color:      _cCyan.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                  offset:     const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: ElevatedButton(
+        onPressed: _creatingRoom ? null : _createRoom,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor:     Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18)),
+        ),
+        child: _creatingRoom
+            ? SizedBox(
+                width: 22, height: 22,
+                child: CircularProgressIndicator(
+                    color: _cBg, strokeWidth: 2.5),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.meeting_room_rounded,
+                    color: _selected != null ? _cBg : Colors.white24,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'create_room.create_btn'.tr(),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _selected != null ? _cBg : Colors.white24,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
 
-          // ─── حالة الانتظار ────────────────────────────────────────────────
-          _guestJoined
-              ? Column(
-                  children: [
-                    const Text('✅', style: TextStyle(fontSize: 40)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'create_room.joined'.tr(namedArgs: {'name': _guestName ?? 'common.opponent'.tr()}),
-                      style: const TextStyle(
-                        color: Colors.greenAccent, fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _startGame,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.greenAccent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        child: Text(
-                          'create_room.start_btn'.tr(),
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  children: [
-                    const CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                    const SizedBox(height: 16),
-                    Text(
-                      'create_room.waiting'.tr(),
-                      style: const TextStyle(color: Colors.white54, fontSize: 15),
-                    ),
+  // ─── بعد إنشاء الغرفة: عرض الكود + انتظار ───────────────────────────────
+  Widget _buildWaiting() {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // أيقونة المنزل بتوهج
+            Container(
+              width: 90, height: 90,
+              decoration: BoxDecoration(
+                shape:  BoxShape.circle,
+                color:  _cCyan.withValues(alpha: 0.08),
+                border: Border.all(
+                    color: _cCyan.withValues(alpha: 0.3), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                      color: _cCyan.withValues(alpha: 0.15), blurRadius: 30),
+                ],
+              ),
+              child: Center(
+                child: Text('🏠', style: const TextStyle(fontSize: 40)),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'create_room.share_code'.tr(),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ─── كود الغرفة ───────────────────────────────────────────────
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: _room!.roomCode));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('create_room.copied'.tr()),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 20, horizontal: 32),
+                decoration: BoxDecoration(
+                  color:        _cCyan.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(22),
+                  border:       Border.all(
+                      color: _cCyan.withValues(alpha: 0.6), width: 1.8),
+                  boxShadow: [
+                    BoxShadow(
+                        color: _cCyan.withValues(alpha: 0.2),
+                        blurRadius: 24, spreadRadius: 2),
                   ],
                 ),
-        ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _room!.roomCode,
+                      style: TextStyle(
+                        color:         _cCyan,
+                        fontSize:      36,
+                        fontWeight:    FontWeight.w900,
+                        letterSpacing: 8,
+                        shadows: [
+                          Shadow(color: _cCyan.withValues(alpha: 0.7),
+                              blurRadius: 12),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Icon(Icons.copy_rounded,
+                        color: _cCyan.withValues(alpha: 0.5), size: 20),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 36),
+
+            // ─── حالة الانتظار ────────────────────────────────────────────
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              child: _guestJoined
+                  ? _buildGuestJoined()
+                  : _buildWaitingIndicator(),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildGuestJoined() {
+    return Column(
+      key: const ValueKey('joined'),
+      children: [
+        // شارة الانضمام
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color:        Colors.greenAccent.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: Colors.greenAccent.withValues(alpha: 0.4), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.greenAccent.withValues(alpha: 0.15),
+                  blurRadius: 16),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('✅', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Text(
+                'create_room.joined'.tr(
+                    namedArgs: {'name': _guestName ?? 'common.opponent'.tr()}),
+                style: const TextStyle(
+                  color: Colors.greenAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 28),
+
+        // زر ابدأ اللعبة
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00FBFB), Color(0xFF00C8C8)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color:      _cCyan.withValues(alpha: 0.4),
+                blurRadius: 20,
+                spreadRadius: 1,
+                offset:     const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ElevatedButton.icon(
+            onPressed: _startGame,
+            icon: const Icon(Icons.play_arrow_rounded,
+                color: _cBg, size: 24),
+            label: Text(
+              'create_room.start_btn'.tr(),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: _cBg,
+                letterSpacing: 0.5,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor:     Colors.transparent,
+              padding:         const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWaitingIndicator() {
+    return Column(
+      key: const ValueKey('waiting'),
+      children: [
+        SizedBox(
+          width: 40, height: 40,
+          child: CircularProgressIndicator(
+            color:       _cCyan,
+            strokeWidth: 2.5,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'create_room.waiting'.tr(),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.45),
+            fontSize: 14,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }
