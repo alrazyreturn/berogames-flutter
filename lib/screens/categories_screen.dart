@@ -83,15 +83,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       if (canPlay) {
         _navigateToGame(category);
       } else {
-        _showNoEnergyDialog();
+        _showNoEnergyDialog(category);
       }
     } catch (_) {
-      if (mounted) _showNoEnergyDialog();
+      if (mounted) _showNoEnergyDialog(category);
     }
   }
 
-  // ─── Dialog لا طاقة ──────────────────────────────────────────────────────
-  void _showNoEnergyDialog() {
+  // ─── Dialog لا طاقة (مع زر مشاهدة إعلان) ───────────────────────────────
+  void _showNoEnergyDialog(CategoryModel category) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -107,16 +107,48 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           style:     const TextStyle(color: Colors.white70, fontSize: 15),
           textAlign: TextAlign.center,
         ),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'common.ok'.tr(),
-              style: const TextStyle(color: _cCyan),
+              'common.cancel'.tr(),
+              style: const TextStyle(color: Colors.white38),
             ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _cIndigo,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+            ),
+            icon:  const Icon(Icons.play_circle_rounded, size: 18),
+            label: Text('energy.watch_ad'.tr()),
+            onPressed: () {
+              Navigator.pop(context);
+              _watchAdAndPlay(category);
+            },
           ),
         ],
       ),
+    );
+  }
+
+  // ─── مشاهدة إعلان → شحن طاقة → اللعب ───────────────────────────────────
+  void _watchAdAndPlay(CategoryModel category) {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+    AdService().showRewarded(
+      onRewarded: () async {
+        try {
+          await _energyService.rechargeEnergy(token);
+          if (!mounted) return;
+          _navigateToGame(category);
+        } catch (_) {}
+      },
     );
   }
 

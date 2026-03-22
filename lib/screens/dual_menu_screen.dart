@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/energy_service.dart';
+import '../services/ad_service.dart';
 import 'create_room_screen.dart';
 import 'join_room_screen.dart';
 import 'matchmaking_screen.dart';
@@ -40,17 +41,17 @@ class _DualMenuScreenState extends State<DualMenuScreen> {
       if (canPlay) {
         navigate();
       } else {
-        _showNoEnergyDialog();
+        _showNoEnergyDialog(navigate);
       }
     } catch (_) {
-      if (mounted) _showNoEnergyDialog();
+      if (mounted) _showNoEnergyDialog(navigate);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  // ─── Dialog لا طاقة ──────────────────────────────────────────────────────
-  void _showNoEnergyDialog() {
+  // ─── Dialog لا طاقة (مع زر مشاهدة إعلان) ───────────────────────────────
+  void _showNoEnergyDialog(VoidCallback navigate) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -66,16 +67,48 @@ class _DualMenuScreenState extends State<DualMenuScreen> {
           style:     const TextStyle(color: Colors.white70, fontSize: 15),
           textAlign: TextAlign.center,
         ),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'common.ok'.tr(),
-              style: const TextStyle(color: _cCyan),
+              'common.cancel'.tr(),
+              style: const TextStyle(color: Colors.white38),
             ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _cIndigo,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+            ),
+            icon:  const Icon(Icons.play_circle_rounded, size: 18),
+            label: Text('energy.watch_ad'.tr()),
+            onPressed: () {
+              Navigator.pop(context);
+              _watchAdAndPlay(navigate);
+            },
           ),
         ],
       ),
+    );
+  }
+
+  // ─── مشاهدة إعلان → شحن طاقة → التنقل ──────────────────────────────────
+  void _watchAdAndPlay(VoidCallback navigate) {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+    AdService().showRewarded(
+      onRewarded: () async {
+        try {
+          await _energyService.rechargeEnergy(token);
+          if (!mounted) return;
+          navigate();
+        } catch (_) {}
+      },
     );
   }
 

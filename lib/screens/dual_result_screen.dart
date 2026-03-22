@@ -15,6 +15,7 @@ import 'leaderboard_screen.dart';
 import 'friends_screen.dart';
 import 'profile_screen.dart';
 import '../services/energy_service.dart';
+import '../services/ad_service.dart';
 
 // ─── Design tokens (Neon-Glass Editorial — matches dual_game_screen) ──────────
 const _cBg      = Color(0xFF0B1326);
@@ -169,54 +170,99 @@ class _DualResultScreenState extends State<DualResultScreen>
     setState(() => _playAgainLoading = true);
     try {
       final energyData = await _energyService.getEnergy(token);
-      final int current = energyData['current'] as int? ?? 0;
+      final int current = energyData['energy'] as int? ?? 0;
 
       if (!mounted) return;
 
       if (current <= 0) {
         setState(() => _playAgainLoading = false);
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            backgroundColor: const Color(0xFF131B2E),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('⚡', style: TextStyle(fontSize: 36), textAlign: TextAlign.center),
-            content: Text(
-              'dual_game.no_energy'.tr(),
-              style: const TextStyle(color: Colors.white70, fontSize: 15),
-              textAlign: TextAlign.center,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('common.ok'.tr(), style: const TextStyle(color: Color(0xFF00FBFB))),
-              ),
-            ],
-          ),
-        );
+        _showNoEnergyWithAdDialog(token);
         return;
       }
 
       await _energyService.consumeEnergy(token);
       if (!mounted) return;
-
-      final opponent = FriendModel(
-        friendshipId: 0,
-        userId:       widget.opponentId!,
-        name:         widget.opponentName,
-        avatar:       widget.opponentAvatar,
-        totalScore:   0,
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CreateRoomScreen(inviteFriend: opponent),
-        ),
-      );
+      _navigateToCreateRoom();
     } catch (_) {
       if (mounted) setState(() => _playAgainLoading = false);
     }
+  }
+
+  // ─── التنقل لشاشة إنشاء الغرفة مع الخصم ────────────────────────────────
+  void _navigateToCreateRoom() {
+    final opponent = FriendModel(
+      friendshipId: 0,
+      userId:       widget.opponentId!,
+      name:         widget.opponentName,
+      avatar:       widget.opponentAvatar,
+      totalScore:   0,
+    );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateRoomScreen(inviteFriend: opponent),
+      ),
+    );
+  }
+
+  // ─── Dialog لا طاقة (مع زر مشاهدة إعلان) ───────────────────────────────
+  void _showNoEnergyWithAdDialog(String token) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _cCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '⚡',
+          style:     TextStyle(fontSize: 36),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          'dual_game.no_energy'.tr(),
+          style:     const TextStyle(color: Colors.white70, fontSize: 15),
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'common.cancel'.tr(),
+              style: const TextStyle(color: Colors.white38),
+            ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _cIndigo,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+            ),
+            icon:  const Icon(Icons.play_circle_rounded, size: 18),
+            label: Text('energy.watch_ad'.tr()),
+            onPressed: () {
+              Navigator.pop(context);
+              _watchAdAndCreateRoom(token);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── مشاهدة إعلان → شحن طاقة → إنشاء الغرفة ────────────────────────────
+  void _watchAdAndCreateRoom(String token) {
+    AdService().showRewarded(
+      onRewarded: () async {
+        try {
+          await _energyService.rechargeEnergy(token);
+          if (!mounted) return;
+          _navigateToCreateRoom();
+        } catch (_) {}
+      },
+    );
   }
 
   @override
