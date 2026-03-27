@@ -349,5 +349,37 @@
     "difficulty": "🔥 Difficulty Levels",
     "dual_title": "⚔️ Dual Play",
     "tips": "💡 Tips to Win"
+  },
+
+  "subscription": {
+    "title":              "Premium Subscriptions",
+    "subtitle":           "Unlock all features and enjoy unlimited experience",
+    "active_label":       "Your Active Subscription",
+    "expires":            "Expires on %s",
+    "restore":            "Restore Previous Purchase",
+    "restored":           "✅ Subscription restored successfully",
+    "no_restore":         "No previous subscription found",
+    "popular":            "Most Popular",
+    "one_time":           "One Time",
+    "per_month":          "/ month",
+    "per_year":           "/ year",
+    "subscribe_btn":      "Subscribe Now",
+    "active_btn":         "✅ Currently Subscribed",
+    "success_title":      "Subscribed Successfully! 🎉",
+    "success_body":       "Your subscription is now active. Enjoy all features.",
+    "error":              "Something went wrong. Please try again.",
+    "no_ads_title":       "No Ads",
+    "monthly_title":      "Monthly Plan",
+    "yearly_title":       "Yearly Plan",
+    "forever_title":      "Lifetime",
+    "feature_no_ads":     "🚫 Remove all ads",
+    "feature_20_energy":  "⚡ 20 energy gift instantly",
+    "feature_all_sections":"🔓 Unlock all premium sections",
+    "feature_unlimited_energy": "♾️ Unlimited energy",
+    "feature_save_44":    "💰 Save 44% vs monthly",
+    "feature_lifetime":   "🏆 One-time payment forever",
+    "premium_gate_title": "Premium Content 👑",
+    "premium_gate_body":  "This section is for subscribers only. Subscribe now to access it.",
+    "premium_gate_btn":   "View Subscription Plans"
   }
 }

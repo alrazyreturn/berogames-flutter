@@ -45,4 +45,9 @@ class ApiConfig {
   static const String energy         = '/energy';
   static const String energyConsume  = '/energy/consume';
   static const String energyRecharge = '/energy/recharge';
+
+  // Subscription
+  static const String subscriptionStatus   = '/subscription/status';
+  static const String subscriptionPurchase = '/subscription/purchase';
+  static const String subscriptionRestore  = '/subscription/restore';
 }

@@ -349,5 +349,37 @@
     "difficulty": "🔥 Zorluk Seviyeleri",
     "dual_title": "⚔️ Çift Oyuncu",
     "tips": "💡 Kazanma İpuçları"
+  },
+
+  "subscription": {
+    "title":              "Premium Abonelikler",
+    "subtitle":           "Tüm özelliklerin kilidini aç ve sınırsız deneyimin tadını çıkar",
+    "active_label":       "Aktif Aboneliğin",
+    "expires":            "Bitiş: %s",
+    "restore":            "Önceki Satın Alımı Geri Yükle",
+    "restored":           "✅ Abonelik başarıyla geri yüklendi",
+    "no_restore":         "Geri yüklenecek abonelik bulunamadı",
+    "popular":            "En Popüler",
+    "one_time":           "Tek Seferlik",
+    "per_month":          "/ ay",
+    "per_year":           "/ yıl",
+    "subscribe_btn":      "Şimdi Abone Ol",
+    "active_btn":         "✅ Şu An Abonesiniz",
+    "success_title":      "Abonelik Başarılı! 🎉",
+    "success_body":       "Aboneliğiniz aktif. Tüm özelliklerin keyfini çıkarın.",
+    "error":              "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "no_ads_title":       "Reklamsız",
+    "monthly_title":      "Aylık Plan",
+    "yearly_title":       "Yıllık Plan",
+    "forever_title":      "Ömür Boyu",
+    "feature_no_ads":     "🚫 Tüm reklamları kaldır",
+    "feature_20_energy":  "⚡ Anında 20 enerji hediyesi",
+    "feature_all_sections":"🔓 Tüm premium bölümlerin kilidi",
+    "feature_unlimited_energy": "♾️ Sınırsız enerji",
+    "feature_save_44":    "💰 Aylıktan %44 tasarruf",
+    "feature_lifetime":   "🏆 Tek seferlik ödeme, sonsuza kadar",
+    "premium_gate_title": "Premium İçerik 👑",
+    "premium_gate_body":  "Bu bölüm yalnızca aboneler için. Erişmek için abone olun.",
+    "premium_gate_btn":   "Abonelik Planlarını Gör"
   }
 }
