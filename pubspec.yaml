@@ -2,7 +2,7 @@ name: berogames
 description: "BeroGames - لعبة مسابقات"
 publish_to: 'none'
 
-version: 1.0.2+3
+version: 1.0.3+10
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
