@@ -384,6 +384,9 @@
     "feature_lifetime":   "🏆 Tek seferlik ödeme, sonsuza kadar",
     "premium_gate_title": "Premium İçerik 👑",
     "premium_gate_body":  "Bu bölüm yalnızca aboneler için. Erişmek için abone olun.",
-    "premium_gate_btn":   "Abonelik Planlarını Gör"
+    "premium_gate_btn":   "Abonelik Planlarını Gör",
+    "store_unavailable":  "Google Play Store şu anda kullanılamıyor\nİnternet bağlantınızı kontrol edin",
+    "product_not_found":  "Ürün şu anda mevcut değil",
+    "loading_price":      "Yükleniyor..."
   }
 }

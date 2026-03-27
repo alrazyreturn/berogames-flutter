@@ -51,6 +51,10 @@ dependencies:
   # AdMob
   google_mobile_ads: ^5.1.0
 
+  # In-App Purchases (Google Play Billing)
+  in_app_purchase: ^3.1.13
+  in_app_purchase_android: ^0.3.6+10
+
   # SVG rendering
   flutter_svg: ^2.0.10+1
 

@@ -384,6 +384,9 @@
     "feature_lifetime":   "🏆 One-time payment forever",
     "premium_gate_title": "Premium Content 👑",
     "premium_gate_body":  "This section is for subscribers only. Subscribe now to access it.",
-    "premium_gate_btn":   "View Subscription Plans"
+    "premium_gate_btn":   "View Subscription Plans",
+    "store_unavailable":  "Google Play Store is not available\nCheck your internet connection",
+    "product_not_found":  "Product not available",
+    "loading_price":      "Loading..."
   }
 }

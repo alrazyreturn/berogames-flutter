@@ -406,6 +406,9 @@
     "feature_lifetime":   "🏆 دفعة واحدة للأبد",
     "premium_gate_title": "محتوى مميز 👑",
     "premium_gate_body":  "هذا القسم متاح للمشتركين فقط. اشترك الآن للوصول إليه.",
-    "premium_gate_btn":   "عرض خطط الاشتراك"
+    "premium_gate_btn":   "عرض خطط الاشتراك",
+    "store_unavailable":  "متجر Google Play غير متاح حالياً\nتأكد من الاتصال بالإنترنت",
+    "product_not_found":  "المنتج غير متاح حالياً",
+    "loading_price":      "جارٍ التحميل..."
   }
 }
