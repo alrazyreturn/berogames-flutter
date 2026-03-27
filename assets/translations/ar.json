@@ -101,7 +101,11 @@
     "nav_home":       "الرئيسية",
     "nav_ranking":    "الترتيب",
     "nav_friends":    "الأصدقاء",
-    "nav_profile":    "بروفايل"
+    "nav_profile":    "بروفايل",
+    "pro_title":      "احصل على التجربة الكاملة 👑",
+    "pro_subtitle":   "افتح الأقسام المميزة وطاقة لا نهائية",
+    "no_ads_btn":     "بدون إعلانات",
+    "subscribe_btn":  "اشترك الآن"
   },
 
   "friends": {

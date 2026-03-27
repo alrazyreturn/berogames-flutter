@@ -94,7 +94,11 @@
     "nav_home": "Home",
     "nav_ranking": "Ranking",
     "nav_friends": "Friends",
-    "nav_profile": "Profile"
+    "nav_profile":  "Profile",
+    "pro_title":    "Get the Full Experience 👑",
+    "pro_subtitle": "Unlock premium sections & unlimited energy",
+    "no_ads_btn":   "No Ads",
+    "subscribe_btn":"Subscribe Now"
   },
   "friends": {
     "title": "Friends 👥",

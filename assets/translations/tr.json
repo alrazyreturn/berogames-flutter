@@ -94,7 +94,11 @@
     "nav_home": "Ana Sayfa",
     "nav_ranking": "Sıralama",
     "nav_friends": "Arkadaşlar",
-    "nav_profile": "Profil"
+    "nav_profile":  "Profil",
+    "pro_title":    "Tam Deneyimi Yaşa 👑",
+    "pro_subtitle": "Premium bölümlerin ve sınırsız enerjinin kilidini aç",
+    "no_ads_btn":   "Reklamsız",
+    "subscribe_btn":"Abone Ol"
   },
   "friends": {
     "title": "Arkadaşlar 👥",

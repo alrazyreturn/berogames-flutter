@@ -16,6 +16,7 @@ import 'friends_screen.dart';
 import 'leaderboard_screen.dart';
 import 'stats_screen.dart';
 import 'profile_screen.dart';
+import 'subscription_screen.dart';
 
 // ─── ثوابت الألوان ───────────────────────────────────────────────────────────
 const _cBg        = Color(0xFF0D1117);
@@ -448,6 +449,211 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _goToSubscription() {
+    Navigator.push(context,
+      MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+    ).then((_) => context.read<UserProvider>().refreshSubscription());
+  }
+
+  // ─── Pro Banner ──────────────────────────────────────────────────────────
+  Widget _buildProBanner(BuildContext context) {
+    final sub = context.watch<UserProvider>().subscriptionStatus;
+    final isSubscribed = sub != null && sub.hasSubscription && sub.canPlayPremium;
+    final isNoAds      = sub != null && sub.subscriptionType == 'no_ads';
+
+    // If fully subscribed → show minimal active badge
+    if (isSubscribed) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF6366F1).withValues(alpha: 0.15),
+              const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.workspace_premium_rounded,
+                  color: Color(0xFFFFD700), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('subscription.active_label'.tr(),
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('subscription.${sub!.subscriptionType}_title'.tr(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const Icon(Icons.check_circle_rounded,
+                color: Color(0xFF10B981), size: 22),
+          ],
+        ),
+      );
+    }
+
+    // Free user → show upgrade banner with 2 buttons
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A1040), Color(0xFF0F172A)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+            blurRadius: 20, spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFFFD700)]),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                        blurRadius: 10),
+                  ],
+                ),
+                child: const Icon(Icons.workspace_premium_rounded,
+                    color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('home.pro_title'.tr(),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15, fontWeight: FontWeight.bold)),
+                    Text('home.pro_subtitle'.tr(),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              // No Ads button
+              if (!isNoAds)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _goToSubscription,
+                    child: Container(
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.block_rounded,
+                              color: Color(0xFF10B981), size: 16),
+                          const SizedBox(width: 6),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('home.no_ads_btn'.tr(),
+                                  style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 12, fontWeight: FontWeight.bold)),
+                              const Text(r'$0.99',
+                                  style: TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 10)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (!isNoAds) const SizedBox(width: 10),
+              // Subscribe button
+              Expanded(
+                flex: isNoAds ? 1 : 1,
+                child: GestureDetector(
+                  onTap: _goToSubscription,
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                            blurRadius: 12, offset: const Offset(0, 3)),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.star_rounded,
+                            color: Color(0xFFFFD700), size: 16),
+                        const SizedBox(width: 6),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('home.subscribe_btn'.tr(),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text(r'من $2.99/شهر',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 10)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   //                              BUILD
   // ════════════════════════════════════════════════════════════════════════════
@@ -476,7 +682,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildWelcomeCard(user),
                     const SizedBox(height: 24),
                     _buildGameCards(context),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
+                    _buildProBanner(context),
+                    const SizedBox(height: 20),
                     // ─ Explore More title ──────────────────────────────────
                     Align(
                       alignment: AlignmentDirectional.centerEnd,

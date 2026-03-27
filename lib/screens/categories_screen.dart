@@ -10,6 +10,7 @@ import 'game_screen.dart';
 import 'leaderboard_screen.dart';
 import 'friends_screen.dart';
 import 'stats_screen.dart';
+import 'subscription_screen.dart';
 
 // ─── Neon-Glass palette ───────────────────────────────────────────────────────
 const _cBg      = Color(0xFF0B1326);
@@ -66,10 +67,36 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   void _onCategoryTap(CategoryModel category) {
     if (category.isPremium) {
-      _showPremiumGate(category);
+      final canPlay = context.read<UserProvider>().canPlayPremium;
+      if (canPlay) {
+        _checkEnergyAndPlay(category);
+      } else {
+        _showSubscriptionGate(category);
+      }
     } else {
       _checkEnergyAndPlay(category);
     }
+  }
+
+  void _showSubscriptionGate(CategoryModel category) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _SubscriptionGateSheet(
+        category: category,
+        lang: context.locale.languageCode,
+        onSubscribe: () {
+          Navigator.pop(context);
+          Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+          ).then((_) {
+            // Refresh subscription status after returning
+            context.read<UserProvider>().refreshSubscription();
+          });
+        },
+      ),
+    );
   }
 
   // ─── فحص الطاقة للأصناف العادية ──────────────────────────────────────────
@@ -945,6 +972,181 @@ class _PremiumGateSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Subscription Gate Sheet ──────────────────────────────────────────────────
+class _SubscriptionGateSheet extends StatelessWidget {
+  final CategoryModel category;
+  final String        lang;
+  final VoidCallback  onSubscribe;
+
+  const _SubscriptionGateSheet({
+    required this.category,
+    required this.lang,
+    required this.onSubscribe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = category.color;
+    final icon  = _iconForEmoji(category.icon);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40, height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Category icon with glow
+          Container(
+            width: 90, height: 90,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(colors: [
+                color.withValues(alpha: 0.25),
+                color.withValues(alpha: 0.05),
+              ]),
+              border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: color.withValues(alpha: 0.3),
+                    blurRadius: 24, spreadRadius: 2),
+              ],
+            ),
+            child: Icon(icon, color: color, size: 42),
+          ),
+          const SizedBox(height: 16),
+
+          // Category name
+          Text(category.localizedName(lang),
+              style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+
+          // Crown badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFFFD700)]),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                    blurRadius: 12),
+              ],
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Text('👑', style: TextStyle(fontSize: 14)),
+              const SizedBox(width: 6),
+              Text('subscription.premium_gate_title'.tr(),
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+          const SizedBox(height: 14),
+
+          Text('subscription.premium_gate_body'.tr(),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 13, height: 1.6)),
+          const SizedBox(height: 20),
+
+          // Benefits row
+          _BenefitChip(icon: Icons.lock_open_rounded,  label: 'subscription.feature_all_sections'.tr(),  color: const Color(0xFF6366F1)),
+          const SizedBox(height: 8),
+          _BenefitChip(icon: Icons.all_inclusive_rounded, label: 'subscription.feature_unlimited_energy'.tr(), color: const Color(0xFF10B981)),
+          const SizedBox(height: 8),
+          _BenefitChip(icon: Icons.block_rounded, label: 'subscription.feature_no_ads'.tr(), color: const Color(0xFFF59E0B)),
+
+          const SizedBox(height: 24),
+
+          // Subscribe button
+          SizedBox(
+            width: double.infinity, height: 56,
+            child: ElevatedButton(
+              onPressed: onSubscribe,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                elevation: 0,
+              ),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                        blurRadius: 16, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Container(
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.workspace_premium_rounded,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text('subscription.premium_gate_btn'.tr(),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('common.cancel'.tr(),
+                style: const TextStyle(color: Colors.white38, fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Benefit Chip ─────────────────────────────────────────────────────────────
+class _BenefitChip extends StatelessWidget {
+  final IconData icon;
+  final String   label;
+  final Color    color;
+  const _BenefitChip({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
+      ]),
     );
   }
 }
