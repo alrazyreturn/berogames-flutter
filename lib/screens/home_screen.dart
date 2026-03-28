@@ -396,6 +396,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     {'code': 'ar', 'flag': '🇸🇦', 'label': 'العربية'},
     {'code': 'en', 'flag': '🇬🇧', 'label': 'English'},
     {'code': 'tr', 'flag': '🇹🇷', 'label': 'Türkçe'},
+    {'code': 'es', 'flag': '🇪🇸', 'label': 'Español'},
+    {'code': 'zh', 'flag': '🇨🇳', 'label': '中文'},
+    {'code': 'ru', 'flag': '🇷🇺', 'label': 'Русский'},
   ];
 
   void _showLangSheet() {
@@ -403,75 +406,92 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     showModalBottomSheet(
       context: context,
       backgroundColor: _cCard,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40, height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            Text(
-              'language.choose'.tr(),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ..._langs.map((lang) {
-              final isSelected = lang['code'] == current;
-              return GestureDetector(
-                onTap: () {
-                  context.setLocale(Locale(lang['code']!));
-                  Navigator.pop(ctx);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
+      builder: (ctx) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Handle ────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Container(
+                  width: 40, height: 4,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? _cNavActive.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected ? _cNavActive : Colors.white12,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(lang['flag']!,
-                          style: const TextStyle(fontSize: 26)),
-                      const SizedBox(width: 16),
-                      Text(
-                        lang['label']!,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white70,
-                          fontSize: 16,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'language.choose'.tr(),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              // ── Scrollable list ───────────────────────────────────
+              Flexible(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  shrinkWrap: true,
+                  children: _langs.map((lang) {
+                    final isSelected = lang['code'] == current;
+                    return GestureDetector(
+                      onTap: () {
+                        context.setLocale(Locale(lang['code']!));
+                        Navigator.pop(ctx);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? _cNavActive.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? _cNavActive : Colors.white12,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(lang['flag']!,
+                                style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 14),
+                            Text(
+                              lang['label']!,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontSize: 15,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (isSelected)
+                              const Icon(Icons.check_circle,
+                                  color: _cNavActive, size: 20),
+                          ],
                         ),
                       ),
-                      const Spacer(),
-                      if (isSelected)
-                        const Icon(Icons.check_circle,
-                            color: _cNavActive, size: 20),
-                    ],
-                  ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
