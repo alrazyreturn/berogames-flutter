@@ -33,7 +33,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _dio      = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
 
   File?   _pickedImage;
-  bool    _loading     = false;
+  bool    _loading        = false;
+  bool    _uploadingAvatar = false; // حالة رفع الصورة التلقائي
   String? _error;
 
   int?    _rank;
@@ -78,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // ─── اختيار صورة ─────────────────────────────────────────────────────────
+  // ─── اختيار صورة ثم رفعها فوراً ──────────────────────────────────────────
   Future<void> _pickImage(ImageSource source) async {
     Navigator.pop(context);
     final xfile = await _picker.pickImage(
@@ -87,7 +88,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
       maxHeight:    800,
       imageQuality: 85,
     );
-    if (xfile != null) setState(() => _pickedImage = File(xfile.path));
+    if (xfile == null) return;
+    final file = File(xfile.path);
+    setState(() => _pickedImage = file);
+    // حفظ الصورة فوراً بدون انتظار الضغط على "حفظ التعديلات"
+    await _saveAvatarOnly(file);
+  }
+
+  // ─── رفع الصورة تلقائياً ──────────────────────────────────────────────────
+  Future<void> _saveAvatarOnly(File imageFile) async {
+    final token = context.read<UserProvider>().token;
+    if (token == null) return;
+
+    setState(() { _uploadingAvatar = true; _error = null; });
+
+    try {
+      final ext      = imageFile.path.contains('.')
+          ? '.${imageFile.path.split('.').last}' : '.jpg';
+      final formData = FormData();
+      formData.files.add(MapEntry(
+        'avatar',
+        await MultipartFile.fromFile(imageFile.path, filename: 'avatar$ext'),
+      ));
+
+      final res = await _dio.put(
+        ApiConfig.profile,
+        data:    formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final updatedUser = res.data['user'] as Map<String, dynamic>;
+      if (!mounted) return;
+      await context.read<UserProvider>().updateProfile(
+        name:   updatedUser['name'],
+        avatar: updatedUser['avatar'],
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _uploadingAvatar = false;
+        _pickedImage     = null; // تم الحفظ → امسح المؤقت حتى لا تُرفع مرة ثانية
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content:         Text('profile.updated'.tr()),
+        backgroundColor: _cCyan.withValues(alpha: 0.9),
+        behavior:        SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ));
+
+    } on DioException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error           = e.response?.data?['message'] ?? 'profile.error'.tr();
+        _uploadingAvatar = false;
+        _pickedImage     = null; // أعد الصورة القديمة عند الخطأ
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error           = 'common.error_generic'.tr();
+        _uploadingAvatar = false;
+        _pickedImage     = null;
+      });
+    }
   }
 
   void _showImageSourceSheet() {
@@ -344,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // ─── Avatar with glow ring ─────────────────────────────────
               GestureDetector(
-                onTap: _showImageSourceSheet,
+                onTap: _uploadingAvatar ? null : _showImageSourceSheet,
                 child: Stack(
                   alignment: Alignment.bottomRight,
                   children: [
@@ -353,52 +416,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [_cCyan, _cPurple],
+                        gradient: LinearGradient(
+                          colors: _uploadingAvatar
+                              ? [_cPurple, _cCyan]
+                              : [_cCyan, _cPurple],
                           begin: Alignment.topLeft,
                           end:   Alignment.bottomRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color:       _cCyan.withValues(alpha: 0.35),
-                            blurRadius:  28,
-                            spreadRadius: 2,
+                            color:       (_uploadingAvatar ? _cPurple : _cCyan)
+                                .withValues(alpha: 0.45),
+                            blurRadius:  32,
+                            spreadRadius: 3,
                           ),
                         ],
                       ),
-                      child: CircleAvatar(
-                        radius: 56,
-                        backgroundColor: _cCard,
-                        backgroundImage: _pickedImage != null
-                            ? FileImage(_pickedImage!) as ImageProvider
-                            : (user?.avatar != null
-                                ? NetworkImage(user!.avatar!)
-                                : null),
-                        child: (_pickedImage == null && user?.avatar == null)
-                            ? Text(
-                                user?.name.isNotEmpty == true
-                                    ? user!.name[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  color:      _cCyan,
-                                  fontSize:   44,
-                                  fontWeight: FontWeight.bold,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 56,
+                            backgroundColor: _cCard,
+                            backgroundImage: _pickedImage != null
+                                ? FileImage(_pickedImage!) as ImageProvider
+                                : (user?.avatar != null
+                                    ? NetworkImage(user!.avatar!)
+                                    : null),
+                            child: (_pickedImage == null && user?.avatar == null)
+                                ? Text(
+                                    user?.name.isNotEmpty == true
+                                        ? user!.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color:      _cCyan,
+                                      fontSize:   44,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          // ── Overlay spinner أثناء الرفع ──────────────
+                          if (_uploadingAvatar)
+                            Container(
+                              width:  112,
+                              height: 112,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black.withValues(alpha: 0.55),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color:       _cCyan,
+                                  strokeWidth: 2.5,
                                 ),
-                              )
-                            : null,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    // Edit badge
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color:  _cCyan,
-                        shape:  BoxShape.circle,
-                        border: Border.all(color: _cBg, width: 2),
+                    // Edit badge (يختفي أثناء الرفع)
+                    if (!_uploadingAvatar)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color:  _cCyan,
+                          shape:  BoxShape.circle,
+                          border: Border.all(color: _cBg, width: 2),
+                        ),
+                        child: const Icon(
+                            Icons.edit_rounded, color: Colors.black, size: 16),
                       ),
-                      child: const Icon(
-                          Icons.edit_rounded, color: Colors.black, size: 16),
-                    ),
                   ],
                 ),
               ),
@@ -622,18 +710,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 54,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: _loading
+                    gradient: (_loading || _uploadingAvatar)
                         ? null
                         : const LinearGradient(
                             colors: [_cCyan, _cPurple],
                             begin:  Alignment.centerRight,
                             end:    Alignment.centerLeft,
                           ),
-                    color: _loading
+                    color: (_loading || _uploadingAvatar)
                         ? Colors.white12
                         : null,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: _loading
+                    boxShadow: (_loading || _uploadingAvatar)
                         ? []
                         : [
                             BoxShadow(
@@ -644,7 +732,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                   ),
                   child: ElevatedButton(
-                    onPressed: _loading ? null : _save,
+                    onPressed: (_loading || _uploadingAvatar) ? null : _save,
                     style: ElevatedButton.styleFrom(
                       backgroundColor:         Colors.transparent,
                       disabledBackgroundColor: Colors.transparent,
@@ -653,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(30)),
                       elevation: 0,
                     ),
-                    child: _loading
+                    child: (_loading || _uploadingAvatar)
                         ? const SizedBox(
                             width:  24,
                             height: 24,
