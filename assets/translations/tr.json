@@ -26,10 +26,13 @@
     "turkish": "Türkçe 🇹🇷"
   },
   "energy": {
-    "empty_title": "⚡ Enerji Bitti!",
-    "recharge_hint": "❤️ enerji kazanmak için bir reklam izle",
-    "wait_midnight": "Ya da geceyi bekle 🕛",
-    "watch_ad": "Reklam İzle +❤️"
+    "empty_title":     "⚡ Enerji Bitti!",
+    "recharge_hint":   "❤️ enerji kazanmak için bir reklam izle",
+    "wait_midnight":   "Ya da geceyi bekle 🕛",
+    "watch_ad":        "Reklam İzle +❤️",
+    "no_energy_title": "Enerjin Bitti! ⚡",
+    "no_energy_body":  "Enerji almak ve oynamaya devam etmek için ücretsiz bir reklam izle",
+    "subscribe_vip":   "👑 VIP Abone Ol — Sınırsız Enerji!"
   },
   "login": {
     "welcome": "BeroGames'e Hoş Geldiniz",
@@ -205,7 +208,8 @@
     "friends":        "Arkadaşlar 💚",
     "pending_sent":   "İstek Gönderildi ⏳",
     "accept_request": "Arkadaşlığı Kabul Et 👋",
-    "message_btn":    "Mesaj 💬"
+    "message_btn":     "Mesaj 💬",
+    "subscribe_promo": "Daha iyi deneyim için abone ol 👑"
   },
 
   "dual_game": {

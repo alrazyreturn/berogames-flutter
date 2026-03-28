@@ -16,6 +16,7 @@ import 'friends_screen.dart';
 import 'profile_screen.dart';
 import '../services/energy_service.dart';
 import '../services/ad_service.dart';
+import 'subscription_screen.dart';
 
 // ─── Design tokens (Neon-Glass Editorial — matches dual_game_screen) ──────────
 const _cBg      = Color(0xFF0B1326);
@@ -444,12 +445,17 @@ class _DualResultScreenState extends State<DualResultScreen>
                     ),
                   ),
 
-                  // ─── أزرار الصداقة والرسالة ──────────────────────────────
+                  // ─── أزرار الصداقة والرسالة والاشتراك ───────────────────
                   const SizedBox(height: 20),
                   _buildFriendButton(),
                   // يظهر زر الرسالة دائماً (بوت أو لاعب حقيقي)
                   const SizedBox(height: 12),
                   _buildMessageButton(),
+                  // زر الاشتراك (يُخفى إذا كان المستخدم مشتركاً)
+                  if (!context.watch<UserProvider>().hasUnlimitedEnergy) ...[
+                    const SizedBox(height: 12),
+                    _buildSubscribePromoButton(),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -721,6 +727,65 @@ class _DualResultScreenState extends State<DualResultScreen>
                 fontWeight: FontWeight.w600,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── زر الاشتراك الترويجي ─────────────────────────────────────────────────
+  Widget _buildSubscribePromoButton() {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFB300), Color(0xFFFF6F00)],
+            begin: Alignment.centerRight,
+            end:   Alignment.centerLeft,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color:      const Color(0xFFFFB300).withValues(alpha: 0.45),
+              blurRadius: 22,
+              spreadRadius: 1,
+              offset:     const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color:  Colors.white.withValues(alpha: 0.2),
+                shape:  BoxShape.circle,
+              ),
+              child: const Text('👑', style: TextStyle(fontSize: 15)),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                'dual_result.subscribe_promo'.tr(),
+                style: const TextStyle(
+                  color:      Colors.white,
+                  fontSize:   14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white70, size: 14),
           ],
         ),
       ),

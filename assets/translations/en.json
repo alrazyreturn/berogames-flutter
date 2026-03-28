@@ -26,10 +26,13 @@
     "turkish": "Türkçe 🇹🇷"
   },
   "energy": {
-    "empty_title": "⚡ Out of Energy!",
-    "recharge_hint": "Watch an ad to get ❤️ extra energy",
-    "wait_midnight": "Or wait until midnight to recharge 🕛",
-    "watch_ad": "Watch Ad +❤️"
+    "empty_title":     "⚡ Out of Energy!",
+    "recharge_hint":   "Watch an ad to get ❤️ extra energy",
+    "wait_midnight":   "Or wait until midnight to recharge 🕛",
+    "watch_ad":        "Watch Ad +❤️",
+    "no_energy_title": "Out of Energy! ⚡",
+    "no_energy_body":  "Watch a free ad to get extra energy and continue playing",
+    "subscribe_vip":   "👑 Subscribe VIP — Unlimited Energy!"
   },
   "login": {
     "welcome": "Welcome to BeroGames",
@@ -205,7 +208,8 @@
     "friends":        "Friends 💚",
     "pending_sent":   "Request Sent ⏳",
     "accept_request": "Accept Friendship 👋",
-    "message_btn":    "Message 💬"
+    "message_btn":     "Message 💬",
+    "subscribe_promo": "For a better experience, subscribe now 👑"
   },
 
   "dual_game": {

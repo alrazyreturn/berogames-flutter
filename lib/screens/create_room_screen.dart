@@ -158,52 +158,120 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   void _showNoEnergyDialog() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: _cCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titlePadding:   const EdgeInsets.fromLTRB(20, 28, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        actionsPadding: EdgeInsets.zero,
         title: Column(children: [
           Container(
-            width: 64, height: 64,
+            width: 68, height: 68,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.amber.withValues(alpha: 0.15),
-              boxShadow: [BoxShadow(color: Colors.amber.withValues(alpha: 0.4),
-                  blurRadius: 20)],
+              boxShadow: [BoxShadow(
+                  color: Colors.amber.withValues(alpha: 0.4), blurRadius: 24)],
             ),
             child: const Center(
-              child: Text('⚡', style: TextStyle(fontSize: 32)),
+              child: Text('⚡', style: TextStyle(fontSize: 34)),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text('energy.no_energy_title'.tr(),
               style: const TextStyle(color: Colors.white, fontSize: 17,
                   fontWeight: FontWeight.bold),
               textAlign: TextAlign.center),
         ]),
-        content: Text('energy.no_energy_body'.tr(),
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.65),
-                fontSize: 14, height: 1.5),
-            textAlign: TextAlign.center),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('common.cancel'.tr(),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _cIndigo,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ─── نص الجسم ──────────────────────────────────────────────
+            Text('energy.no_energy_body'.tr(),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65),
+                    fontSize: 14, height: 1.5),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 18),
+
+            // ─── زر شاهد الإعلان ──────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _cIndigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  elevation: 0,
+                ),
+                icon:  const Icon(Icons.play_circle_rounded, size: 20),
+                label: Text('energy.watch_ad'.tr(),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _watchAdAndCreate();
+                },
+              ),
             ),
-            icon: const Icon(Icons.play_circle_rounded, size: 18),
-            label: Text('energy.watch_ad'.tr(),
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: () { Navigator.pop(context); _watchAdAndCreate(); },
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            // ─── زر الاشتراك VIP ──────────────────────────────────────
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const SubscriptionScreen()));
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFB300), Color(0xFFFF6F00)],
+                    begin:  Alignment.centerRight,
+                    end:    Alignment.centerLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color:      const Color(0xFFFFB300).withValues(alpha: 0.40),
+                      blurRadius: 18,
+                      offset:     const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('👑', style: TextStyle(fontSize: 17)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'energy.subscribe_vip'.tr(),
+                      style: const TextStyle(
+                        color:      Colors.white,
+                        fontSize:   14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // ─── زر الإلغاء ───────────────────────────────────────────
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('common.cancel'.tr(),
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 13)),
+            ),
+          ],
+        ),
       ),
     );
   }
