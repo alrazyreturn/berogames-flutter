@@ -98,15 +98,44 @@ class AdService {
     }
   }
 
-  // ─── للعب الزوجي (يُظهر الإعلان بعد ظهور شاشة النتيجة) ─────────────────
-  void onGameComplete() {
-    _gameCount++;
-    debugPrint('🎮 Dual game complete — count: $_gameCount');
-    if (_gameCount % 2 == 0) {
-      Future.delayed(const Duration(milliseconds: 800), _showInterstitial);
+  // ─── عرض Interstitial فوراً مع callback بعد الإغلاق ─────────────────────
+  // يُستخدم في نهاية اللعبة الفردية وعند الخروج من شاشة الترتيب
+  void showInterstitialNow({VoidCallback? onComplete}) {
+    if (_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (_) {
+          debugPrint('📺 Interstitial showing');
+        },
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitial();
+          onComplete?.call();
+        },
+        onAdFailedToShowFullScreenContent: (ad, err) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitial();
+          onComplete?.call();
+          debugPrint('❌ Interstitial failed: ${err.message}');
+        },
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
     } else {
+      // الإعلان لم يُحمَّل بعد → نفّذ الإجراء مباشرة وحمّل للمرة القادمة
       loadInterstitial();
+      onComplete?.call();
     }
+  }
+
+  // ─── نهاية اللعبة الفردية: يُظهر Interstitial في كل مرة ─────────────────
+  void onGameComplete() {
+    debugPrint('🎮 Solo game complete → showing interstitial');
+    Future.delayed(
+      const Duration(milliseconds: 800),
+      () => showInterstitialNow(),
+    );
   }
 
   void _showInterstitial() {

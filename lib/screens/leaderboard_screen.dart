@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../providers/user_provider.dart';
 import '../config/api_config.dart';
+import '../services/ad_service.dart';
 import 'package:dio/dio.dart';
 import 'home_screen.dart';
 import 'friends_screen.dart';
@@ -38,6 +39,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  // ─── خروج مع إعلان interstitial ─────────────────────────────────────────
+  void _exitWithAd({required VoidCallback then}) {
+    AdService().showInterstitialNow(onComplete: () {
+      if (mounted) then();
+    });
   }
 
   Future<void> _load() async {
@@ -115,8 +123,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 icon:   Icons.home_rounded,
                 label:  'home.nav_home'.tr(),
                 active: false,
-                onTap:  () => Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen())),
+                onTap:  () => _exitWithAd(then: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen()))),
               ),
               _NavItem(
                 icon:   Icons.leaderboard_rounded,
@@ -128,15 +137,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 icon:   Icons.people_rounded,
                 label:  'home.nav_friends'.tr(),
                 active: false,
-                onTap:  () => Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (_) => const FriendsScreen())),
+                onTap:  () => _exitWithAd(then: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FriendsScreen()))),
               ),
               _NavItem(
                 icon:   Icons.person_rounded,
                 label:  'home.nav_profile'.tr(),
                 active: false,
-                onTap:  () => Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                onTap:  () => _exitWithAd(then: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()))),
               ),
             ],
           ),
@@ -149,7 +160,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget build(BuildContext context) {
     final currentUser = context.read<UserProvider>().user;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _exitWithAd(then: () => Navigator.of(context).pop());
+        }
+      },
+      child: Scaffold(
       backgroundColor: _cBg,
       bottomNavigationBar: _buildBottomNav(),
       body: SafeArea(
@@ -161,9 +179,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // زر تحديث / رجوع
+                  // زر رجوع (مع إعلان)
                   GestureDetector(
-                    onTap: () => Navigator.pop(context),
+                    onTap: () => _exitWithAd(
+                        then: () => Navigator.pop(context)),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -270,7 +289,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ],
         ),
       ),
-    );
+    ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildError() {
