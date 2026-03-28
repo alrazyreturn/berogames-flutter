@@ -11,6 +11,7 @@ import 'categories_screen.dart';
 import 'leaderboard_screen.dart';
 import 'friends_screen.dart';
 import 'profile_screen.dart';
+import 'subscription_screen.dart';
 
 // ─── Design tokens (Neon-Glass Editorial) ────────────────────────────────────
 const _cBg      = Color(0xFF0B1326);
@@ -526,6 +527,58 @@ class _ResultScreenState extends State<ResultScreen>
                         ),
                       ],
                     ),
+
+                    // ─── بانر الاشتراك (يُخفى عند الاشتراك) ───────────
+                    Builder(builder: (ctx) {
+                      final user    = ctx.watch<UserProvider>();
+                      final noAds   = user.hasNoAds;
+                      final hasVip  = user.hasUnlimitedEnergy;
+                      if (noAds && hasVip) return const SizedBox.shrink();
+                      return Column(
+                        children: [
+                          const SizedBox(height: 14),
+
+                          // ── No Ads ─────────────────────────────────
+                          if (!noAds)
+                            _PromoButton(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                begin:  Alignment.centerRight,
+                                end:    Alignment.centerLeft,
+                              ),
+                              shadowColor: const Color(0xFF7C3AED),
+                              emoji:  '🚫',
+                              label:  'result.no_ads_promo'.tr(),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const SubscriptionScreen()),
+                              ),
+                            ),
+
+                          if (!noAds && !hasVip)
+                            const SizedBox(height: 10),
+
+                          // ── Subscribe VIP ──────────────────────────
+                          if (!hasVip)
+                            _PromoButton(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFB300), Color(0xFFFF6F00)],
+                                begin:  Alignment.centerRight,
+                                end:    Alignment.centerLeft,
+                              ),
+                              shadowColor: const Color(0xFFFFB300),
+                              emoji:  '👑',
+                              label:  'result.subscribe_promo'.tr(),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const SubscriptionScreen()),
+                              ),
+                            ),
+                        ],
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -598,6 +651,75 @@ class _ResultScreenState extends State<ResultScreen>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── زر الترويج (No Ads / Subscribe VIP) ──────────────────────────────────────
+class _PromoButton extends StatelessWidget {
+  final LinearGradient gradient;
+  final Color          shadowColor;
+  final String         emoji;
+  final String         label;
+  final VoidCallback   onTap;
+
+  const _PromoButton({
+    required this.gradient,
+    required this.shadowColor,
+    required this.emoji,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        decoration: BoxDecoration(
+          gradient:     gradient,
+          borderRadius: BorderRadius.circular(48),
+          boxShadow: [
+            BoxShadow(
+              color:      shadowColor.withValues(alpha: 0.40),
+              blurRadius: 20,
+              spreadRadius: 1,
+              offset:     const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color:  Colors.white.withValues(alpha: 0.18),
+                shape:  BoxShape.circle,
+              ),
+              child: Text(emoji, style: const TextStyle(fontSize: 15)),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color:      Colors.white,
+                  fontSize:   14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.2,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white70, size: 13),
+          ],
         ),
       ),
     );

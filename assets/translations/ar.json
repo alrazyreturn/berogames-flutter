@@ -207,7 +207,9 @@
     "stat_questions": "الأسئلة",
     "stat_level":     "أعلى مستوى",
     "stat_percent":   "النسبة",
-    "watch_ad":       "شاهد إعلان"
+    "watch_ad":        "شاهد إعلان",
+    "no_ads_promo":    "إزالة الإعلانات نهائياً 🚫",
+    "subscribe_promo": "لتجربة أفضل، اشترك الآن 👑"
   },
 
   "dual_result": {

@@ -195,7 +195,9 @@
     "stat_questions": "Questions",
     "stat_level": "Top Level",
     "stat_percent": "Percent",
-    "watch_ad": "Watch Ad"
+    "watch_ad":        "Watch Ad",
+    "no_ads_promo":    "Remove Ads Forever 🚫",
+    "subscribe_promo": "For a better experience, subscribe now 👑"
   },
   "dual_result": {
     "draw":           "Draw!",

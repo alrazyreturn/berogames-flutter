@@ -195,7 +195,9 @@
     "stat_questions": "Sorular",
     "stat_level": "En Yüksek Seviye",
     "stat_percent": "Yüzde",
-    "watch_ad": "Reklam İzle"
+    "watch_ad":        "Reklam İzle",
+    "no_ads_promo":    "Reklamları Kalıcı Kaldır 🚫",
+    "subscribe_promo": "Daha iyi deneyim için abone ol 👑"
   },
   "dual_result": {
     "draw":           "Berabere!",
