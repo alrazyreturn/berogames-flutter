@@ -284,6 +284,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     {'code': 'ar', 'flag': '🇸🇦', 'label': 'العربية'},
     {'code': 'en', 'flag': '🇬🇧', 'label': 'English'},
     {'code': 'tr', 'flag': '🇹🇷', 'label': 'Türkçe'},
+    {'code': 'es', 'flag': '🇪🇸', 'label': 'Español'},
+    {'code': 'zh', 'flag': '🇨🇳', 'label': '中文'},
+    {'code': 'ru', 'flag': '🇷🇺', 'label': 'Русский'},
   ];
 
   void _showLangSheet() {

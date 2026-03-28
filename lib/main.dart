@@ -101,6 +101,9 @@ void main() async {
         Locale('ar'), // العربية (افتراضي)
         Locale('en'), // English
         Locale('tr'), // Türkçe
+        Locale('es'), // Español
+        Locale('zh'), // 中文
+        Locale('ru'), // Русский
       ],
       path:            'assets/translations',
       fallbackLocale:  const Locale('ar'),
