@@ -1195,7 +1195,7 @@ class _GameCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 240,
+        constraints: const BoxConstraints(minHeight: 220),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: gradient,
@@ -1210,14 +1210,15 @@ class _GameCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon box — centered & larger
+            // Icon box
             Container(
-              width: 90,
-              height: 90,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: iconBgColor.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color:      iconBgColor.withValues(alpha: 0.30),
@@ -1226,15 +1227,17 @@ class _GameCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 46),
+              child: Icon(icon, color: Colors.white, size: 40),
             ),
-            const Spacer(),
+            const SizedBox(height: 10),
             Text(
               title,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1242,9 +1245,11 @@ class _GameCard extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
             const SizedBox(height: 12),
@@ -1263,6 +1268,8 @@ class _GameCard extends StatelessWidget {
                 ),
                 child: Text(
                   btnLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 13),
                 ),
