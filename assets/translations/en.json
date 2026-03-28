@@ -150,7 +150,11 @@
     "pro_subtitle": "Discover exclusive content",
     "challenge_title": "Daily Challenge",
     "challenge_desc": "Answer 10 questions in a row and win 500 points!",
-    "challenge_start": "Start"
+    "challenge_start": "Start",
+    "premium_section":  "Premium Sections 👑",
+    "premium_unlocked": "Unlocked Sections ✓",
+    "subscribe_now":    "Subscribe Now",
+    "pro_unlocked":     "Available • Subscriber"
   },
   "game": {
     "level": "Level",

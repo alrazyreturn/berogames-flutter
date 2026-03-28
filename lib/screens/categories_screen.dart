@@ -20,7 +20,10 @@ const _cCyan    = Color(0xFF00FBFB);
 const _cIndigo  = Color(0xFF6366F1);
 const _cNavBg   = Color(0xFF10102B);
 
-// ─── Emoji → Material icon mapping ───────────────────────────────────────────
+// ─── Design extras ────────────────────────────────────────────────────────────
+const _cGold = Color(0xFFFFD700);
+
+// ─── Emoji / name → Material icon mapping ─────────────────────────────────────
 IconData _iconForEmoji(String emoji) {
   switch (emoji) {
     case '🔬': return Icons.science;
@@ -28,8 +31,10 @@ IconData _iconForEmoji(String emoji) {
     case '⚽': return Icons.sports;
     case '🌍': return Icons.language;
     case '🏛️': return Icons.account_balance;
-    case '🕌': return Icons.auto_stories;
+    case '🕌': return Icons.mosque_rounded;
     case '⚔️': return Icons.groups;
+    case 'menu_book':   return Icons.menu_book_rounded;
+    case 'auto_stories':return Icons.auto_stories_rounded;
     default:   return Icons.category;
   }
 }
@@ -347,6 +352,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   // ─── Body ─────────────────────────────────────────────────────────────────
   Widget _buildBody(String lang) {
+    final canPlayPremium = context.watch<UserProvider>().canPlayPremium;
     return FutureBuilder<List<CategoryModel>>(
       future: _future,
       builder: (context, snapshot) {
@@ -396,11 +402,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
               // Premium PRO cards
               if (premium.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 20),
+                _buildPremiumHeader(canPlayPremium),
+                const SizedBox(height: 12),
                 ...premium.map((c) => Padding(
                   padding: const EdgeInsets.only(bottom: 14),
                   child: _ProCard(
                     category: c, lang: lang,
+                    canPlayPremium: canPlayPremium,
                     onTap: () => _onCategoryTap(c),
                   ),
                 )),
@@ -486,6 +495,63 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       if (i + 2 < regular.length) { rows.add(const SizedBox(height: 14)); }
     }
     return Column(children: rows);
+  }
+
+  // ─── Premium section header ───────────────────────────────────────────────
+  Widget _buildPremiumHeader(bool canPlayPremium) {
+    return Row(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            _cGold.withValues(alpha: 0.25),
+            _cGold.withValues(alpha: 0.05),
+          ]),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _cGold.withValues(alpha: 0.4)),
+          boxShadow: [BoxShadow(color: _cGold.withValues(alpha: 0.2),
+              blurRadius: 10)],
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(
+            canPlayPremium
+                ? Icons.workspace_premium_rounded
+                : Icons.lock_rounded,
+            color: _cGold, size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            canPlayPremium
+                ? 'categories.premium_unlocked'.tr()
+                : 'categories.premium_section'.tr(),
+            style: const TextStyle(color: _cGold, fontSize: 12,
+                fontWeight: FontWeight.bold),
+          ),
+        ]),
+      ),
+      const Spacer(),
+      if (!canPlayPremium)
+        GestureDetector(
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const SubscriptionScreen())),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _cGold.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _cGold.withValues(alpha: 0.3)),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  color: _cGold, size: 11),
+              const SizedBox(width: 4),
+              Text('categories.subscribe_now'.tr(),
+                  style: const TextStyle(color: _cGold, fontSize: 11,
+                      fontWeight: FontWeight.bold)),
+            ]),
+          ),
+        ),
+    ]);
   }
 
   // ─── Daily challenge banner ────────────────────────────────────────────────
@@ -773,90 +839,180 @@ class _RegularCard extends StatelessWidget {
 class _ProCard extends StatelessWidget {
   final CategoryModel category;
   final String        lang;
+  final bool          canPlayPremium;
   final VoidCallback  onTap;
-  const _ProCard({required this.category, required this.lang,
-      required this.onTap});
+
+  const _ProCard({
+    required this.category,
+    required this.lang,
+    required this.canPlayPremium,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = category.color;
-    final icon  = _iconForEmoji(category.icon);
+    final color    = category.color;
+    final icon     = _iconForEmoji(category.icon);
+    final isLocked = !canPlayPremium;
+
+    // Locked: gold border glow / Unlocked: category color glow
+    final borderColor = isLocked
+        ? _cGold.withValues(alpha: 0.45)
+        : color.withValues(alpha: 0.5);
+    final glowColor = isLocked
+        ? _cGold.withValues(alpha: 0.18)
+        : color.withValues(alpha: 0.22);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 88,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 92,
         decoration: BoxDecoration(
-          color:        _cCard.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-          boxShadow: [BoxShadow(
-              color: color.withValues(alpha: 0.22), blurRadius: 20)],
+          color: isLocked
+              ? const Color(0xFF12192E)
+              : _cCard.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: borderColor, width: 1.5),
+          boxShadow: [BoxShadow(color: glowColor, blurRadius: 22,
+              spreadRadius: 1)],
         ),
-        child: Row(
-          children: [
-            const SizedBox(width: 18),
-            // Icon square
-            Container(
-              width:  54, height: 54,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: LinearGradient(
-                  colors: [color.withValues(alpha: 0.38),
-                      color.withValues(alpha: 0.0)],
+        child: Stack(children: [
+          // Background shimmer for locked
+          if (isLocked)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _cGold.withValues(alpha: 0.06),
+                      Colors.transparent,
+                      _cGold.withValues(alpha: 0.03),
+                    ],
+                  ),
                 ),
-                border: Border.all(color: color.withValues(alpha: 0.5)),
-                boxShadow: [BoxShadow(
-                    color: color.withValues(alpha: 0.38), blurRadius: 18)],
               ),
-              child: Icon(icon, color: color, size: 26),
             ),
-            const SizedBox(width: 16),
-            // Name + subtitle
-            Expanded(
-              child: Column(
-                mainAxisAlignment:  MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.localizedName(lang),
-                    style: const TextStyle(
-                      color:      Color(0xFFDAE2FD),
-                      fontSize:   17,
-                      fontWeight: FontWeight.bold,
-                    ),
+
+          // Content row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(children: [
+              // Icon container
+              Container(
+                width: 58, height: 58,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: isLocked
+                        ? [_cGold.withValues(alpha: 0.22),
+                           _cGold.withValues(alpha: 0.0)]
+                        : [color.withValues(alpha: 0.38),
+                           color.withValues(alpha: 0.0)],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'categories.pro_subtitle'.tr(),
-                    style: TextStyle(
-                      color:    Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                    ),
+                  border: Border.all(
+                    color: isLocked
+                        ? _cGold.withValues(alpha: 0.4)
+                        : color.withValues(alpha: 0.5),
                   ),
-                ],
+                  boxShadow: [BoxShadow(
+                    color: isLocked
+                        ? _cGold.withValues(alpha: 0.25)
+                        : color.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                  )],
+                ),
+                child: Opacity(
+                  opacity: isLocked ? 0.5 : 1.0,
+                  child: Icon(icon,
+                      color: isLocked ? _cGold : color, size: 28),
+                ),
               ),
-            ),
-            // PRO badge + lock
-            Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('PRO', style: TextStyle(
-                    color:      color,
-                    fontSize:   13,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  )),
-                  const SizedBox(height: 2),
-                  Icon(Icons.lock_rounded, color: color, size: 20),
-                ],
+              const SizedBox(width: 16),
+
+              // Name + subtitle
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.localizedName(lang),
+                      style: TextStyle(
+                        color: isLocked
+                            ? Colors.white.withValues(alpha: 0.55)
+                            : const Color(0xFFDAE2FD),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isLocked
+                          ? 'categories.pro_subtitle'.tr()
+                          : 'categories.pro_unlocked'.tr(),
+                      style: TextStyle(
+                        color: isLocked
+                            ? _cGold.withValues(alpha: 0.6)
+                            : color.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 20),
-          ],
-        ),
+
+              // Right badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isLocked
+                      ? _cGold.withValues(alpha: 0.1)
+                      : color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isLocked
+                        ? _cGold.withValues(alpha: 0.35)
+                        : color.withValues(alpha: 0.3),
+                  ),
+                  boxShadow: [BoxShadow(
+                    color: isLocked
+                        ? _cGold.withValues(alpha: 0.15)
+                        : color.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                  )],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isLocked
+                          ? Icons.lock_rounded
+                          : Icons.workspace_premium_rounded,
+                      color: isLocked ? _cGold : color,
+                      size: 20,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isLocked ? 'PRO' : '✓',
+                      style: TextStyle(
+                        color: isLocked ? _cGold : color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+          ),
+        ]),
       ),
     );
   }

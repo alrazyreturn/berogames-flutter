@@ -150,7 +150,11 @@
     "pro_subtitle": "Özel içeriği keşfet",
     "challenge_title": "Günlük Meydan Okuma",
     "challenge_desc": "Arka arkaya 10 soruyu cevapla ve 500 puan kazan!",
-    "challenge_start": "Başla"
+    "challenge_start": "Başla",
+    "premium_section":  "Premium Bölümler 👑",
+    "premium_unlocked": "Açık Bölümler ✓",
+    "subscribe_now":    "Abone Ol",
+    "pro_unlocked":     "Erişilebilir • Abone"
   },
   "game": {
     "level": "Seviye",
