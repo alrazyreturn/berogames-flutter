@@ -33,7 +33,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _socket        = SocketService();
   final _roomService   = RoomService();
   final _energyService = EnergyService();
@@ -46,10 +46,37 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupSocket();
       _loadEnergy();
       _fetchAdditionalData();
+      _checkPendingInvite(); // معالجة دعوة قبلها المستخدم من إشعار الخلفية
+    });
+  }
+
+  // ─── مراقبة دورة حياة التطبيق لاكتشاف عودته من الخلفية ────────────────────
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // تحقق من وجود دعوة مقبولة عبر زر الإشعار أثناء الخلفية
+      _checkPendingInvite();
+    }
+  }
+
+  // ─── التحقق من دعوة معلقة (Accept من زر الإشعار وهو في الخلفية) ────────────
+  Future<void> _checkPendingInvite() async {
+    await NotificationService().checkPendingInvite((data) {
+      final roomCode   = data['room_code']    ?? '';
+      final fromUserId = int.tryParse(data['from_user_id'] ?? '') ?? 0;
+      final fromName   = data['from_name']    ?? 'صديق';
+      if (roomCode.isNotEmpty && mounted) {
+        _acceptInvite(
+          fromUserId: fromUserId,
+          fromName:   fromName,
+          roomCode:   roomCode,
+        );
+      }
     });
   }
 
@@ -140,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _socket.onGameInviteReceived = null;
     super.dispose();
   }

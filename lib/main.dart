@@ -45,7 +45,7 @@ void main() async {
   final notifService = NotificationService();
   await notifService.init();
 
-  // عند الضغط على إشعار → افتح الشاشة المناسبة
+  // عند الضغط على إشعار أو زر "قبول" → افتح الشاشة المناسبة
   notifService.onNotificationTap = (data) {
     final type = data['type'] as String? ?? '';
     final ctx  = navigatorKey.currentContext;
@@ -85,6 +85,10 @@ void main() async {
         break;
     }
   };
+
+  // معالجة أي إشعار محلي فتح التطبيق من حالة مغلقة (Terminated)
+  // يجب استدعاؤه بعد تعيين onNotificationTap
+  notifService.processLaunchNotification();
 
   // تحميل بيانات الجلسة
   final userProvider = UserProvider();
